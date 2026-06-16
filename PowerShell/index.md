@@ -1,206 +1,149 @@
-# PowerShell – Skriptsammlung für Windows-Administration
+# PowerShell – Skriptsammlung für Windows-Administration (DLRG-Jugend Andernach)
 
-Diese Sammlung automatisiert wiederkehrende Aufgaben auf Windows‑Systemen (z. B. Windows‑Updates).  
+Automatisierte Windows-Verwaltung: Updates, Richtlinien, Personalisierung, Inventur und Monitoring.  
 Ziel ist eine **klare Dokumentation**, **nachvollziehbare Systemänderungen** und **sichere** Ausführung.
 
 > ⚠️ **Wichtige Hinweise**
-> - Verwende Skripte **zuerst in einer Testumgebung**.
-> - Lesen: Abschnitt **„Was wird am PC verändert?“** pro Skript.
-> - Führe Skripte, die Systemkomponenten anfassen, **mit Administratorrechten** aus.
+> - Skripte **zuerst in einer Testumgebung** testen.
+> - Skripte mit Systemzugriff (HKLM, Firewall, Policies) **als Administrator** ausführen.
+> - Execution Policy: `powershell.exe -ExecutionPolicy Bypass -File .\Skript.ps1`
 
 ---
 
-## Inhaltsverzeichnis
+## Ordnerstruktur
 
-- [Voraussetzungen](#voraussetzungen)
-- [Sicherheit & Verantwortungsbereich](#sicherheit--verantwortungsbereich)
-- [Skriptkatalog](#skriptkatalog)
-  - [`1020115_Win_UpdateScript.ps1`](#1020115_win_updatescriptps1)
-- [Allgemeine Ausführung](#allgemeine-ausführung)
-- [Protokollierung (Logging)](#protokollierung-logging)
-- [Troubleshooting](#troubleshooting)
-- [Rollback / Wiederherstellung](#rollback--wiederherstellung)
-- [Vorlage für neue Skripte](#vorlage-für-neue-skripte)
-- [Lizenz](#lizenz)
-- [Mitwirken](#mitwirken)
-- [Changelog](#changelog)
+```
+PowerShell/
+├── Logging.psm1                  ← Gemeinsames Logging-Modul (von allen Skripten genutzt)
+├── SSH_toMac.ps1                 ← SSH-Verbindung per MAC-Adresse aufbauen
+│
+├── Ausführung/                   ← Einmalige Einrichtungs- und Hilfsskripte
+│   ├── DateienSendenVM.ps1       ← Dateien in Hyper-V-VM kopieren, GPO Export/Import
+│   └── WatchDogInstall.ps1       ← Watchdog als geplante Aufgabe einrichten
+│
+├── InstallSoftware/              ← Hersteller-spezifische Tool-Installation
+│   └── 10020115_Win_A_InstallBIOStools.ps1  ← HP (HPCMSL) oder Lenovo System Update
+│
+├── Porgamme/                     ← Verwaltungs-Skripte (via Watchdog ausgeführt)
+│   ├── 10020115_WIN_Log_Software.ps1        ← Software-Inventur
+│   └── 10020115_Win_doc_Word.ps1            ← Word-Vorlagen (.dotx) verteilen
+│
+├── Richtlinien/                  ← Windows-Policy-Konfiguration (via Watchdog ausgeführt)
+│   ├── 10020115_Win_R_Firewall.ps1          ← Windows-Firewall konfigurieren (NEU)
+│   ├── 10020115_Win_R_Passwort.ps1          ← PIN-Komplexität (Windows Hello)
+│   ├── 10020115_Win_R_Personalisierung.ps1  ← Desktop- und Sperrbildschirm-Hintergrund
+│   ├── 10020115_Win_R_SoftwareInstallUninstall.ps1  ← Software-Richtlinien zurücksetzen
+│   ├── 10020115_Win_R_SystemHilfe.ps1       ← OEM-Branding und Legal Notice
+│   └── 10020115_Win_R_WinInstallStore.ps1   ← Microsoft Store deaktivieren
+│
+├── StartUp/                      ← Login-Skripte (Watchdog-Ausführung AUSGESCHLOSSEN)
+│   ├── 10020115_Win_A_Install.ps1           ← Erst-Einrichtung (einmalig)
+│   ├── 10020115_Win_S_MessageWLAN.ps1       ← WLAN-Erinnerung nach X Tagen
+│   └── 10020115_Win_S_Watchdog.ps1          ← Hauptprozess: Sync + Skript-Ausführung
+│
+└── Update/                       ← Update-Automatisierung
+    └── 10020115_Win_UpdateScript.ps1        ← Windows + Treiber + Winget (Hintergrund)
+```
 
 ---
 
 ## Voraussetzungen
 
-- Windows 10 oder Windows 11 (Client); lokale Administratorrechte für Systemeingriffe
-- PowerShell 5.1 oder PowerShell 7.x
-- Internetzugang, wenn Updates oder Module aus Onlinequellen bezogen werden
-- Ggf. temporäres Umgehen der Execution Policy im aktuellen Prozess:
-  ```powershell
-  powershell.exe -ExecutionPolicy Bypass -File .\DeinSkript.ps1
+| Anforderung | Details |
+|------------|---------|
+| Windows | Windows 10 oder Windows 11 (Client) |
+| PowerShell | 5.1 oder 7.x |
+| Rechte | Lokale Administratorrechte für Systemeingriffe |
+| Internet | Für Updates und Modul-Installation (PSWindowsUpdate, HPCMSL) |
+| OneDrive/SharePoint | Sync-Quelle für den Watchdog (im Skript konfigurierbar) |
 
-  
-Sicherheit & Verantwortungsbereich
+---
 
-Prüfe Quellcode und Parameter vor Produktionseinsatz.
-Dokumentiere geplante Änderungen und mögliche Nebenwirkungen.
-Lege Wiederherstellungsoptionen fest (Systemwiederherstellung, Backups, Treiber‑Rollbacks, etc.).
-Nutze gestaffelte Rollouts (Pilot → breiter Rollout).
+## Architektur & Automatisierung
 
+```
+Bei jedem Benutzer-Login:
+  Watchdog (10020115_Win_S_Watchdog.ps1)
+    │
+    ├── Prüft Internetverbindung (5 Versuche x 10 Sek.)
+    ├── Kein Internet → WLAN-Meldebox anzeigen, abbrechen
+    │
+    ├── Kopiert Skripte von Sync-Quelle nach
+    │   C:\Users\Public\10020115_WinScripts\Win11_C\
+    │
+    └── Führt alle .ps1 in Software\Scripte\ aus (außer StartUp\):
+          ├── Richtlinien\*     (Policies, Firewall, OEM-Branding)
+          ├── Porgamme\*        (Inventur, Word-Vorlagen)
+          ├── Update\*          (Windows + Winget Updates)
+          └── InstallSoftware\* (BIOS-Tools je nach Hersteller)
+```
 
-Skriptkatalog
+**Einrichten des Watchdogs** (einmalig, als normaler Benutzer):
+```powershell
+.\Ausführung\WatchDogInstall.ps1
+```
 
-Aktueller Stand: Das Repository enthält derzeit ein Skript. Weitere Skripte können jederzeit ergänzt werden (siehe Vorlage).
+---
 
-1020115_Win_UpdateScript.ps1
-Zweck
-Automatisiert das Suchen, Herunterladen und Installieren von Windows‑Updates auf dem lokalen System. Eignet sich für manuelle Wartungsfenster, On‑Demand‑Patching oder als Baustein in wiederkehrenden Update‑Jobs.
-Typische Einsatzszenarien
+## Gemeinsames Logging-Modul (`Logging.psm1`)
 
-Schnelles Schließen von Sicherheitslücken außerhalb des regulären Patchdays
-Vorbereitete Update‑Läufe mit optionalem automatischem Neustart
-Wartung von Geräten, die (noch) nicht zentral über WSUS/WUfB/Intune gepatcht werden
+Alle Skripte nutzen `Logging.psm1` für konsistentes Logging.
 
-Funktionsweise (High‑Level)
+```powershell
+Import-Module "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1"
 
-Startet eine Updatesuche über Windows Update und listet verfügbare Pakete.
-Lädt Updates herunter und installiert sie in einem Durchlauf.
-Abhängig von der Implementierung können zwei Ansätze genutzt werden:
+Initialize-Logger -Level "INFO"               # Level: DEBUG | INFO | WARN | ERROR
+Write-Log -Level INFO  -Message "Alles OK"
+Write-Log -Level ERROR -Message "Etwas lief schief"
+Close-Logger                                   # Optional: sauber schließen
+```
 
-über das Windows Update COM‑API (Microsoft.Update.Session), oder
-über das Community‑Modul PSWindowsUpdate (Cmdlets wie Get‑WindowsUpdate, Install‑WindowsUpdate).
+**Log-Dateien:** `C:\Users\Public\10020115_WinScripts\Logs\log_YYYY-MM-DD.log`  
+**Log-Rotation:** Täglich (neuer Dateiname) + nach Größe (Standard: 5 MB → `.bak`)
 
+---
 
-Optional: detaillierte Laufzeit‑Ausgaben, Protokollierung in Logdateien, erzwungener Neustart (wenn Updates es verlangen oder ein Parameter dies anweist).
+## Sicherheit & Verantwortungsbereich
 
-Voraussetzungen (skriptspezifisch)
+- Skripte **vor Produktionseinsatz** in Testumgebung prüfen.
+- Alle Systemänderungen (Registry, Dienste, Firewall) dokumentieren.
+- Wiederherstellungsoptionen bereitstellen (Systemwiederherstellungspunkt, GPO-Backup).
+- Gestaffelte Rollouts: Pilot → breiter Rollout.
 
-PowerShell mit Adminrechten
-Internetzugang oder Erreichbarkeit des eigenen WSUS (falls konfiguriert)
-Falls das Skript PSWindowsUpdate nutzt: Modul muss installiert und importiert werden
-(Beispiel – nur falls im Skript wirklich so vorgesehen):
-  Install-Module PSWindowsUpdate -Scope AllUsers -Force
-  Import-Module PSWindowsUpdate  
-PowerShellInstall-Module PSWindowsUpdate -Scope AllUsers -ForceImport-Module PSWindowsUpdateWeitere Zeilen anzeigen
+---
 
+## Troubleshooting
 
-Parameter (Beispiele – abhängig von der konkreten Implementierung)
+| Problem | Lösung |
+|---------|--------|
+| Skript wird blockiert | `-ExecutionPolicy Bypass` verwenden |
+| PSWindowsUpdate nicht gefunden | `Install-Module PSWindowsUpdate -Force` als Admin |
+| Watchdog startet nicht | `WatchDogInstall.ps1` als normaler Benutzer (nicht als Admin) ausführen |
+| Logs leer / nicht vorhanden | Pfad `C:\Users\Public\10020115_WinScripts\Logs\` manuell anlegen |
+| OEM-Branding nicht sichtbar | Windows neu starten |
+| WLAN-Meldebox erscheint nicht | Zähldatei prüfen: `C:\Users\Public\10020115_WinScripts\10020115_Win_R_WLANCounter.txt` |
 
--AcceptAll – akzeptiert alle gefundenen Updates ohne Rückfrage
--AutoReboot – führt nach Bedarf automatisch einen Neustart aus
--Verbose – ausführliche Ausgabe
--WhatIf – Trockenlauf ohne tatsächliche Installation (nur wenn im Skript implementiert)
+---
 
+## Rollback
 
-Bitte die genauen Parameter, Standardwerte und Pflichtparameter der realen Implementierung dem Skriptkopf/Kommentarblock entnehmen. Trage sie unten in der Parameter‑Tabelle nach, sobald final.
+| Aktion | Befehl |
+|--------|--------|
+| Watchdog-Task entfernen | `Unregister-ScheduledTask -TaskName "GPO-Watchdog" -Confirm:$false` |
+| Run-Key entfernen | `Remove-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name GPOWatchdogStarter` |
+| Store-Richtlinie entfernen | `Remove-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name RemoveWindowsStore` |
+| PIN-Richtlinie entfernen | `Remove-Item "HKLM:\SOFTWARE\Policies\Microsoft\PassportForWork\PINComplexity" -Recurse -Force` |
+| Software-Richtlinien | `.\Richtlinien\10020115_Win_R_SoftwareInstallUninstall.ps1` |
+| Legal Notice entfernen | Registry: `HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon` → `LegalNoticeCaption` + `LegalNoticeText` löschen |
+| OEM-Branding entfernen | `Remove-Item "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Recurse` |
 
-Was wird am PC verändert?
+---
 
-Installation von Windows‑Updates: neue Binaries, Sicherheits‑ und Qualitätsupdates; ggf. optionale Treiber/Firmware (falls ausdrücklich eingeschlossen).
-Neustart: falls erforderlich (Kernel/Servicing) oder per Parameter erzwungen.
-Logs: Erzeugt/aktualisiert Logdateien (siehe Abschnitt Protokollierung).
-Keine weiteren dauerhaften Änderungen (z. B. Registry/Scheduled Tasks), außer diese sind ausdrücklich im Skript implementiert.
+## Lizenz
 
-Risiken & Nebenwirkungen
+MIT – Nutzung auf eigene Verantwortung.
 
-Inkompatibilitäten durch einzelne Updates sind möglich (selten, aber nicht ausgeschlossen).
-Ein automatischer Neustart kann laufende Sessions/Anwendungen beenden – daher zuvor Benutzer informieren oder Wartungsfenster nutzen.
-Treiber-/Firmware‑Updates nur nach Geräte‑Kompatibilität testen/zulassen.
+## Mitwirken
 
-Beispiele (sofern unterstützt)
-  # Interaktiver Lauf mit ausführlicher Ausgabe
-  .\1020115_Win_UpdateScript.ps1 -Verbose
-  
-  # Vollautomatischer Lauf inkl. Reboot (falls erforderlich)
-  .\1020115_Win_UpdateScript.ps1 -AcceptAll -AutoReboot
-  
-  # Trockenlauf (zeigt nur an, was passieren würde)
-  .\1020115_Win_UpdateScript.ps1 -WhatIf
-
-Typischerweise werden Logs in einem Ordner wie C:\Temp\Logs\ oder unter C:\Windows\Logs\WindowsUpdate\ erstellt/aktualisiert (genauen Pfad bitte aus dem Skript übernehmen).
-Zusätzlich kann -Verbose genutzt werden, um Konsole/Transkript zu füllen.
-
-Rollback / Wiederherstellung (skriptspezifisch)
-
-Unmittelbar nach Installation: Problematische Updates über „Installierte Updates“ (Systemsteuerung/Einstellungen) oder via PowerShell/WSUS wieder deinstallieren.
-Treiber/Firmware: Gerätemanager → Treiber „Vorheriger Treiber“ (falls verfügbar).
-Systemzustand: Wiederherstellungspunkt/Backup (falls vorab erstellt).
-
-Kompatibilität
-
-Windows 10/11 (Client); Server‑Betriebssysteme nur, wenn explizit vorgesehen/getestet.
-Falls WSUS oder Windows Update for Business Richtlinien aktiv sind, richtet sich die Verfügbarkeit mancher Updates danach.
-
-Bekannte Einschränkungen
-
-Offline‑Geräte ohne Internet/WSUS erreichen keinen Katalog.
-Einige Updates erfordern mehrere Durchläufe (Suchen → Installieren → Reboot → Nachsuchen).
-
-
-Allgemeine Ausführung
-
-PowerShell als Administrator starten.
-In den Repository‑Ordner wechseln.
-Gewünschtes Skript mit Parametern ausführen (siehe Beispiele).
-Hinweise/Prompts beachten; ggf. Neustart einplanen.
-
-
-Protokollierung (Logging)
-
-Wenn im Skript implementiert: Erstellung/Append von Logfiles (z. B. unter C:\Temp\Logs\...).
-Windows‑Update‑Standardprotokolle können zusätzlich herangezogen werden (z. B. WindowsUpdate.log – je nach Windows‑Version ggf. über Get-WindowsUpdateLog generiert).
-
-
-Troubleshooting
-
-„Es wurden keine Updates gefunden“
-
-Internet/WSUS‑Erreichbarkeit prüfen; Gruppenrichtlinien (WUfB/WSUS) verifizieren.
-
-
-„PSWindowsUpdate nicht gefunden“ (falls verwendet)
-
-Modul mit Adminrechten installieren und importieren (siehe oben).
-
-
-„Execution Policy blockiert“
-
-Signierte Skripte bevorzugen; alternativ temporär -ExecutionPolicy Bypass für diesen Start verwenden.
-
-
-Fehlercodes & Logs
-
-Konsole/Transkript prüfen, Skript‑Logs sichten, anschließend Windows‑Update‑Protokolle auswerten.
-
-
-
-
-Rollback / Wiederherstellung
-
-Einzelnes Update entfernen (Einstellungen/Systemsteuerung oder WSUS).
-Treiber‑Rollback über Gerätemanager (falls unterstützt).
-Systemweite Wiederherstellung nur, wenn im Vorfeld Wiederherstellungspunkt/Backup angelegt wurde.
-
-
-Vorlage für neue Skripte
-Nutze diese Struktur für jedes weitere Skript:
-Skriptname.ps1
-
-Zweck:
-Funktionsweise (High‑Level):
-Voraussetzungen:
-Parameter (mit Defaults):
-Was wird am PC verändert?:
-Risiken & Nebenwirkungen:
-Beispiele:
-Protokollierung:
-Rollback:
-Kompatibilität & Einschränkungen:
-
-
-Bitte bei jedem Skript explizit alle Systemänderungen dokumentieren (Registry, Dienste, Aufgabenplanung, Dateien/Ordner, Netzwerkziele, Firewall‑Regeln etc.), damit die Auswirkungen jederzeit nachvollziehbar sind.
-
-
-Lizenz
-Sofern nicht anders angegeben: MIT (oder hier deine Wunschlizenz eintragen).
-
-Mitwirken
-Pull Requests und Issues sind willkommen.
-Bitte beschreibe Änderungen am Verhalten/Parameter‑Set und dokumentiere alle Systemänderungen im README‑Abschnitt des jeweiligen Skripts.
+Pull Requests und Issues sind willkommen.  
+Bitte alle Systemänderungen im zugehörigen Unterordner-README dokumentieren.
