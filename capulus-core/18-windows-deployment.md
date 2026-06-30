@@ -5,55 +5,39 @@ Alle Werkzeuge sind Open Source. Die Installation kann sowohl von einem
 frischen Rechner (ohne Betriebssystem) als auch von einem bereits
 installierten Windows-System aus gestartet werden.
 
-## Inhaltsverzeichnis
-
-1. [Übersicht & Architektur](#übersicht--architektur)
-2. [Was wird eingerichtet?](#was-wird-eingerichtet)
-3. [Szenario A: Neuer PC (kein OS)](#szenario-a-neuer-pc-kein-os)
-   - [Variante A1: USB-Stick](#variante-a1-usb-stick-einfachste-methode)
-   - [Variante A2: Netzwerk-Boot (PXE)](#variante-a2-netzwerk-boot-pxe-fortgeschritten)
-4. [Szenario B: OS installiert, noch nicht eingerichtet](#szenario-b-os-bereits-installiert)
-5. [Kubernetes-Infrastruktur (windeployment)](#kubernetes-infrastruktur-windeployment)
-6. [Ansible-Verwaltung bestehender PCs](#ansible-verwaltung-bestehender-pcs)
-7. [Benutzer & Passwörter](#benutzer--passwörter)
-8. [Namenskonvention: 1002011-XXXX](#namenskonvention-1002011-xxxx)
-9. [Integration: Zammad-Ticket + MinIO-Log-Upload](#integration-zammad-ticket--minio-log-upload)
-10. [Anpassungen](#anpassungen)
-11. [Fehlerbehebung](#fehlerbehebung)
-
 ---
 
 ## Übersicht & Architektur
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Heimnetzwerk (192.168.178.0/24)              │
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Heimnetzwerk (192.168.178.0/24)               │
 │                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Homeserver (192.168.178.94)  — k3s Cluster                 │    │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │  Homeserver (192.168.178.94)  — k3s Cluster                  │    │
 │  │                                                              │    │
 │  │  ArgoCD-App: windeployment                                   │    │
-│  │  ┌──────────────────┐  ┌─────────────────────────────────┐  │    │
-│  │  │  nginx (HTTP)    │  │  dnsmasq-pxe (TFTP/proxyDHCP)  │  │    │
-│  │  │  :30090          │  │  hostNetwork (UDP 67/69)        │  │    │
-│  │  │                  │  │                                 │  │    │
-│  │  │  /autounattend.xml│  │  iPXE undionly.kpxe (BIOS)    │  │    │
-│  │  │  /scripts/       │  │  iPXE ipxe.efi    (UEFI)       │  │    │
-│  │  │  /ipxe/menu.ipxe │  │                                 │  │    │
-│  │  │  /winpe/         │  └─────────────────────────────────┘  │    │
-│  │  │  /iso/           │                                        │    │
-│  │  └──────────────────┘                                        │    │
-│  └─────────────────────────────────────────────────────────────┘    │
+│  │  ┌───────────────────┐  ┌─────────────────────────────────┐  │    │
+│  │  │  nginx (HTTP)     │  │  dnsmasq-pxe (TFTP/proxyDHCP)   │  │    │
+│  │  │  :30090           │  │  hostNetwork (UDP 67/69)        │  │    │
+│  │  │                   │  │                                 │  │    │
+│  │  │  /autounattend.xml│  │  iPXE undionly.kpxe (BIOS)      │  │    │
+│  │  │  /scripts/        │  │  iPXE ipxe.efi    (UEFI)        │  │    │
+│  │  │  /ipxe/menu.ipxe  │  │                                 │  │    │
+│  │  │  /winpe/          │  └─────────────────────────────────┘  │    │
+│  │  │  /iso/            │                                       │    │
+│  │  └───────────────────┘                                       │    │
+│  └──────────────────────────────────────────────────────────────┘    │
 │                                                                      │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                   │
-│  │1002011-0001 │ │1002011-0002 │ │1002011-0003 │                   │
-│  │Büro         │ │Schulung     │ │Empfang      │                   │
-│  │.101         │ │.102         │ │.103         │                   │
-│  └─────────┘    └─────────┘    └─────────┘                         │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                     │
+│  │1002011-0001 │ │1002011-0002 │ │1002011-0003 │                     │
+│  │Büro         │ │Schulung     │ │Empfang      │                     │
+│  │.101         │ │.102         │ │.103         │                     │
+│  └─────────────┘ └─────────────┘ └─────────────┘                     │
 │       ↑                                                              │
-│       └── PXE Boot → iPXE → WinPE → Windows-Installation           │
-│           oder: USB-Stick mit autounattend.xml + setup.ps1          │
-└─────────────────────────────────────────────────────────────────────┘
+│       └── PXE Boot → iPXE → WinPE → Windows-Installation             │
+│           oder: USB-Stick mit autounattend.xml + setup.ps1           │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Eingesetzte Open-Source-Werkzeuge
@@ -291,10 +275,11 @@ powershell.exe -ExecutionPolicy Bypass -Command "
         -OutFile 'C:\Windows\Temp\setup.ps1' -UseBasicParsing
     & 'C:\Windows\Temp\setup.ps1' -PCPurpose 'Buero' -AdminPassword 'MeinSicheresPasswort!'
 "
+```
 
 # Variante 2: Von USB-Stick (setup.ps1 auf USB-Stick kopieren)
 powershell.exe -ExecutionPolicy Bypass -File D:\setup.ps1 -PCPurpose "Schulung"
-```
+
 
 **Parameter für setup.ps1:**
 
@@ -572,7 +557,7 @@ keinen eigenen Zugriffsschlüssel für diesen Zweck. Schritte:
    Replica-Effekt; vor dem Verlassen darauf mit `kubectl get pods -n zammad`
    verifizieren, ob Zammad überhaupt schon läuft). Dann Gruppe
    **„Windows-PCs“** anlegen (Manage → Groups) und unter dem Profil einen
-   API-Token mit Ticket-Rechten erzeugen (siehe docs/19-zammad.md).
+   API-Token mit Ticket-Rechten erzeugen (siehe docs/17-zammad.md).
 2. **MinIO:** Einen auf den Bucket `windows-pc-logs` beschränkten
    Access-Key anlegen (statt der Root-Credentials zu verwenden) — Befehle
    stehen als Kommentar in

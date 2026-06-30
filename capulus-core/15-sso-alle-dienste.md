@@ -1,4 +1,4 @@
-# 16 — SSO für alle Dienste: Ein User, ein Passwort
+# SSO für alle Dienste: Ein User, ein Passwort
 
 Dieser Guide verbindet die verbleibenden drei Dienste (Headlamp, Argo Workflows,
 MinIO) mit Authentik SSO. Nach Abschluss genügt ein einziger Login für alles.
@@ -7,12 +7,12 @@ MinIO) mit Authentik SSO. Nach Abschluss genügt ein einziger Login für alles.
 
 | Dienst | Typ | Status |
 |---|---|---|
-| Grafana | OIDC | ✅ bereits aktiv |
-| Gotify | Forward Auth | ✅ bereits aktiv |
-| Semaphore | Forward Auth | ✅ bereits aktiv |
-| Headlamp | OIDC | ⏳ dieser Guide |
-| Argo Workflows | OIDC | ⏳ dieser Guide |
-| MinIO | OIDC | ⏳ dieser Guide |
+| Grafana | OIDC | bereits aktiv |
+| Gotify | Forward Auth | bereits aktiv |
+| Semaphore | Forward Auth | bereits aktiv |
+| Headlamp | OIDC | dieser Guide |
+| Argo Workflows | OIDC | dieser Guide |
+| MinIO | OIDC | dieser Guide |
 
 ---
 
