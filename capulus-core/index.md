@@ -172,7 +172,7 @@ capulus-core/
 ├── CLAUDE.md                         # Arbeitsregeln für KI-Assistenten
 ├── Makefile                          # help, lint
 ├── renovate.json                     # Renovate-Konfiguration
-├── .releaserc.json                   # semantic-release-Konfiguration
+├── CHANGELOG.md                      # von semantic-release geschrieben
 ├── .github/
 │   ├── dependabot.yml
 │   └── workflows/                    # ci, codeql, build-images, release, renovate, promote-*, sync-entw, mirror-gitlab, …

@@ -15,6 +15,7 @@ Zentrale Dokumentation aller Projekte von pkr-lab. Jedes Projekt hat einen eigen
 | PowerShell | Skriptsammlung für Windows-Administration | [GitHub](https://github.com/pkr-lab/PowerShell) | [PowerShell/](PowerShell/index.md) |
 | ps-data-fixtures | Testdaten für PowerShell-Skripte | [GitHub](https://github.com/pkr-lab/ps-data-fixtures) | [ps-data-fixtures/](ps-data-fixtures/index.md) |
 | EDV-Kretzer | Statische Website von EDV-Kretzer | [GitHub](https://github.com/pkr-lab/EDV-Kretzer) | [EDV-Kretzer/](EDV-Kretzer/index.md) |
+| .github | wiederverwendbare Workflows für Releases und Commitlint | [GitHub](https://github.com/pkr-lab/.github) | [github-workflows/](github-workflows/index.md) |
 | pkr-lab | GitHub-Profilseite | [GitHub](https://github.com/pkr-lab/pkr-lab) | [pkr-lab/](pkr-lab/index.md) |
 
 ## Aufbau
@@ -31,6 +32,7 @@ pkr-lab-docs/
 ├── PowerShell/
 ├── ps-data-fixtures/
 ├── EDV-Kretzer/
+├── github-workflows/
 ├── pkr-lab/
 └── scripts/check-doc-links.py
 ```

@@ -14,7 +14,8 @@ Wo was konfiguriert wird, aufgeteilt nach Repo. Die Hostkonfiguration (Inventory
 | `ops/token-register.yaml` | Register aller Tokens und Passwörter |
 | `pki/homeserver-root-ca.pem` | Root-CA des Homelabs, Quelle der Wahrheit |
 | `renovate.json` | Renovate: Zeitplan, Gruppierung, Digest-Pinning, ENTW-Regeln |
-| `.releaserc.json` | semantic-release: Branch `main`, Tag-Format `v${version}` |
+| `.github/workflows/release.yml` | Aufrufer des zentralen Release-Workflows aus `pkr-lab/.github` (Branch `main`, Tag `vX.Y.Z`, CHANGELOG.md) |
+| `.github/workflows/commitlint.yml`, `.githooks/commit-msg` | Prüfung der Commit-Nachrichten auf PRs und lokal (`make hooks`) |
 | `.yamllint`, `.gitleaks.toml`, `.gitleaksignore` | Lint- und Secret-Scan-Konfiguration |
 | `.github/CODEOWNERS`, `.github/dependabot.yml` | Zuständigkeiten, Sicherheits-PRs für Go-Module und Actions |
 

@@ -1,25 +1,29 @@
 # Releases
 
-Releases entstehen automatisch aus den Commit-Nachrichten. Der Prozess ist in allen Repos von pkr-lab gleich und läuft über einen wiederverwendbaren Workflow im Repo `pkr-lab/.github`.
+Releases entstehen automatisch aus den Commit-Nachrichten. Der Prozess ist in allen Repos von pkr-lab gleich und läuft über die wiederverwendbaren Workflows im Repo [pkr-lab/.github](https://github.com/pkr-lab/.github), beschrieben unter [github-workflows](../github-workflows/index.md).
 
 ## Ablauf
 
-1. Änderungen kommen per Pull Request nach `main`. Ein Check (commitlint) prüft, dass die Commit-Nachrichten dem Format [Conventional Commits](https://www.conventionalcommits.org/) folgen.
-2. Jeder Push auf `main` startet den Release-Workflow (semantic-release).
-3. semantic-release bestimmt aus den Commits seit dem letzten Tag die nächste Version nach [SemVer](https://semver.org/), setzt den Git-Tag `vX.Y.Z`, schreibt `CHANGELOG.md` fort und veröffentlicht ein GitHub-Release mit Release Notes.
+1. Änderungen kommen per Pull Request nach `main`. Der Check **commitlint** prüft, dass alle Commits des Pull Requests dem Format [Conventional Commits](https://www.conventionalcommits.org/) folgen.
+2. Jeder Push auf `main` startet `.github/workflows/release.yml`. Der Workflow ruft den zentralen Release-Workflow auf (semantic-release).
+3. semantic-release bestimmt aus den Commits seit dem letzten Tag die nächste Version nach [SemVer](https://semver.org/), schreibt `CHANGELOG.md` fort (Commit `chore(release): X.Y.Z [skip ci]`), setzt den Git-Tag `vX.Y.Z` und veröffentlicht ein GitHub-Release mit Release Notes.
 
 | Commit | Wirkung |
 |---|---|
 | `fix:` | Patch (`1.2.3` → `1.2.4`) |
 | `feat:` | Minor (`1.2.3` → `1.3.0`) |
 | `feat!:` oder `BREAKING CHANGE:` im Footer | Major (`1.2.3` → `2.0.0`) |
-| `docs:`, `chore:`, `refactor:`, `test:`, `ci:` | kein Release |
+| `docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:` | kein Release |
 
-Die Versionierung beginnt bei der höchsten vorhandenen Version `vX.Y.Z`, ohne vorhandene Tags bei `v1.0.0`.
+Format: `<typ>(<scope>): <beschreibung>`, Der Typ und der Scope sind kleingeschrieben, die Beschreibung endet ohne Punkt, die Kopfzeile ist höchstens 120 Zeichen lang. Lokal prüft der Hook `.githooks/commit-msg` dasselbe; aktivieren mit `git config core.hooksPath .githooks`.
+
+## Versionen
+
+Die Versionierung beginnt bei `v1.0.0`.
 
 ## Artefakte
 
-Pro Release hängt ein Tarball (`cubi-vX.Y.Z.tar.gz`, erzeugt mit `git archive`) mit `bin/`, `src/`, `config/` und `install.sh` am GitHub-Release.
+Pro Release hängt ein Tarball (`cubi-vX.Y.Z.tar.gz`) mit `bin/`, `src/`, `config/`, `install.sh` und `README.md` am GitHub-Release.
 
 ## Änderungsprotokoll
 

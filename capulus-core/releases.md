@@ -1,24 +1,30 @@
 # Releases
 
-capulus-core erzeugt Releases automatisch aus Conventional Commits.
+Releases entstehen automatisch aus den Commit-Nachrichten. Der Prozess ist in allen Repos von pkr-lab gleich und läuft über die wiederverwendbaren Workflows im Repo [pkr-lab/.github](https://github.com/pkr-lab/.github), beschrieben unter [github-workflows](../github-workflows/index.md).
 
 ## Ablauf
 
-Jeder Push auf `main` (also jeder gemergte Pull Request) startet `.github/workflows/release.yml`. Der Workflow führt semantic-release mit `.releaserc.json` aus: Branch `main`, Tag-Format `v${version}`, Plugins `commit-analyzer`, `release-notes-generator` und `github`. Reicht ein Commit seit dem letzten Tag, vergibt semantic-release die nächste Version, setzt den Git-Tag und veröffentlicht ein GitHub-Release mit generierten Release Notes.
+1. Änderungen kommen per Pull Request nach `main`. Der Check **commitlint** prüft, dass alle Commits des Pull Requests dem Format [Conventional Commits](https://www.conventionalcommits.org/) folgen.
+2. Jeder Push auf `main` startet `.github/workflows/release.yml`. Der Workflow ruft den zentralen Release-Workflow auf (semantic-release).
+3. semantic-release bestimmt aus den Commits seit dem letzten Tag die nächste Version nach [SemVer](https://semver.org/), schreibt `CHANGELOG.md` fort (Commit `chore(release): X.Y.Z [skip ci]`), setzt den Git-Tag `vX.Y.Z` und veröffentlicht ein GitHub-Release mit Release Notes.
 
 | Commit | Wirkung |
 |---|---|
-| `fix:` | Patch (`3.49.0` → `3.49.1`) |
-| `feat:` | Minor (`3.49.0` → `3.50.0`) |
-| `feat!:` oder `BREAKING CHANGE:` im Footer | Major (`3.49.0` → `4.0.0`) |
-| `docs:`, `chore:`, `refactor:`, … | kein Release |
+| `fix:` | Patch (`1.2.3` → `1.2.4`) |
+| `feat:` | Minor (`1.2.3` → `1.3.0`) |
+| `feat!:` oder `BREAKING CHANGE:` im Footer | Major (`1.2.3` → `2.0.0`) |
+| `docs:`, `chore:`, `refactor:`, `test:`, `ci:`, `build:`, `perf:`, `style:` | kein Release |
 
-Commits folgen Conventional Commits mit Scope und deutscher Beschreibung, z. B. `feat(isc-news-bot): …`, `fix(monitoring): …`, `chore(<app>): image.tag auf sha-…`.
+Format: `<typ>(<scope>): <beschreibung>`, Der Typ und der Scope sind kleingeschrieben, die Beschreibung endet ohne Punkt, die Kopfzeile ist höchstens 120 Zeichen lang. Lokal prüft der Hook `.githooks/commit-msg` dasselbe; aktivieren mit `git config core.hooksPath .githooks` (oder `make hooks`).
+
+## Versionen
+
+Die Versionierung läuft bei den bestehenden Tags weiter (`v3.x`). Die Konfiguration von semantic-release liegt zentral; die frühere `.releaserc.json` entfällt, `CHANGELOG.md` kommt neu dazu.
+
+## Artefakte
+
+Keine Release-Dateien. Die Workload-Images baut `build-images.yml` getrennt mit dem Tag `sha-<commit>`.
 
 ## Änderungsprotokoll
 
-Die Release Notes stehen bei den [GitHub Releases](https://github.com/pkr-lab/capulus-core/releases). Hintergrund und Architektur der Automatisierung: [f0030 Release-Automatisierung](f-cicd-automatisierung/f0030-release-automation.md).
-
-## Verbindung zu den anderen Repos
-
-capulus-ansible zieht die Quellen des alert-caller aus einem capulus-core-Tag (`alert_caller_core_ref`). Nach einer Änderung an `argocd/apps/tech/alert-caller/` muss dort das Tag und die SHA-256-Prüfsumme angehoben werden.
+[CHANGELOG.md](https://github.com/pkr-lab/capulus-core/blob/main/CHANGELOG.md) im Repo und die [GitHub Releases](https://github.com/pkr-lab/capulus-core/releases).

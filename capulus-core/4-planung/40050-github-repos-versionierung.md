@@ -1,5 +1,7 @@
 # Planung: Versionierung für alle GitHub-Repos
 
+> **Status:** Umgesetzt am 2026-10-18. Alle Repos nutzen die zentralen Workflows aus `pkr-lab/.github` ([github-workflows](../../github-workflows/index.md)); die Konfiguration wird dort erzeugt und nicht mehr aus capulus-core kopiert. Der Text unten ist die ursprüngliche Planung.
+
 Ziel: Nicht nur `capulus-core`, sondern **alle** eigenen GitHub-Repos sollen
 nachvollziehbare Versionen (Git-Tags + Changelog) bekommen — bisher ist das
 laut Repo-Historie nur hier über
