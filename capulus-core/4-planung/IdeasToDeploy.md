@@ -1,7 +1,7 @@
 # Ideas to Deploy at a Later Point
 
 Ideensammlung für spätere Apps und Vorhaben. Nichts davon ist umgesetzt oder verbindlich geplant; was
-konkret wird, bekommt ein Doc unter [docs/4-planung/](https://github.com/pkr-lab/capulus-core/tree/main/docs/4-planung) (Konvention:
+konkret wird, bekommt ein Doc unter [4-planung/](./) (Konvention:
 [capulus-core/TEMPLATE.md](../TEMPLATE.md)) und einen Ordner unter `argocd/apps/entw/` zum Ausprobieren
 ([capulus-core/b-kubernetes-gitops/b0050-entw-argocd.md](../b-kubernetes-gitops/b0050-entw-argocd.md)).
 

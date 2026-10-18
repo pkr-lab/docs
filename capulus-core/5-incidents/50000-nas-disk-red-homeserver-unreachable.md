@@ -89,7 +89,7 @@ Platte selbst.
   so einen Hang blockiert sind (Smart-Plug für Reboot-Option, oder ein
   zweiter, unabhängiger Fernzugriffsweg).
 - **SMART-Alerting**: `smartctl_exporter` liefert die Daten bereits — noch
-  kein Grafana-Alert/Benachrichtigung (siehe [docs/1-benachrichtigungen/](https://github.com/pkr-lab/capulus-core/tree/main/docs/1-benachrichtigungen))
+  kein Grafana-Alert/Benachrichtigung (siehe [1-benachrichtigungen/](../1-benachrichtigungen/))
   auf `smartctl_device_smart_status != 1`, damit eine rote Platte nicht
   erst beim Totalausfall auffällt.
 - **Tailscale-Alerting**: Benachrichtigung, wenn ein Node offline geht,
