@@ -300,7 +300,7 @@ Aufgaben und die Adressen.
 | `immich` | Fotoarchiv mit KI-Suche | I · S · D · C | `immich.prod.homeserver` |
 | `paperless-ngx` | papierlose Dokumentenverwaltung | N · S · D | `paperless.prod.homeserver` |
 | `wikijs` | Wiki, auch öffentlich | N · S · D · C | `wiki.prod.homeserver` |
-| `wiki-docs-sync` | `docs/` aus Git → Wiki.js, alle 15 Min. | S | — (CronJob) |
+| `wiki-docs-sync` | `pkr-lab-docs` aus Git → Wiki.js, alle 15 Min. | S | — (CronJob) |
 | `xibosignage` | Xibo CMS: Medien-/Asset-Verwaltung für die Raspberry-Pi-Bilder-Slideshow | N · S · D · C | `xibo.prod.homeserver` |
 | `example-whoami` / `demo-app` | Referenz-Apps, belegen, dass GitOps und Routing laufen | — | `whoami.prod.homeserver` / `demo.prod.homeserver` |
 | `sealed-secrets`, `cert-manager`, `cloudflared` | eigene Plattform-Grundzutaten des Clusters (eigene SealedSecrets-Schlüssel, Intermediate-CA, Tunnel `homeserver-prod`) | S | — |
