@@ -1,9 +1,10 @@
 max_concurrency = 8
 max_retries = 2
 timeout = 20
-accept = [200, 206, 429]
+accept = [200, 206, 403, 429]
 exclude_all_private = true
 exclude = [
+  '^https://github\.com/pkr-lab/[^/]+/blob/main/CHANGELOG\.md$',
   '\.homeserver',
   '^https?://localhost',
   '^https?://127\.0\.0\.1',
