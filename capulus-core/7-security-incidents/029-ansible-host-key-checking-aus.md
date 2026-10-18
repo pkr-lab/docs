@@ -66,7 +66,7 @@ Niedrig: Beim ersten Lauf nach der Änderung müssen die Hostschlüssel bestäti
 **Geänderte Dateien.**
 
 - `capulus-ansible/ansible.cfg`, `capulus-ansible/roles/vaultwarden_restore/tasks/main.yml`
-- Doku: `docs/6-hintergruende/60010-ansible-hosts-und-playbooks.md`
+- Doku: `capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md`
 
 **Rollback.** `git revert` oder in `ansible.cfg` `host_key_checking = False` zurücksetzen.
 

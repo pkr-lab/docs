@@ -2,7 +2,7 @@
 
 Begründungen zu `capulus-ansible/host_vars/`, `capulus-ansible/group_vars/`, `capulus-ansible/inventory/`, den Playbooks in `ansible/`
 und zur Rolle `libvirt_host`. Was läuft und wie man es bedient, steht in
-[a0030](../a-betriebssystem/a0030-installation.md) und [40080](../4-planung/40080-multi-cluster-entw-prod-tech.md);
+[a0030](../../capulus-ansible/a-betriebssystem/a0030-installation.md) und [40080](../4-planung/40080-multi-cluster-entw-prod-tech.md);
 zum Vorfall mit dem Basis-Image siehe [50010](../5-incidents/50010-prod-vm-basis-image-ersetzt.md).
 Übersicht dieser Kategorie: [60000](60000-uebersicht.md).
 
@@ -22,11 +22,11 @@ Aufbau von `capulus-ansible/inventory/hosts.yml`:
 
 | Stelle | Begründung |
 |---|---|
-| `homeservers` ist selbst Mitglied von `semaphore_targets` | Semaphore kann so dieses Repo auch gegen den Homeserver selbst ausrollen (rekursives Template „Deploy Home Server“, [b0030](../b-kubernetes-gitops/b0030-semaphore.md)). Alle Mitglieder von `semaphore_targets` bekommen den öffentlichen Semaphore-SSH-Schlüssel in `authorized_keys`, damit die UI Playbooks gegen sie ausführen kann. |
+| `homeservers` ist selbst Mitglied von `semaphore_targets` | Semaphore kann so dieses Repo auch gegen den Homeserver selbst ausrollen (rekursives Template „Deploy Home Server“, [b0030](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)). Alle Mitglieder von `semaphore_targets` bekommen den öffentlichen Semaphore-SSH-Schlüssel in `authorized_keys`, damit die UI Playbooks gegen sie ausführen kann. |
 | `ugreen_nas` steht nur zur Dokumentation im Inventar | Das UGREEN NAS (RAID1, NFS-Export für die `nas`-StorageClass, [20000](../2-betrieb-hardware/20000-nas-storage.md)) läuft mit der eigenen Firmware UGOS. Es läuft kein Playbook dagegen, RAID und NFS werden von Hand über die Web-UI eingerichtet. Der Eintrag dient als Referenz (DNS, spätere Backup-Rolle auf einer extern angeschlossenen Platte). |
 | `entw` und `prod` | Eigenständige k3s-Server in KVM-VMs (ENTW auf worker-1, PROD auf dem Homeserver). Die Hintergründe stehen unten bei [ENTW](#entw-cluster-entw-vm) und [PROD](#prod-cluster-prod-vm), die Planung in [40080](../4-planung/40080-multi-cluster-entw-prod-tech.md) (Baustein 5). |
 | `ansible_user: pela` bei `infotafel` und `vereinsheim-alarmmonitor` | So heißt der Benutzer auf diesen Geräten, die Raspberry-Pi-OS-Konvention `pi` gilt hier nicht. `xibo_kiosk_user: pela` überschreibt deshalb den Rollen-Default `pi`. Für andere Benutzer als `pi` legt Raspberry Pi OS keinen `NOPASSWD`-Sudoers-Eintrag an, das Fehlerbild steht in [300e0](../3-apps-workloads/300e0-xibosignage.md). |
-| `ansible_host` von `vereinsheim-alarmmonitor` ist die Tailscale-IP | Das Gerät wurde vorzeitig auf Phase 2 umgestellt, weil der LAN-Pfad zum Pi defekt war. Die Re-Provisionierung geht deshalb nur noch per `make banana-pi-kiosks` aus dem Tailnet, nicht über die Semaphore-UI ([30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). |
+| `ansible_host` von `vereinsheim-alarmmonitor` ist die Tailscale-IP | Das Gerät wurde vorzeitig auf Phase 2 umgestellt, weil der LAN-Pfad zum Pi defekt war. Die Re-Provisionierung geht deshalb nur noch per `make banana-pi-kiosks` aus dem Tailnet, nicht über die Semaphore-UI ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). |
 
 ## ENTW-Cluster (`entw-vm`)
 
@@ -45,7 +45,7 @@ Die statische IP setzt cloud-init (Rolle `libvirt_host`), deshalb steht in `host
 ## PROD-Cluster (`prod-vm`)
 
 - Eigenständiger k3s-Server in der KVM-VM auf dem Homeserver, kein Beitritt zu TECH und **kein ArgoCD in der VM**: Der Hub in
-  TECH registriert PROD ([argocd/bootstrap-prod](../../argocd/bootstrap-prod/README.md)).
+  TECH registriert PROD ([argocd/bootstrap-prod](../komponenten/bootstrap-prod.md)).
 - Audit-Log und Secrets-Verschlüsselung bleiben auf den Rollen-Defaults, weil PROD die echten Familien- und Vereinsdaten trägt.
 - Die VM-Definition (6 vCPU / 24 GiB / 100 GiB, IP `.99`) steht in `host_vars/homeserver`, nicht in den Rollen-Defaults, weil
   worker-1 (ENTW) eine andere Liste braucht. `.98` ist schon die Infotafel (Xibo), deshalb `.99`.
@@ -231,5 +231,5 @@ bisherigen Defaults (pauschale Freigabe für LAN und Tailnet, `6443` nur aus dem
   absichtlich **nicht** per lokalem Override gelockert (würde Canonicals Sandboxing für `wg-quick` aufweichen).
 - Der Pre-Shared-Key ist optional, aber empfohlen (zusätzliche symmetrische Schicht):
   `ansible-vault encrypt_string 'DEIN_PSK' --name 'wireguard_backup_peer_preshared_key'`.
-- Weitere Hintergründe zum Tunnel: [60020](60020-ansible-rollen.md#wireguard_backup).
+- Weitere Hintergründe zum Tunnel: [60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#wireguard_backup).
 - Die physische NIC des Homeservers heißt `enp4s0` (siehe Bridge-Umbau oben), bei Zweifeln mit `ip -br link` prüfen.

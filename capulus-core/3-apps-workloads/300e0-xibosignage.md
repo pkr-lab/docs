@@ -1,6 +1,6 @@
 # xibosignage — Xibo CMS + Bilder-Slideshow auf Raspberry Pi 3 B+
 
-> **Cluster:** PROD · Ordner `argocd/apps/prod/xibosignage/` · URL `https://xibo.prod.homeserver` und `https://xibo-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** PROD · Ordner `argocd/apps/prod/xibosignage/` · URL `https://xibo.prod.homeserver` und `https://xibo-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Digital-Signage-Setup: **Xibo CMS** läuft als zentrale Medien-/Asset-
 Verwaltung im k3s-Cluster, Inhalte werden über eine **Xibo-CMS-Playlist** im
@@ -95,7 +95,7 @@ Playlist-Inhalte, der eigentliche Transport zum Pi läuft komplett über den
 
 Liegt unter `argocd/apps/prod/xibosignage/`, wird wie jede andere App in
 `argocd/apps/*` automatisch von ArgoCD erkannt und ausgerollt (siehe
-[docs/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) — keine manuelle Registrierung nötig.
+[capulus-core/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) — keine manuelle Registrierung nötig.
 
 Komponenten (1:1 aus dem offiziellen
 [xibosignage/xibo-docker](https://github.com/xibosignage/xibo-docker)
@@ -128,7 +128,7 @@ Den Output in `argocd/apps/prod/xibosignage/values.yaml` unter
 Nach dem Sync ist Xibo unter **https://xibo.prod.homeserver** (intern) und
 **https://xibo-prod.pke-lab.de** (extern, über den Cloudflare-Tunnel des PROD-Clusters —
 der externe Host braucht einen DNS-Eintrag auf den Tunnel `homeserver-prod`, siehe
-[docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md))
+[capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md))
 erreichbar. Bewusst **ohne** zusätzliche ForwardAuth-Middleware
 — nur das CMS-eigene Login schützt den
 externen Host. Das CMS-Image führt beim allerersten Start automatisch
@@ -155,7 +155,7 @@ externe Erreichbarkeit.
 
 `xibosignage-inbox` und `xibosignage-display` sind **feste** Pfade unter dem
 bestehenden `k8s-storage`-Export (`nas`-StorageClass, siehe
-[docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — **nicht** dynamisch vom
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — **nicht** dynamisch vom
 `nfs-subdir-external-provisioner` vergeben, weil sowohl n8n (Kubernetes-Pod)
 als auch der Raspberry Pi (rohes NFS, kein Kubernetes) denselben,
 vorhersagbaren Pfad ansprechen müssen. `xibosignage-inbox` wird nur vom
@@ -164,7 +164,7 @@ deaktivierten Alternativ-Pfad gebraucht (siehe
 — beide Ordner trotzdem gemeinsam anlegen, da beide PV/PVC-Paare unabhängig
 davon bestehen bleiben. Details zur Technik (statische PV mit `nfs:`-Block
 statt PVC über eine StorageClass):
-[docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md#fixer-pfad-statt-dynamischer-subdir-name).
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md#fixer-pfad-statt-dynamischer-subdir-name).
 
 ### Einmalig: Ordner auf dem NAS anlegen
 
@@ -364,7 +364,7 @@ ein eigener Tailscale-Auth-Key für diese Geräte-Gruppe — **nicht** den
 Home-Server-Key aus `group_vars/all.yml` wiederverwenden (der ist i. d. R.
 Single-Use und bereits verbraucht). Empfehlung bei mehreren Displays: ein
 **wiederverwendbarer** Key mit eigenem Tag (`tag:xibo-display`), siehe
-[docs/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md#auth-key-besorgen):
+[capulus-core/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md#auth-key-besorgen):
 
 ```bash
 ansible-vault encrypt_string 'tskey-auth-...' --name 'tailscale_auth_key'
@@ -389,7 +389,7 @@ Das Playbook `capulus-ansible/xibo-kiosks.yml` führt pro Pi aus:
 | `tailscale` | VPN-Beitritt, reiner Client (kein Subnetz-Advertising) — Fernzugriff/-wartung ohne Portfreigabe |
 | `node_exporter` | Metriken-Quelle (Port 9100, nur lokal) für Grafana, siehe [Monitoring](#monitoring-grafana) |
 | `xibo_kiosk` | NFS-Mount von `xibosignage-display` (read-only), Manifest-Generator-Timer, lokaler Python-Webserver, Chromium-Kiosk-Slideshow |
-| `thermal_watchdog` / `resource_watchdog` | Selbstschutz für unbeaufsichtigte Geräte (gleiches Bundling wie bei den ALAMOS-Kiosks, siehe [docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md)) |
+| `thermal_watchdog` / `resource_watchdog` | Selbstschutz für unbeaufsichtigte Geräte (gleiches Bundling wie bei den ALAMOS-Kiosks, siehe [capulus-core/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md)) |
 
 ### Wie die Slideshow funktioniert
 
@@ -405,7 +405,7 @@ Das Playbook `capulus-ansible/xibo-kiosks.yml` führt pro Pi aus:
   `http://127.0.0.1:8080/`.
 
 Das Semaphore-Projekt **"xibo-displays"** ist nach `make semaphore-bootstrap`
-automatisch in der UI verfügbar (siehe [docs/b-kubernetes-gitops/b0030-semaphore.md](../b-kubernetes-gitops/b0030-semaphore.md))
+automatisch in der UI verfügbar (siehe [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md))
 — **bewusst ohne** automatischen Schedule, analog zu `alarm-kiosks`.
 
 ---
@@ -413,11 +413,11 @@ automatisch in der UI verfügbar (siehe [docs/b-kubernetes-gitops/b0030-semaphor
 ## Monitoring (Grafana)
 
 Anders als die Tailscale-only Banana-Pi-Alarmmonitore (vmagent-Push, siehe
-[docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, "Grafana (Push statt Pull)"](30020-vereinsheim-alarmmonitor.md#grafana-push-statt-pull))
+[capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, "Grafana (Push statt Pull)"](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md#grafana-push-statt-pull))
 hängen die xibosignage-Displays am normalen Heim-LAN — der Cluster kann
 `node_exporter` also direkt per **VMStaticScrape** scrapen, gleiches Muster
 wie bei `ugreen-nas`
-([docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)):
+([capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)):
 
 ```
 node_exporter (Port 9100, capulus-ansible/roles/node_exporter)
@@ -428,7 +428,7 @@ node_exporter (Port 9100, capulus-ansible/roles/node_exporter)
 ```
 
 Kein Dashboard-Change nötig — die Hardware-Dashboards (Ordner "Hardware",
-[Hardware-Monitoring](../2-betrieb-hardware/20060-hardware-monitoring.md))
+[Hardware-Monitoring](../../capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md))
 filtern dynamisch über das Label `host` (der VMStaticScrape setzt `host:
 infotafel`, `kind: pi`), `infotafel` taucht dort automatisch mit auf, sobald
 die Metriken ankommen (identisches Prinzip wie bei den Banana-Pi-
@@ -441,7 +441,7 @@ gemeinsamen Standort-Dashboard **"1002011-pis"**
 (`argocd/apps/tech/monitoring/templates/dashboard-1002011-pis.yaml`,
 ehemals "Vereinsheim-Alarmmonitor" — umbenannt, als `infotafel` als zweites
 Geraet dazukam, siehe
-[docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](30020-vereinsheim-alarmmonitor.md)).
+[capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)).
 
 ---
 
@@ -462,7 +462,7 @@ Trick — stattdessen denselben Effekt über `subPath` im Volume-Mount
 erreichen (neuer, leerer Unterordner derselben PVC):
 
 1. **Dump** (ergänzend zum nächtlichen restic-Backup, siehe
-   [docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)):
+   [capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)):
    ```bash
    kubectl -n xibosignage exec deploy/xibosignage-mysql -- \
      mysqldump -u cms -p"$(kubectl -n xibosignage get secret xibosignage-secrets -o jsonpath='{.data.db-password}' | base64 -d)" \
@@ -500,9 +500,9 @@ erreichen (neuer, leerer Unterordner derselben PVC):
 | Symptom | Check |
 |---|---|
 | Xibo-CMS-Pod bleibt `CrashLoopBackOff` beim allerersten Start | `kubectl -n xibosignage logs deploy/xibosignage-cms` — meist DB noch nicht bereit, Pod startet automatisch neu; bei anhaltenden Fehlern MySQL-Pod-Status prüfen (`kubectl -n xibosignage get pods`) |
-| MySQL-Pod: `Permission denied` auf `/var/lib/mysql` | NFS-Squash-Identität auf dem UGREEN NAS hat sich geändert (siehe [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) und die identische Problemlösung bei wikijs/immich) — `mysql.securityContext.runAsUser`/`runAsGroup` in `argocd/apps/prod/xibosignage/values.yaml` an die aktuelle Squash-Identität anpassen. **Nicht** auf `cms.securityContext` übertragen — das offizielle xibo-cms-Image braucht beim ersten Start Root (schreibt `/root/.my.cnf`, konfiguriert Apache/PHP/cron unter `/etc`), analog zu wikijs/immich bleibt `cms.securityContext` deshalb bewusst leer |
+| MySQL-Pod: `Permission denied` auf `/var/lib/mysql` | NFS-Squash-Identität auf dem UGREEN NAS hat sich geändert (siehe [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) und die identische Problemlösung bei wikijs/immich) — `mysql.securityContext.runAsUser`/`runAsGroup` in `argocd/apps/prod/xibosignage/values.yaml` an die aktuelle Squash-Identität anpassen. **Nicht** auf `cms.securityContext` übertragen — das offizielle xibo-cms-Image braucht beim ersten Start Root (schreibt `/root/.my.cnf`, konfiguriert Apache/PHP/cron unter `/etc`), analog zu wikijs/immich bleibt `cms.securityContext` deshalb bewusst leer |
 | CMS-Pod: `CrashLoopBackOff`, Logs voller `Permission denied` (`/root/.my.cnf`, `/etc/apache2`, `/etc/php`, `settings.php`) und `ERROR 1045 ... UNKNOWN_USER` | `cms.securityContext` in `argocd/apps/prod/xibosignage/values.yaml` wurde (versehentlich) auf `runAsUser: 1000` o.ä. gesetzt — muss leer (`{}`) sein, da das CMS-Image root für sein Setup braucht |
-| `xibo.prod.homeserver` löst nicht auf | Wildcard-DNS prüfen: `nslookup xibo.prod.homeserver` (siehe [docs/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md)) |
+| `xibo.prod.homeserver` löst nicht auf | Wildcard-DNS prüfen: `nslookup xibo.prod.homeserver` (siehe [capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md)) |
 | Playlist-Sync-Workflow: `Failed to acquire OAuth2 access token: Client authentication failed` (`invalid_client`) | Fast immer: **"Confidential Client"** in der Xibo-Application (Administration → Applications → General) ist nicht angehakt — ohne dieses Häkchen lehnt Xibo jede Secret-basierte Client-Auth ab, unabhängig davon, ob Client-ID/Secret korrekt sind. Anhaken, speichern, erneut versuchen |
 | Playlist-Sync-Workflow: jeder API-Call liefert `403` (auch `/api/display`, `/api/library`, nicht nur `/api/playlist`) | OAuth2-Token hat leere `scopes` (im JWT-Payload prüfbar) — in der Xibo-Application unter dem Tab **"Sharing"** fehlen die Scopes. Mindestens **"Access to Library, Layouts, Playlists, Widgets and Resolutions"** anhaken und speichern |
 | Playlist-Sync-Workflow: `Playlist "infotafel" nicht gefunden oder ohne widgets` trotz befüllter Playlist | Playlist ist **dynamisch** (`isDynamic: 1` in der API-Antwort) — dynamische Playlists liefern ihre Inhalte nicht über das `widgets`-Embed. Playlist auf **statisch** umstellen (oder neu als statische Playlist anlegen) und Bilder manuell per "Add Media" hinzufügen |
@@ -518,7 +518,7 @@ erreichen (neuer, leerer Unterordner derselben PVC):
 | Pi-Mount schlägt fehl | `nfs-common` installiert? (`dpkg -l | grep nfs-common`), NAS vom Pi aus erreichbar? (`showmount -e 192.168.178.97`) |
 | Chromium startet nicht / schwarzer Bildschirm | Autologin auf dem Pi aktiv? `systemctl status xibosignage-kiosk xibosignage-webserver` auf dem Pi |
 | `xibosignage-kiosk.service` im Crash-Loop, `journalctl -u xibosignage-kiosk` zeigt `exec: chromium-browser: Nicht gefunden` (exit 127) | Auf aktuellen (Debian-trixie-basierten) Raspberry-Pi-OS-Images ist `chromium-browser` nur noch ein leeres transitionales Dummy-Paket, das Binary heißt `chromium` (`/usr/bin/chromium`). `xibosignage-kiosk-start.sh.j2` löst das Binary zur Laufzeit dynamisch auf (`command -v chromium \|\| command -v chromium-browser`) — bei älterem Rollenstand `make xibo-kiosks` erneut laufen lassen, um das aktualisierte Skript auszurollen |
-| `Permission denied (publickey)` bei `make xibo-kiosks` | `make semaphore-targets` lief nicht für den neuen Pi (siehe [docs/b-kubernetes-gitops/b0030-semaphore.md](../b-kubernetes-gitops/b0030-semaphore.md)) |
+| `Permission denied (publickey)` bei `make xibo-kiosks` | `make semaphore-targets` lief nicht für den neuen Pi (siehe [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)) |
 | Nach Workflow-Import in n8n: "Watch Inbox" und/oder "Original archivieren" zeigen "Install this node to use it" | n8n blockt Local File Trigger/Execute Command standardmäßig (Sicherheitsfeature) — `env.NODES_EXCLUDE: "[]"` in `argocd/apps/tech/n8n/values.yaml` setzt das für diese Instanz zurück, danach n8n-Pod neu starten und Workflow neu öffnen |
 | Pi advertised ungewollt das Heim-Subnetz im Tailscale-Adminpanel | `tailscale_advertise_routes: ""` fehlt in `capulus-ansible/group_vars/xibo_displays.yml` — sollte nach dem nächsten Rollout verschwinden (`tailscale set --advertise-routes=` ohne Wert entfernt bestehende Routes nicht automatisch, ggf. einmalig `sudo tailscale set --advertise-routes=` manuell auf dem Pi nachziehen) |
 | `infotafel` taucht nicht in Grafana auf | `systemctl status prometheus-node-exporter` auf dem Pi — läuft der Dienst (Port 9100)? `curl -s 192.168.178.98:9100/metrics` von einem k3s-Node aus erreichbar? `kubectl -n monitoring get vmstaticscrape infotafel-node-exporter` |

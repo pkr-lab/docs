@@ -75,7 +75,7 @@ Niedrig.
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/carplay-api/src/cmd/server/main.go`, `src/cmd/server/main_test.go` (neu), `values.yaml`, `README.md`
-- Doku: `docs/3-apps-workloads/300d0-carplay-api.md`, `docs/6-hintergruende/60080-carplay-api-und-ios-app.md`
+- Doku: `capulus-core/3-apps-workloads/300d0-carplay-api.md`, `capulus-core/6-hintergruende/60080-carplay-api-und-ios-app.md`
 
 **Rollback.** `git revert`; alternativ das Image-Tag auf den vorherigen `sha-…` zurücksetzen (aktuell `sha-4e05141`) und `trustedProxies: ""` setzen.
 

@@ -1,6 +1,6 @@
 # Immich
 
-> **Cluster:** PROD · Ordner `argocd/apps/prod/immich/` · URL `https://immich.prod.homeserver` und `https://immich-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** PROD · Ordner `argocd/apps/prod/immich/` · URL `https://immich.prod.homeserver` und `https://immich-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 [Immich](https://immich.app) ist ein selbst gehostetes Foto-/Video-Backup
 (Google-Photos-Ersatz) mit automatischem Handy-Upload, Gesichtserkennung
@@ -57,7 +57,7 @@ volllaufen lässt.
 `nfs-subdir-external-provisioner` (eigener `PROVISIONER_NAME`, eigene
 RBAC-Ressourcen, eigener Namespace `immich-storage`) — technisch identisch
 zum bestehenden `nas-storage`-Setup aus
-[docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md), nur auf einen anderen Export
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md), nur auf einen anderen Export
 gerichtet.
 
 ---
@@ -77,7 +77,7 @@ gerichtet.
 ## Schritt 1 — NFS-Export für Immich einrichten (UGOS, manuell)
 
 Analog zu
-[docs/2-betrieb-hardware/20000-nas-storage.md → NFS-Export in UGOS einrichten](../2-betrieb-hardware/20000-nas-storage.md#nfs-export-in-ugos-einrichten-manuell-kein-ansible-playbook),
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md → NFS-Export in UGOS einrichten](../2-betrieb-hardware/20000-nas-storage.md#nfs-export-in-ugos-einrichten-manuell-kein-ansible-playbook),
 diesmal auf `volume2`:
 
 1. Auf `volume2` eine neue Freigabe `immich-storage` anlegen.
@@ -169,7 +169,7 @@ danach ist der Cache persistent und Neustarts sind schnell.
 Album ihm zugeordnet ist, wird zusätzlich (verschlüsselt, außerhalb der
 App-DB) in `capulus-ansible/group_vars/user_inventory_vault.yml` festgehalten —
 `make user-inventory-edit` zum Bearbeiten, siehe
-[docs/4-planung/40080-multi-cluster-entw-prod-tech.md → Baustein 7](../4-planung/40080-multi-cluster-entw-prod-tech.md#7-nutzer-daten-inventar-für-immich--vaultwarden)
+[capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md → Baustein 7](../4-planung/40080-multi-cluster-entw-prod-tech.md#7-nutzer-daten-inventar-für-immich--vaultwarden)
 für den Zweck (Dokumentation, kein Ersatz für die eigentliche DB).
 
 ---
@@ -258,7 +258,7 @@ unterwegs würde die App nur zuhause im WLAN synchronisieren.
 ## Postgres-Backup
 
 Ergänzend zum nächtlichen Datei-Level-restic-Backup von `immich-nas`
-([docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md) —
+([capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md) —
 das ist **kein** transaktions-konsistenter Snapshot, siehe dort
 "Hinweis: Konsistenz laufender Datenbanken") läuft täglich um 01:50 Uhr
 ein eigener `pg_dump`-CronJob (`immich-postgres-backup`, Muster wie
@@ -276,7 +276,7 @@ beim Container-Start verbindet, bekommt `Connection refused` und
 genaues Hinsehen wie ein erfolgreicher, aber leerer Dump aussieht.
 Der CronJob wartet deshalb per `pg_isready`-Schleife (bis zu 30s) auf
 Erreichbarkeit, bevor er `pg_dump` startet — siehe
-[docs/4-planung/40080-multi-cluster-entw-prod-tech.md](../4-planung/40080-multi-cluster-entw-prod-tech.md)
+[capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md](../4-planung/40080-multi-cluster-entw-prod-tech.md)
 für den vollen Befund (derselbe Bug betraf auch Authentiks Backup-CronJob).
 
 **Manueller Dump/Restore** (z. B. vor einer riskanten Änderung, siehe
@@ -318,7 +318,7 @@ zwei Immich-spezifischen Besonderheiten:
 
 1. **Dump** (ergänzend zum nächtlichen restic-Backup unter der separaten
    `immich-nas`-StorageClass, siehe
-   [docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)):
+   [capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)):
    ```bash
    kubectl -n immich exec deploy/immich-postgresql -- \
      pg_dump -U immich -Fc immich > immich-pg14-$(date +%F).dump
@@ -365,7 +365,7 @@ kubectl -n immich-storage logs deploy/immich-nfs-subdir-external-provisioner
 
 Meist: NFS-Export `/volume2/immich-storage` ist vom Node aus nicht
 erreichbar, oder der `immich-storage`-Provisioner-Pod läuft nicht. Details
-analog zu [docs/2-betrieb-hardware/20000-nas-storage.md → Fehlerbehebung](../2-betrieb-hardware/20000-nas-storage.md#fehlerbehebung).
+analog zu [capulus-core/2-betrieb-hardware/20000-nas-storage.md → Fehlerbehebung](../2-betrieb-hardware/20000-nas-storage.md#fehlerbehebung).
 
 ### Gesichtserkennung/Suche liefert keine Ergebnisse
 
@@ -415,7 +415,7 @@ NICHT wieder absenken, ohne die Ursache dieser Änderung erneut zu prüfen.
 Da der Worst-Case-Wert (volle Autoskalierung aller vier Komponenten
 gleichzeitig auf demselben Node, siehe `podAffinity` unten) einen
 erheblichen Teil des Homeserver-RAM beanspruchen kann, greift stattdessen
-der [Kubelet-RAM-Schutz](../2-betrieb-hardware/20020-cluster-power-manager.md#mehrschichtiger-ram-schutz):
+der [Kubelet-RAM-Schutz](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md#mehrschichtiger-ram-schutz):
 Der Kubelet evakuiert/killt einzelne Pods, bevor die Gesamtlast den Node
 gefährdet.
 

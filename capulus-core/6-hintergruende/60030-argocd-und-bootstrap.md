@@ -10,7 +10,7 @@ und zum Versiegeln von Secrets. Bedienung: [b0010](../b-kubernetes-gitops/b0010-
 ## Generierte Bootstrap-Dateien
 
 - `argocd/bootstrap/root-applicationset.yaml` und `projects.yaml` sind **generiert** aus den Templates der Rolle `argocd`
-  (`make render-bootstrap`, Playbook `capulus-ansible/render-bootstrap.yml`). Nach jeder Änderung an den Templates, an den Namespace-Listen
+  (`make render-bootstrap CORE_DIR=<Pfad zu capulus-core>`, Playbook `capulus-ansible/render-bootstrap.yml`). Nach jeder Änderung an den Templates, an den Namespace-Listen
   in `capulus-ansible/roles/argocd/defaults/main.yml` oder an `argocd_repo_*`/`argocd_namespace` neu rendern, die Kopie im Repo nicht von Hand
   editieren. So driftet die eingecheckte Datei nie von dem ab, was das Playbook anwendet.
 - Die AppProjects werden **vor** dem ApplicationSet angewendet: Applications, die auf ein noch nicht vorhandenes Projekt zeigen,
@@ -28,7 +28,7 @@ und zum Versiegeln von Secrets. Bedienung: [b0010](../b-kubernetes-gitops/b0010-
   auf die beobachtete Nutzung eingeschränkt (`Namespace`, `CustomResourceDefinition`, `ClusterRole`/`ClusterRoleBinding`, `StorageClass`,
   `ClusterIssuer`, `Mutating-`/`ValidatingWebhookConfiguration`; Quelle: die `status.resources` der `prod-*`-Applications). Vorher stand `*/*`: Jede
   App im Projekt hätte beliebige clusterweite Objekte anlegen können, die Hürde war allein das Repo. In `tech` und `entw` bleibt es offen, weil
-  diese Projekte aus der Rolle `argocd` generiert werden (`make render-bootstrap` braucht das Vault-Passwort); `namespaceResourceWhitelist` ist
+  diese Projekte aus der Rolle `argocd` generiert werden (`make render-bootstrap CORE_DIR=<Pfad zu capulus-core>` braucht das Vault-Passwort); `namespaceResourceWhitelist` ist
   überall offen. Die Datei muss im Hub von Hand angewendet werden (`kubectl apply -f argocd/bootstrap-prod/appproject.yaml`, Ablauf in der README
   von `bootstrap-prod`). **Vor dem Anwenden `kubectl diff` ansehen:** Das Projekt im Hub enthält Namespaces, die nicht in der Datei stehen
   (`authentik`, `mealie`, `github-release-watcher`, `tinyteller`, …); das Anwenden entfernt sie.
@@ -61,7 +61,7 @@ Sync (z. B. victoria-metrics-operator installiert die CRD `VMSingle` und ein `VM
   erzeugt, sondern einmalig per `scripts/create-argocd-ci-token.sh` ([f00b0](../f-cicd-automatisierung/f00b0-promotion-chain.md#einrichtung)).
   Das Skript legt ihn direkt als GitHub-Repo-Secret ab (`hub` → `ARGOCD_HUB_TOKEN`, `entw` → `ARGOCD_ENTW_TOKEN`), gibt ihn nicht aus
   und speichert ihn nirgends. Voraussetzung: das Konto existiert (`argocd_ci_account_enabled: true`, einmal `make argocd` bzw.
-  `ansible-playbook capulus-ansible/entw.yml --tags argocd`), `gh` ist als Repo-Admin angemeldet, und das Admin-Passwort ist über das Secret
+  `ansible-playbook entw.yml --tags argocd`), `gh` ist als Repo-Admin angemeldet, und das Admin-Passwort ist über das Secret
   `argocd-initial-admin-secret` lesbar (sonst `ARGOCD_ADMIN_PASSWORD` setzen). `TOKEN_TTL_DAYS` (Standard 365) begrenzt die Laufzeit,
   alte Token bleiben bis zum Ablauf gültig.
 - **Web-UI, API und kein NodePort (Incident 013, 2026-10-17):** UI, CLI und CI erreichen ArgoCD über den Traefik-Ingress per HTTPS. Der Service
@@ -112,7 +112,7 @@ Sync (z. B. victoria-metrics-operator installiert die CRD `VMSingle` und ein `VM
 
 - Die Dateien sind **handgeschrieben**, nicht generiert und nicht Teil des `argocd`-Rollenlaufs. Einmalig im TECH-Cluster anwenden,
   **nachdem** der Cluster `prod` registriert ist: `kubectl apply -f argocd/bootstrap-prod/appproject.yaml` und `applicationset.yaml`
-  ([README](../../argocd/bootstrap-prod/README.md)).
+  ([README](../komponenten/bootstrap-prod.md)).
 - **Zwei ApplicationSets:** `helm.releaseName` zwingt ArgoCD in den Helm-Modus und scheitert bei reinen Manifest-Ordnern ohne
   `Chart.yaml`. Deshalb `home-server-apps-prod` für reine Manifest-Ordner (**explizit gelistet**, ein neuer Manifest-Ordner braucht einen
   Pfad-Eintrag) und `home-server-apps-prod-charts` für jeden Ordner mit `Chart.yaml` (automatisch). Bei `files` ist `.path.path` der Ordner

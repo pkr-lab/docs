@@ -126,7 +126,7 @@ Die Regeln wurden live mit `ufw` gesetzt (je Host Backup und Rollback-Timer, in 
 **Geänderte Dateien.**
 
 - `capulus-ansible/roles/common/defaults/main.yml` (neu), `capulus-ansible/roles/common/tasks/main.yml`, `capulus-ansible/roles/k3s_agent/tasks/main.yml`, `capulus-ansible/host_vars/homeserver/vars.yml`
-- Doku: `docs/6-hintergruende/60010-ansible-hosts-und-playbooks.md` (Abschnitt „Firewall (UFW, Rolle `common`)“), `docs/c-netzwerk-dns/c0030-port-uebersicht.md`, `docs/a-betriebssystem/a0010-overview.md`
+- Doku: `capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md` (Abschnitt „Firewall (UFW, Rolle `common`)“), `capulus-core/c-netzwerk-dns/c0030-port-uebersicht.md`, `capulus-ansible/a-betriebssystem/a0010-overview.md`
 
 **Rollback.** Die Sicherungskopien von `/etc/ufw` (`/root/ufw-backup-20261017-*`, fünf Stück auf vier Hosts) wurden am 2026-10-17 nach der Bestätigung gelöscht. Zurück geht es über den Code: die Variablen `common_ufw_lan_allow_all` und `common_ufw_tailnet_allow_all` des homeservers auf `true`, die Regeländerungen im Repo zurücknehmen und `make common` ausführen. Einzelne Regeln lassen sich von Hand wiederherstellen, zum Beispiel `sudo ufw allow from 192.168.178.0/24` für die LAN-Pauschale. Wird `user.rules` selbst überschrieben, danach `sudo ufw disable && sudo ufw --force enable` (nicht `ufw reload`, beide Teile mit `sudo`) und die Loopback-Regel prüfen.
 

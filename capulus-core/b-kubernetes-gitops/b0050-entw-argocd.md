@@ -79,7 +79,7 @@ gelöscht (`prune: true`).
 | AppProject `entw` (jeder Namespace, nur dieses Repo als Quelle) | [`bootstrap-appprojects.yaml.j2`](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/argocd/templates/bootstrap-appprojects.yaml.j2) |
 
 Die committeten TECH-Dateien `argocd/bootstrap/*` bleiben vom ENTW-Layout
-unberührt (`make render-bootstrap` rendert mit dem Standard der Rolle, dem TECH-Layout).
+unberührt (`make render-bootstrap CORE_DIR=<Pfad zu capulus-core>` rendert mit dem Standard der Rolle, dem TECH-Layout).
 `argocd_platform_apps`/`argocd_workloads_apps` in den ENTW-Host-Vars steuern nur
 noch `security-tier`-Label und Tier-NetworkPolicy der drei Bestands-Namespaces
 (`sealed-secrets`, `demo-app`, `example-whoami`), nicht mehr, was deployt wird.
@@ -100,7 +100,7 @@ Application weiter, ohne dass ArgoCD sie noch verwaltet.
 3. Playbook aus einem Checkout ausführen, der die Rollen-Änderung enthält:
 
 ```bash
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/entw.yml --tags argocd --vault-password-file ~/.vault_pass
+ansible-playbook -i inventory/hosts.yml entw.yml --tags argocd --vault-password-file ~/.vault_pass
 ```
 
 Die `argocd`-Rolle löscht dabei zuerst die alten ApplicationSets

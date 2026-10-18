@@ -86,7 +86,7 @@ Niedrig.
 
 - `capulus-ansible/roles/journal_upload/tasks/main.yml`, `capulus-ansible/group_vars/banana_pis.yml`, `capulus-ansible/group_vars/xibo_displays.yml`
 - `argocd/apps/tech/monitoring/templates/vmrule-host-services.yaml` (neu)
-- Doku: `docs/6-hintergruende/60020-ansible-rollen.md`, `docs/6-hintergruende/60060-monitoring-und-alerting.md`
+- Doku: `capulus-ansible/6-hintergruende/60020-ansible-rollen.md`, `capulus-core/6-hintergruende/60060-monitoring-und-alerting.md`
 
 **Rollback.** Drop-in `/etc/systemd/system/systemd-journal-upload.service.d/restart.conf` löschen, `systemctl daemon-reload`; Pi-Eintrag in `/etc/hosts` auf das Backup zurücksetzen; die VMRule per `git revert` entfernen.
 

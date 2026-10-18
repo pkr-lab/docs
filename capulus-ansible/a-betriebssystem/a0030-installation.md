@@ -33,7 +33,7 @@ Bei einem Fork stattdessen die URL des Forks verwenden.
 Inventory-Datei öffnen und die Platzhalter-IP durch die tatsächliche IP des Servers ersetzen:
 
 ```bash
-$EDITOR capulus-ansible/inventory/hosts.yml
+$EDITOR inventory/hosts.yml
 ```
 
 `192.168.1.100` durch die eigene Server-IP ersetzen:
@@ -53,7 +53,7 @@ Liegt der Private Key woanders, `ansible_ssh_private_key_file` setzen.
 Verbindung testen:
 
 ```bash
-ansible -i capulus-ansible/inventory/hosts.yml homeserver -m ping
+ansible -i inventory/hosts.yml homeserver -m ping
 # Erwartet: homeserver | SUCCESS => { "ping": "pong" }
 ```
 
@@ -64,7 +64,7 @@ ansible -i capulus-ansible/inventory/hosts.yml homeserver -m ping
 Variablendatei öffnen und alle Werte durchgehen:
 
 ```bash
-$EDITOR capulus-ansible/group_vars/all.yml
+$EDITOR group_vars/all.yml
 ```
 
 **Pflicht-Änderungen:**
@@ -142,7 +142,7 @@ grep -A5 "tailscale_auth_key:" capulus-ansible/group_vars/all.yml
 Galaxy-Collections auf der Control-Machine installieren:
 
 ```bash
-ansible-galaxy collection install -r capulus-ansible/requirements.yml
+ansible-galaxy collection install -r requirements.yml
 ```
 
 Installiert:
@@ -188,7 +188,7 @@ Vault-Passwort eingeben, wenn abgefragt.
 6. **semaphore_secrets** (~30 s) — Rendert das Bootstrap-Secret, das der in-Cluster-Semaphore-Pod liest.
 7. **thermal_watchdog** / **resource_watchdog** (~30 s) — Selbst-Abschaltung bei Übertemperatur bzw. Dauerlast.
 8. **cluster_power_manager** / **power_agent** (~30 s) — Wake-on-LAN-Steuerung der Worker je nach Last, HTTP-API für Helligkeit/Wake/Shutdown aus der iOS-App.
-9. **cups_print_server** (~1 min) — Richtet CUPS + Treiber für die per USB angeschlossenen Drucker ein (siehe [docs/2-betrieb-hardware/20040-printer.md](../2-betrieb-hardware/20040-printer.md)).
+9. **cups_print_server** (~1 min) — Richtet CUPS + Treiber für die per USB angeschlossenen Drucker ein (siehe [capulus-ansible/2-betrieb-hardware/20040-printer.md](../2-betrieb-hardware/20040-printer.md)).
 
 Im Anschluss an die host-zentrischen Rollen laufen zwei zusätzliche Plays:
 
@@ -203,16 +203,16 @@ Am Ende druckt das Playbook eine Summary mit den URLs.
 # Nur common
 make common
 # oder:
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --tags common --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml site.yml --tags common --ask-vault-pass
 
 # Nur k3s + argocd
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --tags k3s,argocd --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml site.yml --tags k3s,argocd --ask-vault-pass
 
 # Nur die Split-DNS-Schicht (nach Änderung von dnsmasq_prod_vm_hosts)
 make dnsmasq
 
 # Tailscale komplett überspringen
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --skip-tags tailscale --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml site.yml --skip-tags tailscale --ask-vault-pass
 ```
 
 Alle Convenience-Targets siehst du mit `make help`.
@@ -372,7 +372,7 @@ Nachdem `make install` auf homeserver abgeschlossen ist, kann worker-0
 **Voraussetzungen:**
 
 - k3s läuft auf homeserver (Schritt 6 abgeschlossen)
-- worker-0 ist per SSH erreichbar (Ansible-Konnektivität testen: `ansible -i capulus-ansible/inventory/hosts.yml worker-0 -m ping`)
+- worker-0 ist per SSH erreichbar (Ansible-Konnektivität testen: `ansible -i inventory/hosts.yml worker-0 -m ping`)
 - `vault_worker-0_become_password` in `group_vars/all.yml` gesetzt
 
 **worker-0 provisionieren:**
@@ -385,7 +385,7 @@ Das Playbook führt in dieser Reihenfolge aus:
 
 1. **k3s_agent** — Deaktiviert Swap, lädt Kernel-Module, konfiguriert sysctl,
    installiert `nfs-common` (Voraussetzung für die `nas`-StorageClass, siehe
-   [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)), liest den Join-Token vom
+   [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md)), liest den Join-Token vom
    Control-Plane-Server, installiert k3s im Agent-Mode und wartet bis der
    Node `Ready` ist.
 2. **thermal_watchdog**, **resource_watchdog** — automatischer Shutdown bei
@@ -418,7 +418,7 @@ worker-0   Ready    <none>                 2m    v1.36.4+k3s1    192.168.178.95
 **Weiterer Worker (worker-1):** folgt demselben Muster über
 `make worker-1` (Playbook `capulus-ansible/worker-1.yml`) — inhaltlich identisch zu
 `worker-0.yml`, beide sind reine k3s-Compute-Nodes. Details siehe
-[docs/b-kubernetes-gitops/b0000-k3s.md](../b-kubernetes-gitops/b0000-k3s.md).
+[capulus-core/b-kubernetes-gitops/b0000-k3s.md](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md).
 
 ---
 
@@ -426,7 +426,7 @@ worker-0   Ready    <none>                 2m    v1.36.4+k3s1    192.168.178.95
 
 Nach dem TECH-Cluster lassen sich zwei weitere, voneinander getrennte Cluster als KVM-VMs aufbauen
 (Hintergrund: [a0010](a0010-overview.md#1-drei-cluster-im-überblick),
-[40080](../4-planung/40080-multi-cluster-entw-prod-tech.md)). Voraussetzung sind
+[40080](../../capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md)). Voraussetzung sind
 `libvirt_host_enabled: true` und die VM-Definitionen in den `host_vars`
 (`host_vars/homeserver/vars.yml` für `prod-vm`, `host_vars/worker-1/vars.yml` für `entw-vm`).
 
@@ -443,7 +443,7 @@ make prod            # common + node_exporter + k3s in der prod-vm
 ```
 
 Danach den Cluster im ArgoCD-Hub registrieren und die PROD-ApplicationSets anwenden — Schritt für
-Schritt in [argocd/bootstrap-prod/README.md](../../argocd/bootstrap-prod/README.md).
+Schritt in [capulus-core/komponenten/bootstrap-prod.md](../../capulus-core/komponenten/bootstrap-prod.md).
 
 **ENTW (auf worker-1):**
 
@@ -453,7 +453,7 @@ make entw                    # common + k3s + eigene ArgoCD-Instanz in der entw-
 ```
 
 Die ENTW-ArgoCD-Instanz folgt dem Branch `entw`, der vorher gepusht sein muss
-([b0050](../b-kubernetes-gitops/b0050-entw-argocd.md)). DNS für `*.dev.homeserver` setzt die
+([b0050](../../capulus-core/b-kubernetes-gitops/b0050-entw-argocd.md)). DNS für `*.dev.homeserver` setzt die
 `dnsmasq`-Rolle (`make dnsmasq`).
 
 **Verifikation:**
@@ -472,7 +472,7 @@ Um Konfigurationsänderungen nach dem ersten Setup anzuwenden, einfach das
 Playbook erneut laufen lassen:
 
 ```bash
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml site.yml --ask-vault-pass
 ```
 
 Für Application-Changes, die ArgoCD verwaltet: commit + push ins Git-Repo —

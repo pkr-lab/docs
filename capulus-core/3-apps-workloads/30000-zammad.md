@@ -1,6 +1,6 @@
 # Zammad Helpdesk / Ticket-System
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/zammad/` · URL `https://zammad.tech.homeserver` und `https://support-tech.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/zammad/` · URL `https://zammad.tech.homeserver` und `https://support-tech.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Zammad ist ein Open-Source Helpdesk- und Ticketing-System.  
 Die Deployment-Konfiguration liegt unter `argocd/apps/tech/zammad/`.
@@ -22,7 +22,7 @@ Die Deployment-Konfiguration liegt unter `argocd/apps/tech/zammad/`.
 | Auto-Updates      | Renovate (patch + minor)          | —           |
 
 PostgreSQL und Redis laufen mit `storageClassName: nas` (siehe
-[docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — keine NodeAffinity mehr
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — keine NodeAffinity mehr
 nötig, die PVCs sind von jedem Node aus erreichbar. Da Zammad Attachments
 standardmäßig in der Datenbank speichert (`storageVolume.enabled: false`),
 kann die PostgreSQL-PVC mit der Zeit groß werden — auf dem NAS statt der
@@ -37,7 +37,7 @@ Homeserver-SSD ist das unkritisch.
 - **`nas-storage`-App ist deployt** (`argocd/apps/tech/nas-storage/`) und die
   StorageClass `nas` existiert: `kubectl get storageclass nas`
 - **NAS ist online und der NFS-Export erreichbar** (siehe
-  [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — sonst bleiben die
+  [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — sonst bleiben die
   PostgreSQL- und Redis-PVCs auf `Pending`
 - `kubeseal` CLI ist lokal installiert
 - `kubectl` ist mit dem Cluster verbunden
@@ -137,7 +137,7 @@ Typische Pod-Reihenfolge beim ersten Start:
 
 > Falls `zammad-postgresql-0` / `zammad-redis-*` dauerhaft `Pending` bleiben:
 > das NAS ist offline oder die `nas`-StorageClass fehlt — siehe
-> [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
+> [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
 
 ---
 
@@ -158,7 +158,7 @@ Nach dem erfolgreichen Start ist Zammad unter https://zammad.tech.homeserver err
 
 Kein Eintrag nötig: Zammad läuft im TECH-Cluster, und `zammad.tech.homeserver` wird von der
 `*.homeserver`-Wildcard in dnsmasq auf den Homeserver (`.94`) aufgelöst, siehe
-[docs/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge).
+[capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge).
 Test: `dig +short zammad.tech.homeserver @192.168.178.94`.
 
 ---
@@ -255,7 +255,7 @@ kubectl describe pvc -n zammad data-zammad-postgresql-0
 kubectl -n nas-storage get pods
 ```
 
-Details: [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
+Details: [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
 
 ### ArgoCD zeigt OutOfSync
 
@@ -281,7 +281,7 @@ argocd app sync zammad --force
 
 PostgreSQL- und Redis-Storage liegen bewusst auf dem UGREEN NAS statt auf
 der Homeserver-System-SSD — siehe
-[docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md). Die 50Gi für PostgreSQL sind
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md). Die 50Gi für PostgreSQL sind
 ein Startwert; da Attachments in der DB liegen, ggf. nach Bedarf erhöhen
 (`zammad.postgresql.primary.persistence.size`).
 

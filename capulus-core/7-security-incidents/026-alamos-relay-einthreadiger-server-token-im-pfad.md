@@ -67,7 +67,7 @@ Niedrig.
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/alamos-relay/templates/configmap-script.yaml`
-- Doku: `docs/6-hintergruende/60040-helm-charts-tech.md`, `docs/3-apps-workloads/300i0-alamos-relay.md`
+- Doku: `capulus-core/6-hintergruende/60040-helm-charts-tech.md`, `capulus-core/3-apps-workloads/300i0-alamos-relay.md`
 
 **Rollback.** `git revert`; das alte Skript kommt über die ConfigMap zurück.
 

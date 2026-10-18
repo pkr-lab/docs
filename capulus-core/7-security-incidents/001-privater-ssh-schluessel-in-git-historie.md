@@ -114,10 +114,10 @@ Der Standardschlüssel des Admin-PCs funktioniert auf beiden Pis weiter. Gegen h
 
 **Geänderte Dateien.** Auf keinem Host und in keinem Cluster wurde etwas verändert. Im Repo nur Doku:
 
-- `docs/7-security-incidents/001-privater-ssh-schluessel-in-git-historie.md` (diese Datei)
-- `docs/7-security-incidents/README.md` (Status, Behebungsstand)
-- `docs/7-security-incidents/009-ssh-haertung-nicht-verwaltet.md` (Nachtrag zu den Pis)
-- `docs/f-cicd-automatisierung/f0070-ci-lint.md` (Stand des Altfunds in der Beschreibung der `.gitleaksignore`)
+- `capulus-core/7-security-incidents/001-privater-ssh-schluessel-in-git-historie.md` (diese Datei)
+- `capulus-core/7-security-incidents/README.md` (Status, Behebungsstand)
+- `capulus-core/7-security-incidents/009-ssh-haertung-nicht-verwaltet.md` (Nachtrag zu den Pis)
+- `capulus-core/f-cicd-automatisierung/f0070-ci-lint.md` (Stand des Altfunds in der Beschreibung der `.gitleaksignore`)
 
 **Rollback.** Entfällt, da nichts geändert wurde. Die Doku-Änderungen lassen sich mit `git checkout -- <Datei>` zurücknehmen.
 

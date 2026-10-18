@@ -15,7 +15,7 @@ Im laufenden Cluster existieren Bestandteile, die das Repo nicht beschreibt: **M
 $ kubectl get ns metallb-system -o jsonpath='{.metadata.creationTimestamp}'
 2026-06-03T19:24:42Z
 $ git grep -il metallb -- . ':!*.tgz'
-docs/d-sicherheit/d0030-network-policies.md
+capulus-core/d-sicherheit/d0030-network-policies.md
 $ ssh prod-vm 'sudo k3s kubectl get ns' | grep -E 'mealie|tinyteller'
 mealie  tinyteller
 $ ssh entw-vm 'sudo k3s secrets-encrypt status | head -1'
@@ -42,7 +42,7 @@ Nicht erforderlich.
 
 ## Bearbeitung (2026-10-18)
 
-**Dokumentiert.** Neu: `docs/b-kubernetes-gitops/b0060-metallb.md` mit dem Ist-Zustand von MetalLB (Helm-Release `metallb` 0.16.1 ohne eigene Values, Layer-2-Modus, Pool `192.168.178.200-210`, einzige genutzte Adresse `.200` für Traefik), den beiden Objekten als YAML, dem Neuaufbau und den Auffälligkeiten (FRR-Komponente im L2-Modus ungenutzt, Ursache des offenen Ports `2623` aus Incident 038, hohe Neustartzahlen). Im README-Index eingetragen.
+**Dokumentiert.** Neu: `capulus-core/b-kubernetes-gitops/b0060-metallb.md` mit dem Ist-Zustand von MetalLB (Helm-Release `metallb` 0.16.1 ohne eigene Values, Layer-2-Modus, Pool `192.168.178.200-210`, einzige genutzte Adresse `.200` für Traefik), den beiden Objekten als YAML, dem Neuaufbau und den Auffälligkeiten (FRR-Komponente im L2-Modus ungenutzt, Ursache des offenen Ports `2623` aus Incident 038, hohe Neustartzahlen). Im README-Index eingetragen.
 
 **Geprüft.**
 
@@ -56,11 +56,11 @@ Nicht erforderlich.
 
 - **ENTW verschlüsseln oder als Testumgebung akzeptieren:** `sudo k3s secrets-encrypt enable` plus Neustart von k3s auf entw-vm (kurze Unterbrechung nur der Testumgebung). Ob die Abweichung bewusst ist, entscheidest du.
 
-**Geänderte Dateien.** `docs/b-kubernetes-gitops/b0060-metallb.md` (neu), `README.md`
+**Geänderte Dateien.** `capulus-core/b-kubernetes-gitops/b0060-metallb.md` (neu), `README.md`
 
 ## Entscheidungen und Stand (2026-10-18)
 
 - `mealie` und `tinyteller` (leer) hat der Betreiber gelöscht.
 - **ENTW ohne `secrets-encryption`:** Testumgebung, **akzeptiert** (kein Produktivdatum, keine echten Zugangsdaten). Änderung nur nötig, wenn ENTW echte Daten bekommt.
-- **MetalLB in GitOps:** Chart vorbereitet unter `argocd/pending/metallb-system/` mit abgeschaltetem FRR; Ablauf der Übernahme (Workloads löschen, nicht `helm uninstall`: die CRDs gehören zum Release; `make render-bootstrap`; Verzeichnis nach `argocd/apps/tech/` verschieben) steht in `docs/b-kubernetes-gitops/b0060-metallb.md`. Wegen unveränderlicher Selektoren ist ein direktes Überschreiben nicht möglich. `capulus-ansible/roles/argocd/templates/bootstrap-appprojects.yaml.j2` trägt `metallb-system` schon als festes Ziel ein; das generierte `argocd/bootstrap/projects.yaml` entsteht erst beim Render-Lauf.
+- **MetalLB in GitOps:** Chart vorbereitet unter `argocd/pending/metallb-system/` mit abgeschaltetem FRR; Ablauf der Übernahme (Workloads löschen, nicht `helm uninstall`: die CRDs gehören zum Release; `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>`; Verzeichnis nach `argocd/apps/tech/` verschieben) steht in `capulus-core/b-kubernetes-gitops/b0060-metallb.md`. Wegen unveränderlicher Selektoren ist ein direktes Überschreiben nicht möglich. `capulus-ansible/roles/argocd/templates/bootstrap-appprojects.yaml.j2` trägt `metallb-system` schon als festes Ziel ein; das generierte `argocd/bootstrap/projects.yaml` entsteht erst beim Render-Lauf.
 

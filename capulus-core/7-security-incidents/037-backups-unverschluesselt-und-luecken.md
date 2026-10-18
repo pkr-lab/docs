@@ -2,7 +2,7 @@
 
 - Severity: Medium
 - Bereich: Repo
-- Betroffen: `argocd/apps/tech/vaultwarden` (CronJob `vaultwarden-backup`), `argocd/apps/prod/immich` (`immich-postgres-backup`), `docs/2-betrieb-hardware/20010-nas-backup.md`
+- Betroffen: `argocd/apps/tech/vaultwarden` (CronJob `vaultwarden-backup`), `argocd/apps/prod/immich` (`immich-postgres-backup`), `capulus-core/2-betrieb-hardware/20010-nas-backup.md`
 - Status: Teilweise (Vaultwarden) im Code vorbereitet am 2026-10-18 (restic-Job hinter Schalter; Passwort versiegeln und einschalten: Schritte unten; weitere Dienste offen)
 
 ## Beschreibung
@@ -36,7 +36,7 @@ Ransomware oder ein Fehler in einer Anwendung, die ihre Daten beschädigt, zerst
 
 1. Vaultwarden: Backup verschlüsseln und versionieren, z. B. `restic` mit Passwort aus SealedSecret auf das NAS-Volume (inkrementell, Aufbewahrung 7 tägliche, 4 wöchentliche, 6 monatliche) oder `tar | age -r <Public-Key>`.
 2. PostgreSQL/MariaDB/SQLite-Dumps (`pg_dump`, `mariadb-dump`, `sqlite3 .backup`) als CronJobs für alle Dienste mit Daten, Ergebnisse in dasselbe verschlüsselte Repository.
-3. Alarm, wenn der letzte erfolgreiche Lauf älter als 36 Stunden ist (`docs/2-betrieb-hardware/20050-gitops-und-backup-alerts.md` beschreibt den Mechanismus für TECH; für PROD ergänzen).
+3. Alarm, wenn der letzte erfolgreiche Lauf älter als 36 Stunden ist (`capulus-core/2-betrieb-hardware/20050-gitops-und-backup-alerts.md` beschreibt den Mechanismus für TECH; für PROD ergänzen).
 4. Vierteljährlicher Restore-Test auf ENTW; Ziel der NAS-Sicherung (extern) mit Verschlüsselungs- und Schlüsselablage prüfen.
 
 ## Rollback
@@ -70,7 +70,7 @@ Nächster Schritt: Sag, ob `restic` auf dem NAS-Volume in Ordnung ist und für w
 
 ## Umsetzung Vaultwarden (2026-10-18, nach Freigabe)
 
-Wie vereinbart: restic auf dem NAS-Volume, Vaultwarden zuerst. Gebaut ist `argocd/apps/tech/vaultwarden/templates/restic-cronjob.yaml` (täglich 02:10), `restic-pvc.yaml` (`vaultwarden-restic`, `nas`, 5 Gi) und `restic-sealedsecret.yaml`, alles hinter `resticBackup.enabled` (Standard `false`, erst `scripts/seal-restic-password.sh` setzt Passwort und Schalter). Aufbewahrung 7 tägliche, 4 wöchentliche, 6 monatliche Snapshots, danach `restic check --read-data-subset=5%`; der Name enthält `backup`, damit deckt `BackupJobStale` den Job ab. Beschreibung, Einrichtung, Restore-Test: `docs/2-betrieb-hardware/20010-nas-backup.md#restic-für-vaultwarden-im-cluster`.
+Wie vereinbart: restic auf dem NAS-Volume, Vaultwarden zuerst. Gebaut ist `argocd/apps/tech/vaultwarden/templates/restic-cronjob.yaml` (täglich 02:10), `restic-pvc.yaml` (`vaultwarden-restic`, `nas`, 5 Gi) und `restic-sealedsecret.yaml`, alles hinter `resticBackup.enabled` (Standard `false`, erst `scripts/seal-restic-password.sh` setzt Passwort und Schalter). Aufbewahrung 7 tägliche, 4 wöchentliche, 6 monatliche Snapshots, danach `restic check --read-data-subset=5%`; der Name enthält `backup`, damit deckt `BackupJobStale` den Job ab. Beschreibung, Einrichtung, Restore-Test: `capulus-core/2-betrieb-hardware/20010-nas-backup.md#restic-für-vaultwarden-im-cluster`.
 
 **Nachweis.** Den Skriptablauf (`sqlite3 .backup`, `restic init`, zwei Läufe, `forget --prune`, `check`, `restore`) habe ich in `alpine:3.24` mit Testdaten durchgespielt: zwei Snapshots, `no errors were found`, wiederhergestellte Datenbank liefert die Testzeilen, die Ausschlüsse (`icon_cache`, `tmp`, `db.sqlite3*` aus `/source`) greifen. `helm template` mit und ohne Schalter: ohne keine restic-Objekte, mit Schalter PVC, SealedSecret und CronJob. Der echte Lauf im Cluster steht aus.
 

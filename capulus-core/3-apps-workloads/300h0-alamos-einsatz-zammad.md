@@ -1,6 +1,6 @@
 # ALAMOS-Einsatzalarm → Zammad-Ticket (n8n)
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/n8n/workflows/` · Zugang: n8n-Workflow, Webhook über alamos-relay. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/n8n/workflows/` · Zugang: n8n-Workflow, Webhook über alamos-relay. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Erweitert die reine Kiosk-Anzeige aus
 [30010-alamos-apager.md](30010-alamos-apager.md) um eine
@@ -18,7 +18,7 @@ Handbuch als Standard-Platzhalter dokumentiert. Der Workflow ist deshalb
 bewusst **datenoffen** gebaut: er gibt *alle* Felder aus, die der Webhook
 mitliefert, unabhängig davon, wie sie heißen. Die vollständige Recherche
 inkl. offener Fragen steht in
-[docs/4-planung/40060-alamos-einsatz-email-benachrichtigung.md](../4-planung/40060-alamos-einsatz-email-benachrichtigung.md).
+[capulus-core/4-planung/40060-alamos-einsatz-email-benachrichtigung.md](../4-planung/40060-alamos-einsatz-email-benachrichtigung.md).
 
 ## Architektur
 
@@ -137,7 +137,7 @@ unsichtbar, sondern zumindest im Log sichtbar, nur eben nicht per Ticket.
 Falls der Webhook **pro geöffnetem Kiosk-Tab** feuert (statt zentral einmal
 pro Konto — auch das ist eine der offenen Fragen im Planungsdokument),
 würden bei bis zu drei gleichzeitig laufenden Alarmmonitor-Standorten
-([30010](30010-alamos-apager.md), [30020](30020-vereinsheim-alarmmonitor.md))
+([30010](30010-alamos-apager.md), [30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md))
 bis zu drei Tickets für denselben Einsatz entstehen. Der Code-Node merkt
 sich deshalb `Stichwort|Einheit` (oder den kompletten Payload, falls
 `keyword`/`unit` fehlen) für 2 Minuten in n8n-Workflow-Static-Data und
@@ -220,9 +220,9 @@ Sekunden eintreffen, nicht nach einem Neustart).
 
 ## Relevante Links
 
-- [docs/3-apps-workloads/300i0-alamos-relay.md](300i0-alamos-relay.md) — öffentlicher Proxy vor n8n, Fix für den direkten Aufruf
-- [docs/4-planung/40060-alamos-einsatz-email-benachrichtigung.md](../4-planung/40060-alamos-einsatz-email-benachrichtigung.md) — Recherche zu ALAMOS-Schnittstellen, offene Fragen
-- [docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md) — Basis-Architektur (Kiosk-Anzeige)
-- [docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, Zammad-Ticket via n8n](30020-vereinsheim-alarmmonitor.md#zammad-ticket-via-n8n) — analoges Vorbild-Muster (Ausfall statt Einsatz)
-- [docs/3-apps-workloads/30070-n8n.md](30070-n8n.md) — n8n-Setup
-- [docs/f-cicd-automatisierung/f0040-github-release-watcher.md](../f-cicd-automatisierung/f0040-github-release-watcher.md) — Zammad-API-Token/Gruppe/Requester-Regeln
+- [capulus-core/3-apps-workloads/300i0-alamos-relay.md](300i0-alamos-relay.md) — öffentlicher Proxy vor n8n, Fix für den direkten Aufruf
+- [capulus-core/4-planung/40060-alamos-einsatz-email-benachrichtigung.md](../4-planung/40060-alamos-einsatz-email-benachrichtigung.md) — Recherche zu ALAMOS-Schnittstellen, offene Fragen
+- [capulus-core/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md) — Basis-Architektur (Kiosk-Anzeige)
+- [capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, Zammad-Ticket via n8n](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md#zammad-ticket-via-n8n) — analoges Vorbild-Muster (Ausfall statt Einsatz)
+- [capulus-core/3-apps-workloads/30070-n8n.md](30070-n8n.md) — n8n-Setup
+- [capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md](../f-cicd-automatisierung/f0040-github-release-watcher.md) — Zammad-API-Token/Gruppe/Requester-Regeln

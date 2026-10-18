@@ -27,7 +27,7 @@ Namen in `Schreibmaschinenschrift` sind Verzeichnisse bzw. Ansible-Rollen im Rep
 ## 1. Drei Cluster im Überblick
 
 Aus dem früheren **einen** 3-Node-Cluster sind im September 2026 **drei getrennte k3s-Cluster**
-geworden ([40080](../4-planung/40080-multi-cluster-entw-prod-tech.md)). Der Grund ist Blast-Radius:
+geworden ([40080](../../capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md)). Der Grund ist Blast-Radius:
 PROD trägt die Familien-/Vereinsdaten und ist am stärksten dem Internet ausgesetzt, TECH hält
 Identität, Secrets und Deploy-Kontrolle, ENTW ist eine absichtlich verwundbare Trainings- und
 Testumgebung.
@@ -74,7 +74,7 @@ Intermediate-CA), **dnsmasq** auf dem homeserver als Namensauflösung für alle 
 Bei einem NAS-Ausfall trifft das alle drei Cluster.
 
 **Welcher Cluster hinter einem Namen steckt**, entscheidet das DNS, nicht das Tier-Label im Hostnamen,
-siehe [c0040](../c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge).
+siehe [c0040](../../capulus-core/c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge).
 
 ### kubectl-Zugriff je Cluster
 
@@ -242,16 +242,16 @@ sequenceDiagram
 | Ansible | alles *unter* dem Cluster (OS, k3s, KVM-VMs, dnsmasq, Tailscale, Drucker, Watchdogs) | `make install` / `make prod` / `make entw`, Semaphore-Knopf, täglich 06:00 |
 
 **Promotion:** Neue Versionen (Image-Tags, Chart-Abhängigkeiten) laufen zuerst auf ENTW und werden von der
-[Promotion-Kette](../f-cicd-automatisierung/f00b0-promotion-chain.md) nach 24 h Gesundheit als PR nach TECH,
+[Promotion-Kette](../../capulus-core/f-cicd-automatisierung/f00b0-promotion-chain.md) nach 24 h Gesundheit als PR nach TECH,
 nach weiteren 2 h als PR nach PROD übernommen. `main` ist geschützt (PR-Pflicht, grüne CI, siehe
-[f0090](../f-cicd-automatisierung/f0090-branch-schutz-main.md)).
+[f0090](../../capulus-core/f-cicd-automatisierung/f0090-branch-schutz-main.md)).
 
 ---
 
 ## 5. App-Matrix
 
 Die Zuordnung Cluster ↔ Ordner ↔ AppProject steht in
-[b0020](../b-kubernetes-gitops/b0020-argocd-projects.md). Die folgenden Tabellen zeigen die
+[b0020](../../capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md). Die folgenden Tabellen zeigen die
 Aufgaben und die Adressen.
 
 ### TECH-Cluster — Plattformdienste (`argocd/apps/tech/…`)
@@ -383,8 +383,8 @@ flowchart TB
 | Samsung Xpress M2026 | Drucker | USB am Homeserver | CUPS-Freigabe per IPP/AirPrint; braucht einen eigenen QPDL-Treiber-Build, weil splix und hplip die M2020-Serie nicht abdecken |
 | Samsung ML-1630W | Drucker | `192.168.178.57:9100` | hängt per USB an einer Fritz!Box, spricht SPL2 → `printer-driver-splix` genügt; zweite Warteschlange in CUPS |
 | Fritz!Box | Router | `192.168.178.1` | LAN und Internet, DNS-Ziel von Pi-hole, keine Portfreigabe nach außen |
-| Raspberry Pis / Banana Pi | Alarmmonitor-Kiosks | frei / Tailscale | Chromium im Vollbild gegen `alamos-apager`, per Ansible verwaltet, mit Lebenszeichen-Meldung (siehe [30010](../3-apps-workloads/30010-alamos-apager.md), [30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md)) |
-| Raspberry Pi 3 B+ (`infotafel`) | xibosignage-Bilder-Slideshow | `192.168.178.98` | Chromium im Vollbild gegen einen NFS-gemounteten Bilder-Ordner, kein offizieller Xibo-Player (siehe [300e0](../3-apps-workloads/300e0-xibosignage.md)) |
+| Raspberry Pis / Banana Pi | Alarmmonitor-Kiosks | frei / Tailscale | Chromium im Vollbild gegen `alamos-apager`, per Ansible verwaltet, mit Lebenszeichen-Meldung (siehe [30010](../../capulus-core/3-apps-workloads/30010-alamos-apager.md), [30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md)) |
+| Raspberry Pi 3 B+ (`infotafel`) | xibosignage-Bilder-Slideshow | `192.168.178.98` | Chromium im Vollbild gegen einen NFS-gemounteten Bilder-Ordner, kein offizieller Xibo-Player (siehe [300e0](../../capulus-core/3-apps-workloads/300e0-xibosignage.md)) |
 
 ---
 
@@ -396,7 +396,7 @@ flowchart TB
 | `crowdsec` | homeserver | Brute-Force-Schutz für SSH und Traefik-Logs |
 | `dnsmasq` | homeserver | Split-DNS `*.homeserver` (inkl. `*.dev.homeserver` → ENTW und PROD-Einzelhosts), Weiterleitung an Pi-hole |
 | `tailscale` | homeserver, worker-0/-1, xibosignage-Displays, Banana Pi, alert-caller-VM | WireGuard-Mesh-VPN, Auth-Key aus Ansible Vault; nur der homeserver ist Subnet-Router |
-| `wireguard_backup` | homeserver | Notfall-Tunnel, falls die Tailscale-Control-Plane ausfällt ([c0011](../c-netzwerk-dns/c0011-wireguard-backup.md)) |
+| `wireguard_backup` | homeserver | Notfall-Tunnel, falls die Tailscale-Control-Plane ausfällt ([c0011](../../capulus-core/c-netzwerk-dns/c0011-wireguard-backup.md)) |
 | `k3s` | homeserver, prod-vm, entw-vm | Kubernetes-Server + Helm, je Cluster eigene CIDRs |
 | `k3s_agent` | worker-0, worker-1 | Cluster-Beitritt (TECH) per Join-Token vom Control-Plane |
 | `libvirt_host` | homeserver, worker-1 | KVM/libvirt, Bridge `br0`, legt `prod-vm` bzw. `entw-vm` an |
@@ -415,12 +415,12 @@ flowchart TB
 | `power_agent` | homeserver | HTTP-API für Helligkeit/Wake/Shutdown aus der iOS-App |
 | `node_exporter` | prod-vm, entw-vm, Banana Pi | Host-Metriken für Nicht-k3s-Hosts bzw. VMs |
 | `smartctl_exporter` | homeserver, worker-0/-1 | S.M.A.R.T.-Werte der physischen Platten |
-| `journal_upload` | alle Ansible-Hosts | journald → VictoriaLogs ([300j0](../3-apps-workloads/300j0-logging.md)) |
+| `journal_upload` | alle Ansible-Hosts | journald → VictoriaLogs ([300j0](../../capulus-core/3-apps-workloads/300j0-logging.md)) |
 | `vmagent` | Tailscale-only-Hosts (Banana Pi) | Metriken-Push per remote-write |
 | `cups_print_server` | homeserver | Druckserver, QPDL-Treiber-Build, zweite Warteschlange |
 | `alamos_kiosk` / `banana_pi_kiosk` | Raspberry Pis / Banana Pi | Chromium-Kiosk + Heartbeat-Timer |
 | `xibo_kiosk` | xibosignage-Displays | NFS-Mount, Manifest-Timer, Chromium-Slideshow-Kiosk |
-| `alert_caller` | externe VM `alert-caller-vm` (noch nicht ausgerollt, heute läuft der Caller als Pod) | Telefon-Alarm: Webhook-Server, Piper-Ansage, baresip-Anruf ([10020](../1-benachrichtigungen/10020-telefon-alarm.md)) |
+| `alert_caller` | externe VM `alert-caller-vm` (noch nicht ausgerollt, heute läuft der Caller als Pod) | Telefon-Alarm: Webhook-Server, Piper-Ansage, baresip-Anruf ([10020](../../capulus-core/1-benachrichtigungen/10020-telefon-alarm.md)) |
 | `vaultwarden_restore` | homeserver | Wiederherstellung der Vaultwarden-Daten aus dem NAS-Backup |
 
 **Reihenfolge beim ersten Rollout:**
@@ -431,7 +431,7 @@ make worker-0       # erst danach möglich
 make worker-1
 make libvirt-host   # auf dem homeserver: Bridge + prod-vm (braucht libvirt_host_enabled)
 make worker-1-libvirt-host   # auf worker-1: Bridge + entw-vm
-make prod           # k3s in der prod-vm; danach Cluster im Hub registrieren (argocd/bootstrap-prod/README.md)
+make prod           # k3s in der prod-vm; danach Cluster im Hub registrieren (capulus-core/komponenten/bootstrap-prod.md)
 make entw           # k3s + ArgoCD in der entw-vm
 make alarm-kiosks   # optional, nur manuell
 make xibo-kiosks    # optional, nur manuell
@@ -473,7 +473,7 @@ flowchart LR
 | 41641 | UDP | Tailscale/WireGuard | **ausgehend** ins Internet |
 
 Die Ports 80/443/6443 gelten je Cluster für dessen eigene IP (`.94`, `.99`, `.100`); ArgoCD (Hub und ENTW) hat
-keinen eigenen Port, UI und API laufen über Traefik auf `:443`. Details je App: [c0030](../c-netzwerk-dns/c0030-port-uebersicht.md).
+keinen eigenen Port, UI und API laufen über Traefik auf `:443`. Details je App: [c0030](../../capulus-core/c-netzwerk-dns/c0030-port-uebersicht.md).
 
 | Netz | CIDR |
 |---|---|
@@ -519,18 +519,18 @@ keinen eigenen Port, UI und API laufen über Traefik auf `:443`. Details je App:
 Kein eingehender Port aus dem Internet. Fernzugriff läuft über Tailscale, öffentliche Dienste
 ausschließlich über ausgehende Cloudflare-Verbindungen. UFW auf dem homeserver lässt aus dem LAN nur 22, 53, 6443, 631 und 6566 durch (Worker, NAS, prod-vm und entw-vm dürfen alles),
 aus dem Tailnet entscheidet allein die Tailscale-ACL (Tailscale nimmt den Verkehr auf `tailscale0` vor UFW an). Für alle Quellen offen sind 22, 80, 443 und die VPN-Ports
-41641/UDP, 443/UDP und 51888/UDP. NodePorts und LoadBalancer laufen an UFW vorbei ([c0030](../c-netzwerk-dns/c0030-port-uebersicht.md)). Die drei Cluster sind getrennt:
+41641/UDP, 443/UDP und 51888/UDP. NodePorts und LoadBalancer laufen an UFW vorbei ([c0030](../../capulus-core/c-netzwerk-dns/c0030-port-uebersicht.md)). Die drei Cluster sind getrennt:
 eigene Pod-/Service-Netze, eigene SealedSecrets-Schlüssel, PROD und ENTW als KVM-VMs mit
 Hypervisor-Grenze zum jeweiligen Host, und ENTW bekommt bewusst keine Route zu TECH/PROD und keinen
 ArgoCD-Zugriff vom Hub. ArgoCD hat ausschließlich Leserechte auf das Git-Repo. Innerhalb von ArgoCD
 begrenzt je Cluster ein AppProject (`tech` / `prod` / `entw`, siehe
-[b0020](../b-kubernetes-gitops/b0020-argocd-projects.md)) Quelle und Ziel-Namespaces; im TECH-Cluster
-kommen Default-Deny-NetworkPolicies je Namespace dazu ([d0030](../d-sicherheit/d0030-network-policies.md)).
+[b0020](../../capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md)) Quelle und Ziel-Namespaces; im TECH-Cluster
+kommen Default-Deny-NetworkPolicies je Namespace dazu ([d0030](../../capulus-core/d-sicherheit/d0030-network-policies.md)).
 Der Shutdown-SSH-Key des Power-Managers ist per `command=`-Option fest auf `poweroff` beschränkt.
 Secrets liegen verschlüsselt in Git — Host-Werte per Ansible Vault, Cluster-Werte als SealedSecret,
 das nur der Controller des jeweiligen Clusters öffnen kann; k3s verschlüsselt Secrets zusätzlich at
 rest ([d0050](../d-sicherheit/d0050-secrets-encryption-audit-log.md)). Internes HTTPS läuft über cert-manager
-mit einer eigenen Root-CA ([d0040](../d-sicherheit/d0040-internal-tls.md)). CrowdSec beobachtet SSH-
+mit einer eigenen Root-CA ([d0040](../../capulus-core/d-sicherheit/d0040-internal-tls.md)). CrowdSec beobachtet SSH-
 und Traefik-Logs und sperrt auffällige IPs per Firewall-Bouncer
 ([d0020](../d-sicherheit/d0020-crowdsec.md)).
 

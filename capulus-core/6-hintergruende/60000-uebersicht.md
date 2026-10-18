@@ -13,7 +13,7 @@ Die Fach-Kategorien (`a`–`f`, `1`–`3`) beschreiben, **was läuft und wie man
 | Doc | Inhalt |
 |---|---|
 | [60010 Ansible: Hosts, VMs und Playbooks](60010-ansible-hosts-und-playbooks.md) | ENTW- und PROD-VM, Rolle `libvirt_host` (Bridge, dnsmasq-Snippet, Basis-Image), DNS der VMs, Worker-Playbooks und ihre Reihenfolge, Tailscale-Auth-Keys, WireGuard-Notzugang |
-| [60020 Ansible: Rollen](60020-ansible-rollen.md) | Kiosk-Geräte (alamos, Banana Pi, Xibo), Energie-Rollen, Watchdogs, vmagent und Exporter, `journal_upload`, Semaphore-Rollen, `wireguard_backup`, `alert_caller` (Telefon-Alarm), `vaultwarden_restore` |
+| [60020 Ansible: Rollen](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md) | Kiosk-Geräte (alamos, Banana Pi, Xibo), Energie-Rollen, Watchdogs, vmagent und Exporter, `journal_upload`, Semaphore-Rollen, `wireguard_backup`, `alert_caller` (Telefon-Alarm), `vaultwarden_restore` |
 | [60030 ArgoCD, Bootstrap und SealedSecrets](60030-argocd-und-bootstrap.md) | Generierte Bootstrap-Dateien, `ignoreDifferences`, Rolle `argocd`, PROD im Hub, Daten-Migrationen, Promotion-Konfiguration, Fallstricke beim Versiegeln |
 | [60040 Helm-Charts im TECH-Cluster](60040-helm-charts-tech.md) | Gemeinsame Muster (HPA, Speicher, Root-Container), Zertifikate und TLS, Traefik-Metriken, cloudflared, alle TECH-Apps von alamos bis zammad |
 | [60050 Helm-Charts im PROD-Cluster](60050-helm-charts-prod.md) | Regeln für PROD-Kopien, Nextcloud, Immich, Wiki.js und wiki-docs-sync, Xibo, Paperless-ngx |
@@ -40,7 +40,7 @@ siehe [TEMPLATE](../TEMPLATE.md)).
 | Pfad | Doc |
 |---|---|
 | `capulus-ansible/host_vars/`, `capulus-ansible/group_vars/`, `capulus-ansible/inventory/`, `ansible/*.yml`, `capulus-ansible/roles/libvirt_host`, `capulus-ansible/roles/dnsmasq`, `capulus-ansible/roles/disable_eee` | [60010](60010-ansible-hosts-und-playbooks.md) |
-| `capulus-ansible/roles/*` (übrige Rollen) | [60020](60020-ansible-rollen.md) |
+| `capulus-ansible/roles/*` (übrige Rollen) | [60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md) |
 | `capulus-ansible/roles/argocd`, `argocd/bootstrap/`, `argocd/bootstrap-prod/`, `argocd/promotion.yaml`, SealedSecrets | [60030](60030-argocd-und-bootstrap.md) |
 | `argocd/apps/tech/*` (ohne monitoring, lldap, carplay-api, pacman) | [60040](60040-helm-charts-tech.md) |
 | `argocd/apps/prod/*`, `argocd/apps/entw/*` | [60050](60050-helm-charts-prod.md) |

@@ -1,9 +1,9 @@
 # Ansible: Rollen — Hintergründe
 
 Begründungen zu den Rollen unter `capulus-ansible/roles/`, geordnet nach Rolle. Hosts, VMs, Playbook-Reihenfolge und die Rolle
-`libvirt_host` stehen in [60010](60010-ansible-hosts-und-playbooks.md). Die Rolle `argocd` steht in
-[60030](60030-argocd-und-bootstrap.md). Bedienung der Geräte: [30010](../3-apps-workloads/30010-alamos-apager.md),
-[30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md), [300e0](../3-apps-workloads/300e0-xibosignage.md).
+`libvirt_host` stehen in [60010](../../capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md). Die Rolle `argocd` steht in
+[60030](../../capulus-core/6-hintergruende/60030-argocd-und-bootstrap.md). Bedienung der Geräte: [30010](../../capulus-core/3-apps-workloads/30010-alamos-apager.md),
+[30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md), [300e0](../../capulus-core/3-apps-workloads/300e0-xibosignage.md).
 
 ---
 
@@ -16,7 +16,7 @@ Begründungen zu den Rollen unter `capulus-ansible/roles/`, geordnet nach Rolle.
   systemd-Timer pingt den Heartbeat-Endpunkt, damit ein Ausfall zentral per ntfy erkannt wird.
 - Chromium startet **bewusst ohne `--incognito`**. AMweb verlangt beim Laden ein Passwort plus Verschlüsselungspasswort (Formular auf
   der Seite, kein Basic-Auth) und lässt sich nicht automatisch einloggen. Ohne `--incognito` bleibt die Session (Cookies,
-  LocalStorage) über Neustarts erhalten, der Login ist nur einmal manuell am Pi nötig ([30010](../3-apps-workloads/30010-alamos-apager.md),
+  LocalStorage) über Neustarts erhalten, der Login ist nur einmal manuell am Pi nötig ([30010](../../capulus-core/3-apps-workloads/30010-alamos-apager.md),
   „Pi-Provisionierung“).
 - Bildschirmschoner und Energiesparen sind deaktiviert, sonst dunkelt der Alarmmonitor nach Inaktivität ab.
 - Autologin richtet die Rolle nicht ein, das erledigt der Imaging-Schritt (Raspberry Pi Imager, „Enable autologin“).
@@ -38,11 +38,11 @@ alamos-apager auf eine lokal hinterlegte, vault-verschlüsselte Fallback-URL ums
 | `make banana-pi-kiosks-restart-session` | Der Handler „Reload getty@tty1“ läuft nur bei Ansible-`changed`. Liegt das Skript schon korrekt auf der Platte (z. B. weil ein früherer Lauf es geschrieben hat, bevor der `notify` existierte), meldet der Task `ok`, und der längst laufende Prozess bleibt mit veralteten Werten (z. B. `BASE_URL`) im Speicher, weil er sich nicht selbst neu einliest. Das Target erzwingt den Neustart unabhängig von einem Playbook-Diff und braucht kein Vault-Passwort, da der Ad-hoc-Befehl keine verschlüsselten Variablen referenziert. |
 | Screenshot-Skript nur manuell per SSH, kein Timer/Dienst (kein x11vnc, kein Cron) | Nur für die Sichtprüfung ([30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md), „Sichtprüfung ohne physischen Zugriff“). Läuft als Kiosk-User (gleicher User wie die X-Session auf `:0`), daher kein `XAUTHORITY`-Handling. |
 | Wake-on-LAN-Skript nur manuell per SSH | Der Pi ist per Tailscale erreichbar (Semaphore und n8n haben **keinen** Pfad zu Tailscale-Peers), broadcastet das Magic Packet aber lokal. Das funktioniert nur, wenn Zielgerät und Pi im selben L2-Segment hängen (keine Client-/AP-Isolation im Router oder Repeater). |
-| WoL-HTTP-Agent (`banana-pi-wol-agent.py`) direkt am Pi | Dünner HTTP-Wrapper um `banana-pi-wol.sh`, damit die iOS-App ein Magic Packet ins Standort-LAN auslösen kann. Er spiegelt strukturell `power-agent.py`, ist aber sonst unabhängig: Der power-agent läuft im LAN des Homeservers und wird vom carplay-api-Pod gerufen, dieser hier läuft im reinen Tailscale-Netz des Pi und wird **direkt** von der App gerufen, weil der carplay-api-Pod keine Route zu Tailscale-Peers hat ([40020](../4-planung/40020-vereinsheim-wol-router-vpn.md)). Er kennt keine MACs, Gültigkeit des Ziels und MAC-Lookup bleiben in `banana-pi-wol.sh` / `banana_pi_kiosk_wol_devices`, er reicht nur den Alias weiter. Er lauscht auf `banana_pi_kiosk_wol_agent_bind_address`: Im Standard `0.0.0.0`, für den Alarmmonitor per `host_vars` auf seine Tailscale-Adresse (`ansible_host`), damit das Vereinsheim-LAN den Port nicht erreicht. Steht `ansible_host` auf einer LAN-Adresse (Ersteinrichtung), lauscht der Agent dort statt am Tailnet. Timeouts, Body-Grenze und systemd-Härtung wie beim [power_agent](#power_agent). **TLS** schaltet `banana_pi_kiosk_wol_agent_tls_enabled` ein (Zertifikat und Schlüssel als Vault-Variablen, die Rolle legt sie mit `0600` ab, der Schlüssel mit `no_log`; fehlt eines, bricht ein `assert` ab). Der Agent aktiviert TLS nur, wenn `TLS_CERT` und `TLS_KEY` gesetzt sind, ohne diese Werte läuft er wie vorher mit HTTP, das ist der Rollback-Schalter. Mindestens TLS 1.2. Der Handshake läuft im Handler-Thread mit dem 10-Sekunden-Timeout und nicht im Accept-Loop, sonst könnte ein Client, der nur verbindet und nichts sendet, den ganzen Agent blockieren. Fehlgeschlagene Handshakes (Klartext-Client, Scanner) landen als eine Logzeile im Journal statt als Traceback. Das Zertifikat ist von Hand ausgestellt (365 Tage, Ablauf im Token-Register), weil cert-manager es nicht auf den Pi verteilen kann: [d0040](../d-sicherheit/d0040-internal-tls.md#zertifikat-für-den-wol-agent-auf-dem-vereinsheim-pi). |
+| WoL-HTTP-Agent (`banana-pi-wol-agent.py`) direkt am Pi | Dünner HTTP-Wrapper um `banana-pi-wol.sh`, damit die iOS-App ein Magic Packet ins Standort-LAN auslösen kann. Er spiegelt strukturell `power-agent.py`, ist aber sonst unabhängig: Der power-agent läuft im LAN des Homeservers und wird vom carplay-api-Pod gerufen, dieser hier läuft im reinen Tailscale-Netz des Pi und wird **direkt** von der App gerufen, weil der carplay-api-Pod keine Route zu Tailscale-Peers hat ([40020](../../capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md)). Er kennt keine MACs, Gültigkeit des Ziels und MAC-Lookup bleiben in `banana-pi-wol.sh` / `banana_pi_kiosk_wol_devices`, er reicht nur den Alias weiter. Er lauscht auf `banana_pi_kiosk_wol_agent_bind_address`: Im Standard `0.0.0.0`, für den Alarmmonitor per `host_vars` auf seine Tailscale-Adresse (`ansible_host`), damit das Vereinsheim-LAN den Port nicht erreicht. Steht `ansible_host` auf einer LAN-Adresse (Ersteinrichtung), lauscht der Agent dort statt am Tailnet. Timeouts, Body-Grenze und systemd-Härtung wie beim [power_agent](#power_agent). **TLS** schaltet `banana_pi_kiosk_wol_agent_tls_enabled` ein (Zertifikat und Schlüssel als Vault-Variablen, die Rolle legt sie mit `0600` ab, der Schlüssel mit `no_log`; fehlt eines, bricht ein `assert` ab). Der Agent aktiviert TLS nur, wenn `TLS_CERT` und `TLS_KEY` gesetzt sind, ohne diese Werte läuft er wie vorher mit HTTP, das ist der Rollback-Schalter. Mindestens TLS 1.2. Der Handshake läuft im Handler-Thread mit dem 10-Sekunden-Timeout und nicht im Accept-Loop, sonst könnte ein Client, der nur verbindet und nichts sendet, den ganzen Agent blockieren. Fehlgeschlagene Handshakes (Klartext-Client, Scanner) landen als eine Logzeile im Journal statt als Traceback. Das Zertifikat ist von Hand ausgestellt (365 Tage, Ablauf im Token-Register), weil cert-manager es nicht auf den Pi verteilen kann: [d0040](../../capulus-core/d-sicherheit/d0040-internal-tls.md#zertifikat-für-den-wol-agent-auf-dem-vereinsheim-pi). |
 
 ### xibo_kiosk (Raspberry Pi 3 B+, Bilder-Slideshow)
 
-Kein echter Xibo-Player, denn Xibo unterstützt den Raspberry Pi nicht offiziell ([300e0](../3-apps-workloads/300e0-xibosignage.md)).
+Kein echter Xibo-Player, denn Xibo unterstützt den Raspberry Pi nicht offiziell ([300e0](../../capulus-core/3-apps-workloads/300e0-xibosignage.md)).
 Stattdessen mountet der Pi den NFS-Ordner `xibosignage-display` read-only, ein winziger lokaler Python-Webserver liefert eine
 statische Slideshow-Seite aus, und Chromium zeigt sie im Kiosk-Modus.
 
@@ -141,7 +141,7 @@ Bildschirmhelligkeit (sysfs), manuelles Wake-on-LAN und Poweroff für worker-0/w
 - Der `thermal_watchdog` liest `/sys/class/hwmon` **direkt** (ohne Prometheus/k8s) und fährt den Host herunter, wenn der heißeste
   Sensor `THRESHOLD_C` für `SUSTAIN_SECONDS` erreicht (90 s = Mitte der gewünschten 1–2 Minuten), vorher geht eine ntfy-Meldung raus.
   Er läuft bewusst **unabhängig vom Cluster**, damit der Schutz auch greift, wenn der Cluster wegen der Hitze schon klemmt. Er
-  ergänzt den Alert ab 95 °C über 3 Minuten ([60060](60060-monitoring-und-alerting.md#lautstärke-der-ntfy-meldungen)).
+  ergänzt den Alert ab 95 °C über 3 Minuten ([60060](../../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md#lautstärke-der-ntfy-meldungen)).
 - Die ntfy-Meldung geht per **HTTPS** (`https://ntfy.tech.homeserver/<Topic>`, Port 443) hinaus und wird per `curl --resolve` direkt auf die statische Server-IP aufgelöst, damit sie auch rausgeht, wenn auf dem
   Host kein `*.homeserver`-DNS eingerichtet ist.
 - `DRY_RUN=1` (z. B. `systemctl edit --runtime thermal-watchdog`) testet den kompletten Pfad Erkennung → Meldung, ohne auszuschalten.
@@ -179,7 +179,7 @@ Bildschirmhelligkeit (sysfs), manuelles Wake-on-LAN und Poweroff für worker-0/w
 - **`vmagent_remote_write_queues: 1`**: Der vmagent-Default ist 2× CPU-Kerne (Banana Pi: 8). Im Normalbetrieb sind es nur ~1 KB/s
   (ein `node_exporter`-Scrape alle 30 s). Beim Nachliefern eines Backlogs (Stunden Ausfall) schicken 8 Queues aber gleichzeitig
   Requests, die serverseitig je einen Insert-Slot von VictoriaMetrics halten (Default dort: 2) und so u. a. `vmalert` aussperren.
-  Eine Queue reicht für diese Datenmenge (siehe auch `maxConcurrentInserts` in [60060](60060-monitoring-und-alerting.md)).
+  Eine Queue reicht für diese Datenmenge (siehe auch `maxConcurrentInserts` in [60060](../../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md)).
 - Die Binary kommt aus den GitHub-Releases von VictoriaMetrics, das Asset heißt `vmutils-linux-{arch}-v{version}.tar.gz`.
 - Der Banana Pi M2 Ultra (Allwinner R40, Cortex-A7) ist reines ARMv7/32-Bit (kein aarch64), deshalb `vmagent_arch: arm`, nicht
   `arm64`. Der Installationspfad ist versioniert (`/opt/vmagent-<version>`) statt fix unter `/usr/local/bin`: Ein Versions-Bump legt
@@ -198,14 +198,14 @@ Bildschirmhelligkeit (sysfs), manuelles Wake-on-LAN und Poweroff für worker-0/w
 
 ### journal_upload
 
-- **HTTPS und Port sind Pflicht**, siehe [300j0](../3-apps-workloads/300j0-logging.md). Der TECH-Traefik leitet HTTP per 308 um, und
+- **HTTPS und Port sind Pflicht**, siehe [300j0](../../capulus-core/3-apps-workloads/300j0-logging.md). Der TECH-Traefik leitet HTTP per 308 um, und
   `systemd-journal-upload` folgt keiner Weiterleitung („Upload … failed with code 308“). Mit der früheren `http://`-URL kam von
   **keinem** Host ein Journal an (Vorfall 2026-09-20). Ohne Port hängt `systemd-journal-upload` selbst `:19532/upload` an (Pfad
   `/insert/journald:19532/upload`, den VictoriaLogs nicht kennt), mit `:443` wird nur `/upload` angehängt.
 - Das Server-Zertifikat wird gegen die interne Root-CA geprüft, aber es wird **kein Client-Zertifikat** verwendet. Ohne diese beiden
   Zeilen versucht der Dienst bei HTTPS `/etc/ssl/certs/journal-upload.pem` zu laden und bricht ab („could not load PEM client
   certificate“). Der Hostname muss in der SAN-Liste von `certificate-homeserver-wildcard.yaml` stehen, ein Wildcard-Zertifikat gibt es
-  nicht ([60040](60040-helm-charts-tech.md#zertifikate-und-tls)).
+  nicht ([60040](../../capulus-core/6-hintergruende/60040-helm-charts-tech.md#zertifikate-und-tls)).
 - **Namensauflösung ohne DNS-Abhängigkeit:** worker-0/worker-1 lösen `*.homeserver` nicht auf (kein dnsmasq als Resolver), die
   Pis nur über Tailscale-Split-DNS. Ein fester `/etc/hosts`-Eintrag auf die LAN-IP des Homeservers macht den Upload unabhängig davon.
   Nur abschalten, wenn der Host `*.homeserver` zuverlässig per DNS auflöst. **Der Default `127.0.0.1` stimmt nur auf dem Homeserver und den
@@ -220,7 +220,7 @@ Bildschirmhelligkeit (sysfs), manuelles Wake-on-LAN und Poweroff für worker-0/w
   write entry“ ab, ohne den Cursor zu bewegen. Jede längere Unterbrechung des Log-Endpunkts kann das auslösen. Behoben wird es durch das Setzen
   von `LAST_CURSOR` in `/var/lib/private/systemd/journal-upload/state` auf das Journal-Ende (`journalctl -q -n 1 --show-cursor`), danach
   `systemctl reset-failed` und `restart`; das Alt-Journal bleibt lokal, geht nur der zentralen Ablage verloren. Der Alarm `JournalUploadFailed`
-  ([60060](60060-monitoring-und-alerting.md)) meldet den Zustand nach 15 Minuten.
+  ([60060](../../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md)) meldet den Zustand nach 15 Minuten.
 - **State-Datei (Vorfall 2026-09-24):** Ohne State-Datei beginnt `systemd-journal-upload` am Journal-**Anfang** und schickt das
   komplette Backlog als einen einzigen Request. Auf dem Homeserver (5 GB Journal) brach das jedes Mal mit „Buffer space is too small
   to write entry“ / „operation aborted by callback“ ab, bevor je ein Cursor gespeichert wurde, eine Endlosschleife bis zum
@@ -254,12 +254,12 @@ Bildschirmhelligkeit (sysfs), manuelles Wake-on-LAN und Poweroff für worker-0/w
     Weiterleitung liefen. Das Zertifikat wird gegen die interne Root-CA im System-Vertrauensspeicher geprüft (installiert von der Rolle
     `journal_upload`), und der Hostname steht in der SAN-Liste des Zertifikats.
   - Semaphore hat einen **zweiten Ingress** (`semaphore-api.tech.homeserver`), weil die Rolle die REST-API ohne Browser-Session
-    anspricht ([60040](60040-helm-charts-tech.md)).
+    anspricht ([60040](../../capulus-core/6-hintergruende/60040-helm-charts-tech.md)).
 
 ### wireguard_backup
 
 Kernel-WireGuard über `wg-quick`, unabhängig von Tailscale (Userspace `tailscale0` samt Tailscales Koordinations- und
-DERP-Servern). Er dient nur als Notzugang, falls die Tailscale-Control-Plane ausfällt ([c0011](../c-netzwerk-dns/c0011-wireguard-backup.md)).
+DERP-Servern). Er dient nur als Notzugang, falls die Tailscale-Control-Plane ausfällt ([c0011](../../capulus-core/c-netzwerk-dns/c0011-wireguard-backup.md)).
 
 - Tunnelnetz `/24` mit Platz für weitere vertrauenswürdige Geräte, aber **jeder Peer bekommt seine eigene `/32` in `AllowedIPs`**: Peers
   erreichen einander nicht, nur den Server.
@@ -268,7 +268,7 @@ DERP-Servern). Er dient nur als Notzugang, falls die Tailscale-Control-Plane aus
 - In UFW wird **nur der UDP-Port** freigegeben, es gibt bewusst **keine** `FORWARD`-/NAT-Regeln (`PostUp`/`PostDown` fehlen absichtlich):
   Der Tunnel erreicht nur den Server selbst (SSH, kubectl, ArgoCD), er ist kein LAN-Subnet-Router wie die von Tailscale beworbene
   Route. Das lässt die UFW-Forward-Chain unangetastet, auf die k3s/Flannel angewiesen sind.
-- Warum Port 51888 und nicht 443: [60010](60010-ansible-hosts-und-playbooks.md#zugang-und-notfallzugang).
+- Warum Port 51888 und nicht 443: [60010](../../capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md#zugang-und-notfallzugang).
 
 ---
 
@@ -276,9 +276,9 @@ DERP-Servern). Er dient nur als Notzugang, falls die Tailscale-Control-Plane aus
 
 ### alert_caller
 
-Telefon-Alarm für eine **externe VM** (noch nicht ausgerollt, heute läuft der Caller als Pod, siehe [60040](60040-helm-charts-tech.md#alert-caller)): systemd-Dienst `alert-caller` (Python, nur Standardbibliothek), der Alertmanager-Webhooks in einen Anruf per SIP verwandelt. `caller.py` liegt
+Telefon-Alarm für eine **externe VM** (noch nicht ausgerollt, heute läuft der Caller als Pod, siehe [60040](../../capulus-core/6-hintergruende/60040-helm-charts-tech.md#alert-caller)): systemd-Dienst `alert-caller` (Python, nur Standardbibliothek), der Alertmanager-Webhooks in einen Anruf per SIP verwandelt. `caller.py` liegt
 im Chart `argocd/apps/tech/alert-caller/src/` und wird von der Rolle von dort kopiert (eine Quelle für beide Betriebsarten). Playbook `capulus-ansible/alert-caller.yml`, Inventar-Gruppe `alert_callers`, Make-Targets `alert-caller` und `alert-caller-check`.
-Bedienung, Einrichtung und Testplan: [10020](../1-benachrichtigungen/10020-telefon-alarm.md). Routing und Regeln: [60060](60060-monitoring-und-alerting.md#telefon-alarm).
+Bedienung, Einrichtung und Testplan: [10020](../../capulus-core/1-benachrichtigungen/10020-telefon-alarm.md). Routing und Regeln: [60060](../../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md#telefon-alarm).
 
 - **Playbook und Tailscale:** Die Overrides für Tailscale (`tailscale_hostname`, keine Subnetz-Route) stehen in `host_vars/alert-caller-vm`, **nicht** in `group_vars/alert_callers.yml`. Der `homeserver` kann als Fallback in der Gruppe stehen, und ein
   `tailscale_advertise_routes: ""` auf Gruppenebene würde ihm beim nächsten Lauf die Subnetz-Route nehmen.
@@ -286,7 +286,7 @@ Bedienung, Einrichtung und Testplan: [10020](../1-benachrichtigungen/10020-telef
   `sip.linphone.org` nicht anmelden: Der Flexisip-Server (2.6.1) schickt zwei `WWW-Authenticate`-Header, SHA-256 vor MD5. Die alte `libre` beherrscht nur MD5, verweigert die erste Challenge mit `ENOSYS`, und die Registrierung endet mit
   „Function not implemented“. `re` ab Version 4 kann SHA-256 (geprüft am 2026-10-11 mit v4.12.0: der Server antwortet auf einen erfundenen Benutzer mit `403 Forbidden`). Die Stempeldatei `/opt/baresip/.built-<hash aus Version und Modulliste>` macht den Build
   idempotent, Löschen erzwingt einen Neubau. `CMAKE_INSTALL_RPATH` ist nötig, sonst findet die Binärdatei `libbaresip.so` nur mit `LD_LIBRARY_PATH`. `-DMODULES` baut nur die benötigten Module.
-- **`libre` und `baresip` werden gepatcht** (Listen `alert_caller_libre_patches` und `alert_caller_baresip_patches`, Dateien in `argocd/apps/tech/alert-caller/patches/`): `sips:`-Routen und SRTP-Suitenwechsel (ICE-Patches wurden getestet und wieder entfernt, siehe 60040). Begründungen und Messwerte: [60040](60040-helm-charts-tech.md#alert-caller). Der Hash aller Patches fließt in die Stempeldatei ein, ein geänderter Patch löst einen Neubau aus. Die `git`-Aufgabe nutzt `force: true`, sonst bricht der zweite Lauf an den gepatchten Dateien ab. Die Rollenänderung ist nur syntaxgeprüft und gelintet, nicht neu auf einem Host ausgerollt. Der Caller wartet nach dem Abheben auf den Medienstart (`ICE_TIMEOUT`, `alert_caller_ice_timeout`).
+- **`libre` und `baresip` werden gepatcht** (Listen `alert_caller_libre_patches` und `alert_caller_baresip_patches`, Dateien in `argocd/apps/tech/alert-caller/patches/`): `sips:`-Routen und SRTP-Suitenwechsel (ICE-Patches wurden getestet und wieder entfernt, siehe 60040). Begründungen und Messwerte: [60040](../../capulus-core/6-hintergruende/60040-helm-charts-tech.md#alert-caller). Der Hash aller Patches fließt in die Stempeldatei ein, ein geänderter Patch löst einen Neubau aus. Die `git`-Aufgabe nutzt `force: true`, sonst bricht der zweite Lauf an den gepatchten Dateien ab. Die Rollenänderung ist nur syntaxgeprüft und gelintet, nicht neu auf einem Host ausgerollt. Der Caller wartet nach dem Abheben auf den Medienstart (`ICE_TIMEOUT`, `alert_caller_ice_timeout`).
 - **Modulliste** (`templates/baresip-config.j2`) weicht von der Aufgabe ab, jeweils aus einem Testlauf:
   - `stdio` bleibt drin, aber nur mit einer **Pipe** als stdin. Mit `/dev/null` (Standard unter systemd) scheitert es mit `epoll_ctl: Operation not permitted`. Der Caller startet baresip deshalb mit `stdin=PIPE` und schreibt `/dial …` hinein.
     `-e "/dial …"` taugt nicht: Es wählt sofort beim Start, und vor der Registrierung kann das Medien-Socket keine Adressfamilie bestimmen (`stream: failed to create socket for media 'audio'`, `af=AF_UNSPEC`). Mit IP-Konten ohne Registrierung geht es, mit
@@ -311,11 +311,11 @@ Bedienung, Einrichtung und Testplan: [10020](../1-benachrichtigungen/10020-telef
 - **Watchdog:** Der Startzeitpunkt zählt als letzter Ping, nach einem Neustart des Callers hat der Cluster also 10 min Zeit. Pro Ausfall gibt es genau einen Anruf, ein neuer Watchdog setzt zurück. Der Ping an healthchecks.io wird nur weitergegeben, wenn ein Watchdog
   ankommt: Fällt der Cluster **oder** der Caller aus, bleibt der Ping aus.
 - **Label-Fallback:** `ansage`, `grund`, `summary` und `kontext*` werden auch aus den Labels gelesen. `amtool alert add … summary="…"` legt sie als Labels an, nur `--annotation=` erzeugt Annotationen. So funktioniert der manuelle Test wie dokumentiert.
-- **Statischer Modus für den Pi** (`alert_caller_static_announcement: true`, Gruppe `alert_caller_pi`): Der Caller spielt statt Piper die vorab erzeugte WAV `files/cluster-down.wav` ab (`STATIC_ANNOUNCEMENT`), denn `onnxruntime` und damit Piper gibt es für armv7l nicht. `/alert` antwortet in diesem Modus mit 404, weil jeder Alarm sonst die feste Ansage bekäme. `alert_caller_manage_firewall: false` lässt UFW unberührt (der Pi hat bisher keine UFW-Konfiguration aus Ansible, ein erstmaliges Einschalten wäre ein Risiko für den Kiosk), `alert_caller_build_jobs: 2` schont den Speicher beim Bauen von baresip. `alert_caller_hc_uuid` ist optional. Details und Ausrollen: [10020](../1-benachrichtigungen/10020-telefon-alarm.md#notfall-caller-auf-dem-vereinsheim-pi-ausgerollt-anruf-vom-pi-noch-nicht-getestet).
+- **Statischer Modus für den Pi** (`alert_caller_static_announcement: true`, Gruppe `alert_caller_pi`): Der Caller spielt statt Piper die vorab erzeugte WAV `files/cluster-down.wav` ab (`STATIC_ANNOUNCEMENT`), denn `onnxruntime` und damit Piper gibt es für armv7l nicht. `/alert` antwortet in diesem Modus mit 404, weil jeder Alarm sonst die feste Ansage bekäme. `alert_caller_manage_firewall: false` lässt UFW unberührt (der Pi hat bisher keine UFW-Konfiguration aus Ansible, ein erstmaliges Einschalten wäre ein Risiko für den Kiosk), `alert_caller_build_jobs: 2` schont den Speicher beim Bauen von baresip. `alert_caller_hc_uuid` ist optional. Details und Ausrollen: [10020](../../capulus-core/1-benachrichtigungen/10020-telefon-alarm.md#notfall-caller-auf-dem-vereinsheim-pi-ausgerollt-anruf-vom-pi-noch-nicht-getestet).
 - **Ohne Sprachsynthese:** Schlägt Piper fehl, spielt der Caller einen Warnton (`sox synth`). Ein Anruf ohne Text ist besser als keiner.
 - **Firewall:** Die Rolle setzt UFW (SSH zuerst, dann `default deny incoming`, damit sich niemand aussperrt). Der RTP-Bereich in UFW, in `baresip-config.j2` und in der Oracle-Security-List muss derselbe sein.
 - **Zugriffsschutz auf dem Pi:** `alert_caller_token` (aus `vault_alert_caller_token`, Standard leer) und `alert_caller_auth_mode` (`log` oder `enforce`) landen in `alert-caller.env` (`0600`). Die Rolle bricht ab, wenn der Modus `enforce` ohne Token gesetzt ist. Der Pi bekommt
-  vom Alertmanager nur `/watchdog` und ist der Totmann bei einem Totalausfall des Clusters. Ist der Token im Modus `enforce` falsch, bleibt der Timer unberührt, und der Pi ruft nach `WATCHDOG_TIMEOUT` selbst an (ein lauter Fehler, kein stiller). Einführung und Rotation: [10020](../1-benachrichtigungen/10020-telefon-alarm.md#zugriffsschutz-token).
+  vom Alertmanager nur `/watchdog` und ist der Totmann bei einem Totalausfall des Clusters. Ist der Token im Modus `enforce` falsch, bleibt der Timer unberührt, und der Pi ruft nach `WATCHDOG_TIMEOUT` selbst an (ein lauter Fehler, kein stiller). Einführung und Rotation: [10020](../../capulus-core/1-benachrichtigungen/10020-telefon-alarm.md#zugriffsschutz-token).
 
 ## Sonstiges
 
@@ -367,9 +367,9 @@ Ein Kompromiss der Auslieferung hätte Codeausführung auf den Control-Plane- un
 
 ### common: ArgoCD-NodePort in UFW
 
-ArgoCD hat keinen NodePort mehr (`argocd_server_nodeport_enabled: false`, siehe [60030](60030-argocd-und-bootstrap.md#rolle-argocd)). Die Rolle `common` löscht deshalb die früheren
+ArgoCD hat keinen NodePort mehr (`argocd_server_nodeport_enabled: false`, siehe [60030](../../capulus-core/6-hintergruende/60030-argocd-und-bootstrap.md#rolle-argocd)). Die Rolle `common` löscht deshalb die früheren
 UFW-Freigaben für `30080` (LAN, Tailnet, WireGuard-Notzugang) und `30443`. Die Regeln hatten auch vorher nichts begrenzt, weil NodePort-Verkehr an UFW vorbeiläuft
-([c0030](../c-netzwerk-dns/c0030-port-uebersicht.md)).
+([c0030](../../capulus-core/c-netzwerk-dns/c0030-port-uebersicht.md)).
 
 ### ssh_hardening
 
@@ -394,7 +394,7 @@ UFW-Freigaben für `30080` (LAN, Tailnet, WireGuard-Notzugang) und `30443`. Die 
 ### vaultwarden_restore
 
 Die Rolle stellt `db.sqlite3`, `rsa_key.pem`, Attachments und Sends aus der `vaultwarden-backup`-PVC (nachts vom Backup-CronJob auf
-der NAS gefüllt) auf die `vaultwarden-data`-PVC zurück ([300a0](../3-apps-workloads/300a0-vaultwarden.md), [20010](../2-betrieb-hardware/20010-nas-backup.md)).
+der NAS gefüllt) auf die `vaultwarden-data`-PVC zurück ([300a0](../../capulus-core/3-apps-workloads/300a0-vaultwarden.md), [20010](../../capulus-core/2-betrieb-hardware/20010-nas-backup.md)).
 
 - **Sicherheitsgurt:** Ohne `-e force_restore=true` (Make: `make vaultwarden-restore FORCE_RESTORE=true`) bricht die Rolle sofort
   ab, statt versehentlich einen lebenden Tresor mit dem NAS-Backup zu überschreiben. Das Playbook ist aus demselben Grund **nicht** Teil
@@ -404,4 +404,4 @@ der NAS gefüllt) auf die `vaultwarden-data`-PVC zurück ([300a0](../3-apps-work
 
 ### Konventionen der Linter-Konfiguration
 
-Begründungen zu `.ansible-lint` und `.yamllint` stehen in [600a0](600a0-ci-workflows-und-skripte.md#lint-konfiguration).
+Begründungen zu `.ansible-lint` und `.yamllint` stehen in [600a0](../../capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md#lint-konfiguration).

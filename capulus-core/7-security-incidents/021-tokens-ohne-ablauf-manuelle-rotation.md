@@ -47,7 +47,7 @@ Das Skript meldet fehlende Ablaufdaten und beendet mit Exit-Code `1`, solange si
 
 **Fix.**
 
-- `max_age_days` ist jetzt für jeden der 44 Register-Einträge gesetzt (26 ergänzt): API-Tokens, Passwörter, Zertifikate und Tunnel-Credentials 365 Tage, Auth-Keys 90, Verschlüsselungsschlüssel 30. Die Werte folgen dem Turnus aus `docs/d-sicherheit/d0060-secrets-rotation.md`.
+- `max_age_days` ist jetzt für jeden der 44 Register-Einträge gesetzt (26 ergänzt): API-Tokens, Passwörter, Zertifikate und Tunnel-Credentials 365 Tage, Auth-Keys 90, Verschlüsselungsschlüssel 30. Die Werte folgen dem Turnus aus `capulus-core/d-sicherheit/d0060-secrets-rotation.md`.
 - `scripts/check-token-register.py` lässt die CI jetzt scheitern, wenn `max_age_days` fehlt, wenn `issued` plus `max_age_days` in der Vergangenheit liegt (Rotation überfällig) oder wenn `expires` verstrichen ist. Ist `issued` unbekannt, meldet das Skript die Zahl als Hinweis, scheitert aber nicht.
 - Nicht erfunden: Die Anlegedaten fehlen weiter bei 34 von 44 Einträgen. Ein geratenes Datum würde die Prüfung vortäuschen.
 
@@ -62,7 +62,7 @@ Das Skript meldet fehlende Ablaufdaten und beendet mit Exit-Code `1`, solange si
 **Geänderte Dateien.**
 
 - `ops/token-register.yaml`, `scripts/check-token-register.py`
-- Doku: `docs/d-sicherheit/d0060-secrets-rotation.md`, `docs/f-cicd-automatisierung/f0070-ci-lint.md`, `docs/6-hintergruende/600a0-ci-workflows-und-skripte.md`
+- Doku: `capulus-core/d-sicherheit/d0060-secrets-rotation.md`, `capulus-core/f-cicd-automatisierung/f0070-ci-lint.md`, `capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md`
 
 **Rollback.** `git revert`; die Prüfregeln entfallen, die Fristen bleiben als Felder.
 

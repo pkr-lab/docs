@@ -16,7 +16,7 @@ Doc hält die Hypothese und die Schritte fest, die beim nächsten Zugriff
 ## Ursache (Hypothese)
 
 `homeserver` bezieht PVCs mehrerer Apps per NFS vom NAS (StorageClass `nas`,
-siehe [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — u. a. `n8n`,
+siehe [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — u. a. `n8n`,
 `paperless-ngx`, `wikijs`, `mealie`, `minio`. Standard-NFS-Mounts sind
 **hard mounts**: hängt der NFS-Server (Platte degradiert/Pool im Fehler-
 zustand), blockieren Prozesse, die auf diese Mounts zugreifen, im
@@ -47,7 +47,7 @@ Platte selbst.
 
 1. **NAS zuerst:** UGOS → Speicher-Manager → welche Platte ist rot, SMART-
    Status im Detail. Grafana-Dashboard "Speicher & Laufwerke" prüfen
-   (S.M.A.R.T.-Tabelle, siehe [docs/2-betrieb-hardware/20060-hardware-monitoring.md](../2-betrieb-hardware/20060-hardware-monitoring.md) und [docs/2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards](../2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards))
+   (S.M.A.R.T.-Tabelle, siehe [capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md](../../capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md) und [capulus-core/2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards](../2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards))
    — Health/Temperatur/Power-On-Hours der betroffenen Platte, plus
    Verlauf **vor** dem Ausfallzeitpunkt (Vorwarnung verpasst?).
 2. **homeserver, sobald erreichbar:**
@@ -72,7 +72,7 @@ Platte selbst.
 
 - **Defekte Platte ersetzen**, RAID1-Rebuild starten (UGOS führt durch den
   Austausch-Assistenten). Bis dahin Array **degradiert** — Backup-Lauf
-  (externe USB-Platte, siehe [docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md))
+  (externe USB-Platte, siehe [capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md))
   zeitnah manuell anstoßen/verifizieren, falls der letzte planmäßige Lauf
   vor dem Vorfall lag.
 - Falls Diagnose den NFS-Hang bestätigt: Mount-Optionen für die `nas`-
@@ -89,7 +89,7 @@ Platte selbst.
   so einen Hang blockiert sind (Smart-Plug für Reboot-Option, oder ein
   zweiter, unabhängiger Fernzugriffsweg).
 - **SMART-Alerting**: `smartctl_exporter` liefert die Daten bereits — noch
-  kein Grafana-Alert/Benachrichtigung (siehe [docs/1-benachrichtigungen/](../1-benachrichtigungen/))
+  kein Grafana-Alert/Benachrichtigung (siehe [docs/1-benachrichtigungen/](https://github.com/pkr-lab/capulus-core/tree/main/docs/1-benachrichtigungen))
   auf `smartctl_device_smart_status != 1`, damit eine rote Platte nicht
   erst beim Totalausfall auffällt.
 - **Tailscale-Alerting**: Benachrichtigung, wenn ein Node offline geht,

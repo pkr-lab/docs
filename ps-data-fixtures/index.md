@@ -1,48 +1,37 @@
-# IT-Ausbildung SharePoint
+# ps-data-fixtures
 
-Dies ist der zentrale SharePoint-Bereich für die IT-Ausbildung mit 3 Jahrgängen.
+Testdaten für PowerShell-Skripte: eine künstliche Ordner- und Dateistruktur im Stil eines SharePoint-Bereichs für die IT-Ausbildung mit drei Jahrgängen (FI23, FI24, FI25), fünf Fachbereichen und rund 750 Beispieldateien (PDF und DOCX). Sie dient dazu, Skripte wie [DocFlowEngine](../DocFlowEngine/index.md) ohne echte Daten auszuprobieren.
 
-## Struktur
-- **Ausbildungsjahr_1**: Anfänger
-- **Ausbildungsjahr_2**: Fortgeschrittene
-- **Ausbildungsjahr_3**: Abschlussjahr
+Repository: [pkr-lab/ps-data-fixtures](https://github.com/pkr-lab/ps-data-fixtures)
 
-Pro Jahrgang: ~40 Schüler/innen verteilt auf 5 Fachbereiche
+## Überblick
 
-## Fachbereiche Übersicht
-1. **AWIS** - Anwendungsentwicklung mit Webtechnologien, iOS, Server
-2. **FIAE** - Fachinformatiker/in Anwendungsentwicklung
-3. **FISI** - Fachinformatiker/in Systemintegration
-4. **FIDP** - Fachinformatiker/in Digitale Prozesse
-5. **MASE** - Mathematik und Softwareentwicklung
+```
+IT-Ausbildung/
+├── FI23/, FI24/, FI25/            # Jahrgänge, je mit Austauschordner/<Fachbereich>/<Vorname_Nachname_HEXCODE>/
+├── Gemeinschaftliche_Ressourcen/
+├── Lehrplan/                      # Lehrpläne und Kompetenzmatrix
+├── Ressourcen/, Vorlagen/, Verwaltung/
+└── Tooling/                       # Skripts/, Templates/, Checklists/ (leer, mit .gitkeep)
+```
 
-## Navigation
-Jeder Schüler/jede Schülerin hat einen eigenen Ordner mit der Namenstruktur:
-`Vorname_Nachname_HEXCODE`
+| Fachbereich | Bedeutung |
+|---|---|
+| AWIS | Anwendungsentwicklung mit Webtechnologien, iOS, Server |
+| FIAE | Fachinformatiker/in Anwendungsentwicklung |
+| FISI | Fachinformatiker/in Systemintegration |
+| FIDP | Fachinformatiker/in Digitale Prozesse |
+| MASE | Mathematik und Softwareentwicklung |
 
-## Dateinamenskonvention
+Die Namen der Lernenden sind überwiegend erfunden. Jeder hat einen eigenen Ordner `Vorname_Nachname_HEXCODE` mit Dateien nach der [Namenskonvention](namenskonvention.md), z. B. `PKE_Java_ArrayList_001.pdf`.
 
-Format: `[Kürzel]_[Präfix]_[Suffix]_[Nummer].[Format]`
+Die Ordner `FI23`, `FI24`, `FI25`, `Gemeinschaftliche_Ressourcen`, `Lehrplan` und `Tooling` enthalten eine eigene `README.md`; sie gehören zu den Testdaten und bleiben im Repo.
 
-- **Kürzel**: Schülerkürzel (1. Buchstabe Vorname + 1. Buchstabe Nachname + 3. Buchstabe Nachname)
-- **Präfix**: Themenbereich
-- **Suffix**: Spezifisches Konzept oder Thema
-- **Nummer**: Laufende Nummer (001, 002, 003, ...)
-- **Dateiformat**: .pdf oder .docx
+## Seiten
 
-**Beispiel Kürzel:**
-- Peter Kretzer → PKE (P, K, E von Kretzer)
-- Xenia Bauer → XBu (X, B, u von Bauer)
-- Liam Koch → LKc (L, K, c von Koch)
-
-### Verfügbare Präfixe und Suffixe
-
-| Präfix | Suffixe |
-|--------|---------|
-| **Java** | ArrayList, HashMap, Collections, Streams, Lambda, Threads, JPA, Generics, Exceptions, Reflection |
-| **Python** | List, Dict, Tuple, Classes, Decorators, Modules, Generators, Context_Manager, Comprehensions, AsyncIO |
-| **Datenbanken** | Query, Index, Trigger, View, Normalisierung, Constraints, Joins, Transactions, Backup, Replikation |
-| **Netzwerktechnik** | TCP, UDP, DNS, DHCP, Firewall, VPN, Routing, SMTP, HTTP, SSL_TLS |
-| **Zahlensysteme** | Binär, Hexadezimal, Oktal, Konvertierung, Bitoperationen, Overflow, Kodierung, Komplement, BCD, Floating_Point |
-| **PowerShell** | Cmdlets, Loops, Functions, ErrorHandling, Modules, Registry, WMI, Remoting, JSON, Pipeline |
-
+- [Installation](installation.md)
+- [Konfiguration](konfiguration.md)
+- [Nutzung](nutzung.md)
+- [Verzeichnisindex](verzeichnisindex.md)
+- [Namenskonvention](namenskonvention.md)
+- [Releases](releases.md)

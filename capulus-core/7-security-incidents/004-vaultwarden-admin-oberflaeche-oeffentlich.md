@@ -99,7 +99,7 @@ Die Client-Pfade (`/identity`, `/api`, `/notifications/hub`) antworten auf dem Ã
 - `argocd/apps/tech/vaultwarden/templates/middleware-admin.yaml` (neu)
 - `argocd/apps/tech/vaultwarden/templates/ingress-admin.yaml` (neu)
 - `argocd/apps/tech/vaultwarden/values.yaml` (Block `adminRestriction`)
-- `docs/3-apps-workloads/300a0-vaultwarden.md`, `docs/6-hintergruende/60040-helm-charts-tech.md`
+- `capulus-core/3-apps-workloads/300a0-vaultwarden.md`, `capulus-core/6-hintergruende/60040-helm-charts-tech.md`
 
 **Rollback.** In `argocd/apps/tech/vaultwarden/values.yaml` `adminRestriction.enabled: false`, mergen, ArgoCD entfernt Ingress und Middleware. Der Tresor-Zugriff der Clients ist davon nicht betroffen.
 

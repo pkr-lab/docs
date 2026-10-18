@@ -22,10 +22,10 @@ Ein neu aufgebauter PROD-Cluster ist für ArgoCD ein **fremder Cluster**: neue C
 
 | Baustein | Aufgabe | Relevanz für den Vorfall |
 |---|---|---|
-| **TECH-Cluster** (`homeserver`, 192.168.178.94) | k3s + ArgoCD-Hub, verwaltet TECH **und** PROD | Der Hub kennt PROD nur über das Secret `cluster-prod` (ServiceAccount-Token + CA), das von Hand angelegt wird ([bootstrap-prod/README](../../argocd/bootstrap-prod/README.md)) |
+| **TECH-Cluster** (`homeserver`, 192.168.178.94) | k3s + ArgoCD-Hub, verwaltet TECH **und** PROD | Der Hub kennt PROD nur über das Secret `cluster-prod` (ServiceAccount-Token + CA), das von Hand angelegt wird ([bootstrap-prod/README](../komponenten/bootstrap-prod.md)) |
 | **PROD-Cluster** (`prod-vm`) | Eigener k3s-Server in einer KVM-VM auf dem homeserver, 6 vCPU / 24 GiB / 100 GiB | Wurde neu aufgebaut |
 | **ENTW-Cluster** (`entw-vm`) | Gleicher Aufbau auf `worker-1` | Nutzt dieselbe Rolle, vermutlich derselbe Fehler |
-| **Semaphore** | Führt Ansible aus dem Repo aus. Zeitplan „Daily 06:00" für `site.yml`, dazu nächtlich die Worker-Templates ([20030](../2-betrieb-hardware/20030-nightly-worker-update.md)) | Auslöser der Image-Ersetzung |
+| **Semaphore** | Führt Ansible aus dem Repo aus. Zeitplan „Daily 06:00" für `site.yml`, dazu nächtlich die Worker-Templates ([20030](../../capulus-ansible/2-betrieb-hardware/20030-nightly-worker-update.md)) | Auslöser der Image-Ersetzung |
 | **`libvirt_host`-Rolle** | Legt VMs an (Disk, cloud-init, `virt-install`). Steht als **letzte** Rolle in `site.yml`, läuft also jeden Tag mit | Ort des Fehlers |
 | **NAS** (UGREEN, 192.168.178.97) | NFS für die StorageClasses `nas` und `immich-nas`, `reclaimPolicy: Retain` ([20000](../2-betrieb-hardware/20000-nas-storage.md)) | Hat die Nutzerdaten gerettet |
 | **Sealed Secrets** | Secrets verschlüsselt im Git, nur der Controller des jeweiligen Clusters kann sie entschlüsseln | Der PROD-Controller hatte einen eigenen Schlüssel, den nur die alte Disk kannte |
@@ -165,7 +165,7 @@ Der Erreichbarkeits-Sweep über alle Hosts zeigte für PROD durchgängig TLS-Feh
 
 ### 1. Cluster im Hub registrieren
 
-Auf der prod-vm ServiceAccount, `cluster-admin`-Binding und Token-Secret neu anlegen (Block aus [bootstrap-prod/README](../../argocd/bootstrap-prod/README.md)), dann im Hub das Secret `cluster-prod` ersetzen. Token und CA gehen dabei **direkt von der prod-vm ins Secret**, nicht per Copy-and-paste.
+Auf der prod-vm ServiceAccount, `cluster-admin`-Binding und Token-Secret neu anlegen (Block aus [bootstrap-prod/README](../komponenten/bootstrap-prod.md)), dann im Hub das Secret `cluster-prod` ersetzen. Token und CA gehen dabei **direkt von der prod-vm ins Secret**, nicht per Copy-and-paste.
 
 Stolperfallen dabei:
 

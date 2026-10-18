@@ -102,7 +102,7 @@ Probleme gleichzeitig:
   laufen ganz normal über die Fritz!Box.
 
 **Setup**: einmaliger Admin-Console-Schritt, beschrieben in
-[docs/b-kubernetes-gitops/b0030-semaphore.md → Zugriff über Tailscale](../b-kubernetes-gitops/b0030-semaphore.md#zugriff-über-tailscale-einmaliger-admin-schritt).
+[capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md → Zugriff über Tailscale](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md#zugriff-über-tailscale-einmaliger-admin-schritt).
 
 **Verfügbarkeit**: macOS, Windows, Linux, iOS, Android — überall wo
 Tailscale läuft, was praktisch jedes moderne Gerät ist.
@@ -232,7 +232,7 @@ Tailscale zeigte "last seen" mehrere Tage alt, und ein Ansible-Lauf
 schlug bei `Download Tailscale GPG signing key` mit
 `Temporary failure in name resolution` fehl. Root Cause war **kein**
 Netzwerk-/NIC-Problem (siehe
-[20020-cluster-power-manager.md → Nachtrag 2026-09-02](../2-betrieb-hardware/20020-cluster-power-manager.md)
+[20020-cluster-power-manager.md → Nachtrag 2026-09-02](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)
 für den vorherigen, unabhängigen Vorfall), sondern eine **UFW-Firewall-
 Regression**: die aktive nftables-Regelmenge hatte die Standardregel
 `-A ufw-before-input -i lo -j ACCEPT` verloren (`/etc/ufw/before.rules`

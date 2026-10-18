@@ -1,6 +1,6 @@
 # Cluster-NetworkPolicies (Security-Härtung Phase 3)
 
-Detail-Doku zu Phase 3 aus [docs/d-sicherheit/d0010-security-hardening-roadmap.md](d0010-security-hardening-roadmap.md):
+Detail-Doku zu Phase 3 aus [capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md](d0010-security-hardening-roadmap.md):
 grobe Default-Deny-NetworkPolicy je `security-tier`, damit ein
 kompromittierter Pod (z. B. n8n) nicht mehr uneingeschränkt auf
 Postgres/Redis/Services in fremden Namespaces zugreifen kann.
@@ -78,7 +78,7 @@ unsichtbar.
 ## Incident: neue App (authelia) lässt `make argocd` an fehlendem Namespace scheitern
 
 **Was passiert ist:** Beim Hinzufügen von `authelia` (21.08.2026,
-[docs/4-planung/40000-authelia-sso.md](../4-planung/40000-authelia-sso.md))
+[capulus-core/4-planung/40000-authelia-sso.md](../4-planung/40000-authelia-sso.md))
 zu `argocd_platform_apps` schlug der Task „Apply tier-default-ingress
 NetworkPolicies" fehl: `namespaces "authelia" not found`. Ursache: der
 ArgoCD-Sync, der den `authelia`-Namespace anlegt, kann hinter diesem
@@ -123,13 +123,13 @@ den generalisierten `argocd_network_policy_extra_ingress`-Mechanismus.
 
 ## Vorfund beim Start dieser Phase
 
-Bevor die Policies gebaut wurden, zwei Abweichungen vom in docs/d-sicherheit/d0010-security-hardening-roadmap.md
+Bevor die Policies gebaut wurden, zwei Abweichungen vom in capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md
 angenommenen Zustand aufgefallen (Stand 13.08.2026):
 
 1. **Die `security-tier`-Labels aus Phase 2 fehlten komplett** auf allen
    Namespaces (`kubectl get ns -L security-tier` zeigte nichts) — vermutlich
    durch den ApplicationSet-Incident verloren gegangen
-   ([docs/d-sicherheit/d0000-incident-2026-08-12.md](d0000-incident-2026-08-12.md)): Namespaces wurden neu angelegt,
+   ([capulus-core/d-sicherheit/d0000-incident-2026-08-12.md](d0000-incident-2026-08-12.md)): Namespaces wurden neu angelegt,
    das Label wird aber nur vom Ansible-`argocd`-Role-Lauf gesetzt, nicht von
    ArgoCD selbst nachgezogen. Ein erneuter `make argocd`-Lauf setzt sie
    wieder (idempotenter Task, bereits vorhanden).
@@ -163,7 +163,7 @@ Egress-Policies zusätzlich einzuführen hätte ein deutlich höheres Risiko
 (DNS zu `kube-system`, Internet-Zugriff für n8n/cloudflared/Renovate,
 OIDC-Callbacks, NAS/NFS ist Host-Level und unbetroffen) für **keinen**
 zusätzlichen Sicherheitsgewinn in diesem groben ersten Schritt — deshalb
-bewusst nicht Teil dieser Iteration. Das ist auch, warum der in docs/d-sicherheit/d0010-security-hardening-roadmap.md
+bewusst nicht Teil dieser Iteration. Das ist auch, warum der in capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md
 genannte "klassische Fehler: fehlender DNS-Allow" hier strukturell nicht
 auftreten kann: DNS-Auflösung ist ein Egress-Vorgang (Pod fragt CoreDNS),
 und Egress bleibt vollständig unangetastet.
@@ -230,7 +230,7 @@ ssh ubuntu@192.168.178.94 "sudo cp /var/lib/rancher/k3s/server/db/state.db /var/
 ```
 
 Zusätzlich prüfen, dass der letzte nächtliche NAS/PVC-restic-Backup
-([docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)) erfolgreich war (UGOS Task Scheduler → letzter
+([capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)) erfolgreich war (UGOS Task Scheduler → letzter
 Lauf).
 
 **2. Leftover-Namespaces löschen** (siehe [Vorfund](#vorfund-beim-start-dieser-phase)
@@ -250,7 +250,7 @@ kubectl get ns -L security-tier   # Kontrolle: alle 36 App-Namespaces müssen je
 ```
 
 **4. Pilot auf zwei unkritischen Namespaces**, statt direkt alle 36 auf
-einmal (Empfehlung aus docs/d-sicherheit/d0010-security-hardening-roadmap.md, hier einen Schritt früher angewendet als
+einmal (Empfehlung aus capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md, hier einen Schritt früher angewendet als
 dort für Phase-3-Schritt-2 vorgesehen, aus Vorsicht):
 
 ```bash
@@ -289,7 +289,7 @@ kubectl delete networkpolicy tier-default-ingress -n example-whoami -n tinytelle
 ```bash
 # make argocd reicht keine Extra-Vars durch, deshalb direkt ansible-playbook
 # aufrufen (Inventory/Playbook-Pfade wie im Makefile-Target `argocd`):
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --tags argocd \
+ansible-playbook -i inventory/hosts.yml site.yml --tags argocd \
   --ask-vault-pass -e argocd_apply_network_policies=true
 ```
 
@@ -348,7 +348,7 @@ Namespace für Namespace migrieren, ohne die anderen 34 anzufassen —
 `kubectl apply` ist idempotent, ein Re-Run des `argocd`-Roles ändert nur
 die Policy-Objekte, deren Inhalt sich tatsächlich geändert hat.
 
-**Reihenfolge** (aus docs/d-sicherheit/d0010-security-hardening-roadmap.md): unkritische Apps zuerst, dann Apps mit
+**Reihenfolge** (aus capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md): unkritische Apps zuerst, dann Apps mit
 eigener DB, zuletzt Plattform-Namespaces.
 
 **Batch 1 (13.08.2026, verifiziert):** `example-whoami`, `tinyteller` —
@@ -440,7 +440,7 @@ Plattform-Namespaces als letzter Batch.
 **Batch 4 (13.08.2026): alle 19 Plattform-Namespaces — letzter Batch.**
 Damit sind **alle 36 App-Namespaces verfeinert**, Schritt 2 ist komplett.
 `coredns-custom`/`traefik-config` haben keine eigenen Pods (deployen nach
-`kube-system`, siehe docs/b-kubernetes-gitops/b0020-argocd-projects.md) — Policy dort ist ein wirkungsloses No-Op,
+`kube-system`, siehe capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md) — Policy dort ist ein wirkungsloses No-Op,
 der Vollständigkeit halber trotzdem gesetzt.
 
 Gefundene Platform-zu-Platform-Abhängigkeiten (alle bislang durch

@@ -67,7 +67,7 @@ Niedrig.
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/cloudflared/values.yaml`, `templates/configmap.yaml`, `argocd/apps/prod/cloudflared/values.yaml`, `templates/configmap.yaml`
-- Doku: `docs/6-hintergruende/60040-helm-charts-tech.md`, `docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md`, `docs/c-netzwerk-dns/c0040-domain-tiers.md`
+- Doku: `capulus-core/6-hintergruende/60040-helm-charts-tech.md`, `capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md`, `capulus-core/c-netzwerk-dns/c0040-domain-tiers.md`
 
 **Rollback.** In beiden `values.yaml` `originRequest` auf `noTLSVerify: true` zurücksetzen (`git revert`), ArgoCD rollt die ConfigMap aus, die Pods starten durch die Checksum-Annotation neu.
 

@@ -5,7 +5,7 @@ Mail-Logik wurde die Zustellung — wie bei den bestehenden n8n→Zammad-
 Workflows in diesem Repo — über ein Zammad-Ticket gelöst (Zammads eigene
 Agenten-Benachrichtigung verschickt dann die Mail, kein eigener
 E-Mail-Node nötig). Umsetzung, Setup-Anleitung und Fehlerbehebung:
-[docs/3-apps-workloads/300h0-alamos-einsatz-zammad.md](../3-apps-workloads/300h0-alamos-einsatz-zammad.md),
+[capulus-core/3-apps-workloads/300h0-alamos-einsatz-zammad.md](../3-apps-workloads/300h0-alamos-einsatz-zammad.md),
 Workflow: `argocd/apps/tech/n8n/workflows/alamos-einsatz-to-zammad.json`.
 Weil die exakten Webhook-Feldnamen (siehe unten) ohne Alamos-Login nicht zu
 ermitteln waren, gibt der Workflow bewusst **alle** empfangenen Felder aus,
@@ -27,12 +27,12 @@ Ursprüngliches Ziel: Kommt über ALAMOS AMweb ein echter Einsatz (Alarm)
 rein, sollen die wichtigsten Einsatzdaten automatisch zugestellt werden —
 zusätzlich zur bestehenden Anzeige auf den Kiosk-Monitoren
 ([30010-alamos-apager.md](../3-apps-workloads/30010-alamos-apager.md),
-[30020-vereinsheim-alarmmonitor.md](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md)).
+[30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)).
 
 Dieses Dokument ist der **erste Schritt**: klären, welche Einsatzdaten sich
 über den Alarmmonitor überhaupt abgreifen lassen, bevor Architektur/Umsetzung
 festgelegt werden. Es gibt bereits eine Vorrecherche dazu in
-`IdeasToDeploy.md` (Abschnitt "Einsatzbereich") — dieses Dokument fasst sie
+`capulus-core/4-planung/IdeasToDeploy.md` (Abschnitt "Einsatzbereich") — dieses Dokument fasst sie
 zusammen, ergänzt sie um öffentlich zugängliche ALAMOS-Handbuch-Treffer und
 zeigt auf, was davon nur mit eingeloggtem Alamos-Account zu klären ist.
 
@@ -72,7 +72,7 @@ mit Alamos-Login in die Webhook-Konfiguration schauen.
   (`alamos-support.atlassian.net/wiki/...`) abgerufen. Mehrere davon sind
   nur als Übersicht/Inhaltsverzeichnis öffentlich sichtbar, die technischen
   Details (genaue Platzhalter, Beispiel-Payloads) liegen hinter dem
-  Alamos-Login — deckt sich mit dem, was in `IdeasToDeploy.md` schon notiert
+  Alamos-Login — deckt sich mit dem, was in `capulus-core/4-planung/IdeasToDeploy.md` schon notiert
   war ("Details liegen hinter dem Alamos-Login").
 
 ## Schnittstellen-Übersicht
@@ -175,7 +175,7 @@ beantworten, sondern nur direkt in eurem Alamos-Account:
    den Empfänger-Endpunkt.
 4. **Ob es einen eingebauten Alarmton/eine eingebaute Mail-Funktion in AMweb
    selbst gibt**, die das Problem ggf. schon teilweise löst (aus
-   `IdeasToDeploy.md` übernommen, dort als offene Prüfung notiert).
+   `capulus-core/4-planung/IdeasToDeploy.md` übernommen, dort als offene Prüfung notiert).
 5. **Ob/wie sich die `alarmId` für die Rückmeldungen-API aus einem normalen
    Leitstellen-Alarm gewinnen lässt** (kommt sie im Webhook-Payload mit,
    oder gilt die Feedback-API nur für Alarme, die selbst über die

@@ -60,7 +60,7 @@ Niedrig.
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/argo-workflows/values.yaml`
-- Doku: `docs/6-hintergruende/60040-helm-charts-tech.md`
+- Doku: `capulus-core/6-hintergruende/60040-helm-charts-tech.md`
 
 **Rollback.** `git revert`; ArgoCD legt die Bindings wieder an (ohne ClusterRoles, wie vorher).
 

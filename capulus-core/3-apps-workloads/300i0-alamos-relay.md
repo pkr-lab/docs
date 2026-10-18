@@ -1,6 +1,6 @@
 # ALAMOS-Webhook-Relay (öffentlicher Proxy vor n8n)
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/alamos-relay/` · URL `https://alamos-relay-prod.pke-lab.de` (extern), `alamos-relay.prod.homeserver` (intern). `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/alamos-relay/` · URL `https://alamos-relay-prod.pke-lab.de` (extern), `alamos-relay.prod.homeserver` (intern). `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Kleiner, einzweckiger Proxy: nimmt den ALAMOS-Einsatzalarm-Webhook
 öffentlich unter einem geheimen Pfad entgegen und reicht ihn
@@ -39,7 +39,7 @@ ALAMOS AMweb (Cloud, Browser-Tab ODER Alamos-Server)
    ▼
 https://alamos-relay-prod.pke-lab.de/relay/<TOKEN>
    │  Cloudflare Tunnel (Wildcard-Regel *.pke-lab.de → Traefik,
-   │  siehe docs/c-netzwerk-dns/c0040-domain-tiers.md)
+   │  siehe capulus-core/c-netzwerk-dns/c0040-domain-tiers.md)
    ▼
 Pod im eigenen Namespace "alamos-relay"
    │  - Pfad muss exakt "/relay/<TOKEN>" sein (hmac.compare_digest,
@@ -74,7 +74,7 @@ selbst im Worst Case.
 
 Liegt unter `argocd/apps/tech/alamos-relay/`, wird wie jede andere App
 automatisch von ArgoCD erkannt und ausgerollt (siehe
-[docs/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) — keine manuelle
+[capulus-core/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) — keine manuelle
 Registrierung im ArgoCD-Sinn nötig. **Aber:** die NetworkPolicy-Verfeinerung
 (Egress-Deny + n8n-Ausnahme) läuft über Ansible, nicht über den Chart
 selbst — siehe [Rollout](#rollout-nach-dem-ersten-push) unten.
@@ -122,7 +122,7 @@ Relay nur noch 404 (siehe [Fehlerbehebung](#fehlerbehebung)).
    Egress-NetworkPolicies).
 2. **Zusätzlich nötig, weil neue Namespaces/Cross-Namespace-Ausnahmen nicht
    rein über ArgoCD laufen** (siehe
-   [docs/d-sicherheit/d0030-network-policies.md](../d-sicherheit/d0030-network-policies.md)):
+   [capulus-core/d-sicherheit/d0030-network-policies.md](../d-sicherheit/d0030-network-policies.md)):
    ```bash
    make argocd
    ```
@@ -171,8 +171,8 @@ Relay nur noch 404 (siehe [Fehlerbehebung](#fehlerbehebung)).
 
 ## Relevante Links
 
-- [docs/3-apps-workloads/300h0-alamos-einsatz-zammad.md](300h0-alamos-einsatz-zammad.md) — n8n-Workflow, der das Relay als Ziel bekommt
-- [docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md) — gleicher Tech-Stack-Ansatz (Python-Stdlib-HTTP-Server)
-- [docs/d-sicherheit/d0030-network-policies.md](../d-sicherheit/d0030-network-policies.md) — Cluster-NetworkPolicy-Modell, das dieser Chart mit eigenen Egress-Regeln ergänzt
-- [docs/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md) — Namenskonvention `<app>-<tier>.pke-lab.de`
-- [docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md) — wie der externe Host überhaupt erreichbar wird
+- [capulus-core/3-apps-workloads/300h0-alamos-einsatz-zammad.md](300h0-alamos-einsatz-zammad.md) — n8n-Workflow, der das Relay als Ziel bekommt
+- [capulus-core/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md) — gleicher Tech-Stack-Ansatz (Python-Stdlib-HTTP-Server)
+- [capulus-core/d-sicherheit/d0030-network-policies.md](../d-sicherheit/d0030-network-policies.md) — Cluster-NetworkPolicy-Modell, das dieser Chart mit eigenen Egress-Regeln ergänzt
+- [capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md) — Namenskonvention `<app>-<tier>.pke-lab.de`
+- [capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md) — wie der externe Host überhaupt erreichbar wird

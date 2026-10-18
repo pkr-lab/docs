@@ -1,13 +1,13 @@
 # CI — Pflicht-Gate für jeden PR
 
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) prüft jeden
+[`.github/workflows/ci.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/ci.yml) prüft jeden
 Pull Request gegen `main` (und jeden Push auf `main` selbst), bevor eine
 Änderung beim ArgoCD-Sync gegen den Live-Cluster landet. Die sechs Jobs sind
 die **Pflicht-Checks** des Rulesets [„main: PR + CI“](f0090-branch-schutz-main.md):
 ein PR lässt sich erst mergen, wenn alle grün sind.
 
 Angelegt im Rahmen von
-[docs/4-planung/40080-multi-cluster-entw-prod-tech.md](../4-planung/40080-multi-cluster-entw-prod-tech.md),
+[capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md](../4-planung/40080-multi-cluster-entw-prod-tech.md),
 Baustein 6. Vorher existierte `make lint` nur lokal, und ein kaputtes Manifest
 fiel erst beim Sync auf, nicht im PR.
 
@@ -24,8 +24,8 @@ Branch `entw` auf, bevor ein PR nach `main` entsteht.
 | `make lint (yamllint, ansible-lint, helm lint)` | YAML-Syntax (`ansible/`, `argocd/`), Ansible-Best-Practices, `helm lint` je Chart | ruft schlicht `make lint` auf — dieselbe Prüfung wie lokal |
 | `helm template \| kubeconform` | rendert jeden Chart und validiert die entstandenen Ressourcen gegen echte API-Schemas; prüft zusätzlich **reine Manifest-Ordner** (ohne `Chart.yaml`) und `argocd/bootstrap*` | [kubeconform](https://github.com/yannh/kubeconform) mit CRD-Katalog |
 | `go build, vet, test, tidy` | jedes Go-Modul im Repo: `go mod tidy -diff`, `go build`, `go vet`, `go test` | Go (`stable`); Module per `git ls-files` gefunden |
-| `docs links` | relative Links und Überschriften-Anker in allen `*.md` (Slug-Regeln wie auf GitHub); externe URLs werden nicht abgerufen | [`scripts/check-doc-links.py`](../../scripts/check-doc-links.py) |
-| `token register` | Pflichtfelder, Datumsformat und `max_age_days` in [`ops/token-register.yaml`](../../ops/token-register.yaml), überfällige Rotation (`issued` plus `max_age_days` in der Vergangenheit), abgelaufene `expires`, und dass jede `SealedSecret`-Datei im Repo dort auftaucht | [`scripts/check-token-register.py`](../../scripts/check-token-register.py), siehe [40090](../4-planung/40090-standby-cluster-ha-paar.md#token-management) |
+| `docs links` | relative Links und Überschriften-Anker in allen `*.md` (Slug-Regeln wie auf GitHub); externe URLs werden nicht abgerufen | [`scripts/check-doc-links.py`](https://github.com/pkr-lab/capulus-core/blob/main/scripts/check-doc-links.py) |
+| `token register` | Pflichtfelder, Datumsformat und `max_age_days` in [`ops/token-register.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml), überfällige Rotation (`issued` plus `max_age_days` in der Vergangenheit), abgelaufene `expires`, und dass jede `SealedSecret`-Datei im Repo dort auftaucht | [`scripts/check-token-register.py`](https://github.com/pkr-lab/capulus-core/blob/main/scripts/check-token-register.py), siehe [40090](../4-planung/40090-standby-cluster-ha-paar.md#token-management) |
 | `gitleaks` | Plaintext-Secrets in PRs, bevor sie versiegelt werden | [gitleaks](https://github.com/gitleaks/gitleaks), Konfiguration siehe unten |
 
 ### Warum der CRD-Katalog
@@ -84,13 +84,13 @@ Lokal: `python3 scripts/check-doc-links.py`.
 
 ### gitleaks-Konfiguration
 
-- [`.gitleaks.toml`](../../.gitleaks.toml) erweitert die Standardregeln um **eine Ausnahme**: den Chiffretext von
+- [`.gitleaks.toml`](https://github.com/pkr-lab/capulus-core/blob/main/.gitleaks.toml) erweitert die Standardregeln um **eine Ausnahme**: den Chiffretext von
   SealedSecrets (Base64, beginnt mit `Ag`, mindestens 200 Zeichen). Ohne sie meldete die Regel `generic-api-key` den
   verschlüsselten Wert von Feldern namens `token:` als Klartext-Token (der Lauf nach Commit `433afb3` wurde rot,
   und mit Pflicht-Checks hätte jeder PR mit einem neuen SealedSecret hier gehangen). Die Ausnahme hängt am **Wert**,
   nicht am Dateipfad: ein versehentlich im Klartext eingetragenes Token in einer `sealedsecret*.yaml` wird weiter
   gemeldet (getestet).
-- [`.gitleaksignore`](../../.gitleaksignore) führt **7 Altfunde in der Git-Historie** auf. Ohne die Liste scheitert
+- [`.gitleaksignore`](https://github.com/pkr-lab/capulus-core/blob/main/.gitleaksignore) führt **7 Altfunde in der Git-Historie** auf. Ohne die Liste scheitert
   jeder Lauf, der die ganze Historie scannt (Cron/`workflow_call` der [ENTW-Promotion](f0080-entw-promotion.md)),
   dauerhaft. Fünf sind harmlos (Platzhalter in alten Doku-Beispielen, eine öffentliche UUID im pacman-Manifest).
   **Zwei sind echte Altlasten und gelten als kompromittiert**, weil das Repo öffentlich ist: ein OpenSSH-Private-Key
@@ -122,14 +122,14 @@ Lokal: `python3 scripts/check-doc-links.py`.
 
 ## Image-Scan der laufenden Images (lokal, nicht in der CI)
 
-Die CI prüft keine Container-Images auf Schwachstellen. Dafür gibt es [`scripts/scan-cluster-images.sh`](../../scripts/scan-cluster-images.sh): Es liest alle Images aller Pods per `kubectl` und scannt sie mit Trivy (lokal installiert oder per Docker `aquasec/trivy`), nur behebbare Funde (`--ignore-unfixed`) mit Schwere `HIGH` und `CRITICAL` (`SEVERITY=CRITICAL ./scripts/scan-cluster-images.sh` ändert das).
+Die CI prüft keine Container-Images auf Schwachstellen. Dafür gibt es [`scripts/scan-cluster-images.sh`](https://github.com/pkr-lab/capulus-core/blob/main/scripts/scan-cluster-images.sh): Es liest alle Images aller Pods per `kubectl` und scannt sie mit Trivy (lokal installiert oder per Docker `aquasec/trivy`), nur behebbare Funde (`--ignore-unfixed`) mit Schwere `HIGH` und `CRITICAL` (`SEVERITY=CRITICAL ./scripts/scan-cluster-images.sh` ändert das).
 
 ```bash
 ./scripts/scan-cluster-images.sh --summary                              # eine Zeile je Image: CRITICAL und HIGH
 ./scripts/scan-cluster-images.sh louislam/uptime-kuma:2.5.6              # Details für ein Image
 ```
 
-Die erste Fassung der Tabelle steht im Incident-Audit. Ein voller Lauf braucht je Image rund eine Minute (Datenbank und Image-Layer werden geladen), deshalb eher wöchentlich von Hand als pro PR. Die meisten Funde stecken in den Basis-Paketen der Upstream-Images (das neueste Release von uptime-kuma oder Semaphore trägt sie ebenfalls), nicht in veralteten Tags; Abhilfe ist ein Image-Wechsel oder warten auf ein Rebuild des Herstellers. Zusätzlich läuft wöchentlich (montags 05:30 UTC) und auf Abruf der Workflow [`image-scan.yml`](../../.github/workflows/image-scan.yml): `./scripts/scan-cluster-images.sh --charts --summary` liest die Images aus `helm template` aller Charts (ohne Cluster-Zugriff), scannt sie mit Trivy im Container (`aquasec/trivy:0.76.0`) und schreibt die Tabelle in die Job-Zusammenfassung. Der Job **blockiert nichts** (kein Pflicht-Check, keine Fehlerschwelle), er zeigt nur, wo sich Funde ansammeln. Die geladenen Trivy-Datenbanken werden nicht gecacht, ein Lauf dauert deshalb lang (Timeout 90 Minuten).
+Die erste Fassung der Tabelle steht im Incident-Audit. Ein voller Lauf braucht je Image rund eine Minute (Datenbank und Image-Layer werden geladen), deshalb eher wöchentlich von Hand als pro PR. Die meisten Funde stecken in den Basis-Paketen der Upstream-Images (das neueste Release von uptime-kuma oder Semaphore trägt sie ebenfalls), nicht in veralteten Tags; Abhilfe ist ein Image-Wechsel oder warten auf ein Rebuild des Herstellers. Zusätzlich läuft wöchentlich (montags 05:30 UTC) und auf Abruf der Workflow [`image-scan.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/image-scan.yml): `./scripts/scan-cluster-images.sh --charts --summary` liest die Images aus `helm template` aller Charts (ohne Cluster-Zugriff), scannt sie mit Trivy im Container (`aquasec/trivy:0.76.0`) und schreibt die Tabelle in die Job-Zusammenfassung. Der Job **blockiert nichts** (kein Pflicht-Check, keine Fehlerschwelle), er zeigt nur, wo sich Funde ansammeln. Die geladenen Trivy-Datenbanken werden nicht gecacht, ein Lauf dauert deshalb lang (Timeout 90 Minuten).
 
 ## Unterschiede zwischen lokal und CI
 

@@ -2,7 +2,7 @@
 
 Eigenständiger Dienst, der News inkl. Bildern im DLRG-ISC (`https://dlrg.net`, App „News“) anlegt. Er steuert einen headless Chromium über Playwright. n8n ist nur Auftraggeber: n8n ruft den Dienst per HTTP auf, im n8n-Pod läuft kein Browser. Die Kategorien liefert n8n mit.
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/isc-news-bot/` · kein Ingress, nur cluster-intern unter `http://isc-news-bot.isc-news-bot.svc.cluster.local:8080`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/isc-news-bot/` · kein Ingress, nur cluster-intern unter `http://isc-news-bot.isc-news-bot.svc.cluster.local:8080`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 ---
 
@@ -165,7 +165,7 @@ Liest die Urkunden der Gliederung über die Aktion `ladeUrkundenListe` der Urkun
 | `disallowResizeImage` | `input#disallowResizeImage` | |
 | `firstAssetOnlyTeaser` | `input#firstAssetOnlyTeaser` | |
 
-Alle Selektoren und URLs stehen zentral in [`src/isc/selectors.ts`](../../argocd/apps/tech/isc-news-bot/src/isc/selectors.ts).
+Alle Selektoren und URLs stehen zentral in [`src/isc/selectors.ts`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/isc-news-bot/src/isc/selectors.ts).
 
 ---
 
@@ -227,7 +227,7 @@ Im Secret `isc-news-bot-secrets` stehen drei Schlüssel: `ISC_USERNAME`, `ISC_PA
    Dasselbe mit `ISC_PASSWORD` und einem frisch erzeugten Token (`openssl rand -hex 32`) für `API_TOKEN`. Jeder Befehl gibt einen Base64-Text aus.
 3. **Ausgaben eintragen.** In `argocd/apps/tech/isc-news-bot/values.yaml` unter `secrets.encryptedData` die drei Werte ersetzen, committen und pushen.
 4. **Token für n8n.** Denselben `API_TOKEN` als Header-Auth-Credential in n8n hinterlegen ([Workflow einrichten](#n8n-workflow-einrichten)).
-5. **Register pflegen.** Die beiden Einträge `isc-news-bot-isc-login` und `isc-news-bot-api-token` in [`ops/token-register.yaml`](../../ops/token-register.yaml) führen Rotationsdatum und Verantwortliche. `scripts/check-token-register.py` prüft das im CI.
+5. **Register pflegen.** Die beiden Einträge `isc-news-bot-isc-login` und `isc-news-bot-api-token` in [`ops/token-register.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml) führen Rotationsdatum und Verantwortliche. `scripts/check-token-register.py` prüft das im CI.
 
 Rotation: Schritte 2 bis 4 wiederholen. Für `API_TOKEN` zuerst die neue Credential in n8n anlegen, dann rollen, damit nichts ausfällt.
 
@@ -235,7 +235,7 @@ Rotation: Schritte 2 bis 4 wiederholen. Für `API_TOKEN` zuerst die neue Credent
 
 ## Deployment und Promotion
 
-- **Deploy:** ArgoCD erkennt `argocd/apps/tech/isc-news-bot/` über den ApplicationSet `home-server-apps-tech` automatisch (Namespace `isc-news-bot`, AppProject `tech`). Die Registrierung steht in `capulus-ansible/roles/argocd/defaults/main.yml` (`argocd_workloads_apps`, `argocd_network_policy_refined_namespaces`). `projects.yaml` wird mit `make render-bootstrap` erzeugt.
+- **Deploy:** ArgoCD erkennt `argocd/apps/tech/isc-news-bot/` über den ApplicationSet `home-server-apps-tech` automatisch (Namespace `isc-news-bot`, AppProject `tech`). Die Registrierung steht in `capulus-ansible/roles/argocd/defaults/main.yml` (`argocd_workloads_apps`, `argocd_network_policy_refined_namespaces`). `projects.yaml` wird mit `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>` erzeugt.
 - **Netzwerk-Stufe:** `make argocd` setzt das `security-tier`-Label und die Tier-Policy nach dem ersten Sync. Erst danach greift die Stufe vollständig.
 - **Image:** `build-images.yml` baut bei Änderungen an Dockerfile, `src/`, `test/`, `scripts/` oder den Paketdateien nach `ghcr.io/pkr-lab/isc-news-bot`. Anschließend öffnet der Workflow einen `image.tag`-PR, der den Rollout auslöst. Neue GHCR-Pakete sind zunächst privat, bei `ImagePullBackOff` die Sichtbarkeit prüfen.
 - **Promotion:** keine. Der Dienst gibt es nur in TECH, nicht in ENTW oder PROD. Ein Testlauf in ENTW würde mit echten Zugangsdaten gegen das echte ISC laufen. Testläufe laufen in TECH mit `dryRun`.
@@ -253,7 +253,7 @@ curl -s http://127.0.0.1:8080/readyz
 
 ## n8n-Workflow einrichten
 
-Der fertige Workflow liegt unter [`argocd/apps/tech/n8n/workflows/isc-news-veroeffentlichen.json`](../../argocd/apps/tech/n8n/workflows/isc-news-veroeffentlichen.json). Die Schritte nach dem Import stehen auch als Notiz im Workflow.
+Der fertige Workflow liegt unter [`argocd/apps/tech/n8n/workflows/isc-news-veroeffentlichen.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/isc-news-veroeffentlichen.json). Die Schritte nach dem Import stehen auch als Notiz im Workflow.
 
 **Eingang per E-Mail (Hauptweg):** Der Node **E-Mail empfangen** (IMAP) liest den Ordner **`ISC-News`** und holt ungelesene Mails mit dem Betreff `HOMEPAGE1002011` vom Absender `peter.kretzer@dlrg.org`. Danach werden sie als gelesen markiert. Mails von anderen Absendern lösen keinen Lauf aus.
 

@@ -15,7 +15,7 @@ mergen, wenn die CI-Jobs grün sind.
 | Regel | Wirkung |
 |---|---|
 | Pull Request | Kein Direkt-Push auf `main`. Kein Pflicht-Review (`0` Freigaben), du arbeitest allein — die Sicherheit kommt aus den Checks. |
-| Pflicht-Checks | `make lint (yamllint, ansible-lint, helm lint)`, `helm template \| kubeconform`, `go build, vet, test, tidy`, `docs links`, `token register`, `gitleaks` — die sechs Jobs aus [`ci.yml`](../../.github/workflows/ci.yml) |
+| Pflicht-Checks | `make lint (yamllint, ansible-lint, helm lint)`, `helm template \| kubeconform`, `go build, vet, test, tidy`, `docs links`, `token register`, `gitleaks` — die sechs Jobs aus [`ci.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/ci.yml) |
 | Kein Force-Push, kein Löschen | `main` ist nicht überschreibbar |
 | „Up to date“ nicht verlangt | `strict_required_status_checks_policy: false` — sonst müsste jeder PR nach jedem anderen Merge neu gebaut werden |
 

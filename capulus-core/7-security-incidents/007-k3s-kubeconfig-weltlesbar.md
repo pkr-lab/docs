@@ -84,7 +84,7 @@ Health-Check danach: ArgoCD-Apps `Synced`/`Healthy` bis auf `logging` und `ollam
 **Geänderte Dateien.**
 
 - `capulus-ansible/roles/k3s/templates/k3s-config.yaml.j2` (`write-kubeconfig-mode: "0600"`)
-- `docs/6-hintergruende/60020-ansible-rollen.md` (Abschnitt „k3s: Modus der Kubeconfig“)
+- `capulus-ansible/6-hintergruende/60020-ansible-rollen.md` (Abschnitt „k3s: Modus der Kubeconfig“)
 - Auf den Hosts: `/etc/rancher/k3s/config.yaml` (Zeile 3) und Modus von `/etc/rancher/k3s/k3s.yaml`
 
 **Backups auf den Hosts.** Die Kopien der Kubeconfig (`k3s.yaml.bak-20261017-151*`, Modus `0600`, mit dem cluster-admin-Zertifikat) wurden am 2026-10-17 auf Wunsch des Betreibers gelöscht. Die Kopien von `config.yaml` (`config.yaml.bak-20261017-151*`, ohne Zugangsdaten) liegen noch neben der Datei.

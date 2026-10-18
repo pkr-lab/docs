@@ -14,7 +14,7 @@ Warteschlangen per **IPP** (Windows/Linux/macOS) und
 **AirPrint/IPP-Everywhere via Avahi/mDNS** (iOS, Android, macOS) im
 gesamten Heimnetz frei — inklusive Tailnet, dank der bereits bestehenden
 Tailscale-Subnet-Route auf `local_subnet` (siehe
-[../c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md#subnet-routing)).
+[../c-netzwerk-dns/c0010-tailscale.md](../../capulus-core/c-netzwerk-dns/c0010-tailscale.md#subnet-routing)).
 
 ---
 
@@ -296,7 +296,7 @@ stattdessen `lpoptions -p Samsung_M2026 | grep shared` bzw. erneut
 **Drucken funktioniert im LAN, aber nicht über Tailscale unterwegs:**
 Subnet-Route (`local_subnet`) im
 [Tailscale-Admin-Panel](https://login.tailscale.com/admin/machines)
-approved? Siehe [../c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md#subnet-routing).
+approved? Siehe [../c-netzwerk-dns/c0010-tailscale.md](../../capulus-core/c-netzwerk-dns/c0010-tailscale.md#subnet-routing).
 
 **Verschlüsselter Druck (`ipps://`, z.B. via AirPrint/`cups-browsed`) schlägt
 mit `"Unable to encrypt connection: A TLS fatal alert has been received."`
@@ -389,7 +389,7 @@ M2026-Abschnitt oben (Warteschlangenname `Samsung_ML-1630` statt
 
 ## Relevante Links
 
-- [Tailscale-Referenz (Subnet-Routing)](../c-netzwerk-dns/c0010-tailscale.md)
+- [Tailscale-Referenz (Subnet-Routing)](../../capulus-core/c-netzwerk-dns/c0010-tailscale.md)
 - [capulus-ansible/roles/cups_print_server](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cups_print_server)
 - [OpenPrinting/splix (offizielles Upstream-Repo)](https://github.com/OpenPrinting/splix)
 - [gitlab.com/ScumCoder/splix, Branch `patches` (QPDL-Treiber-Quelle)](https://gitlab.com/ScumCoder/splix/-/tree/patches)

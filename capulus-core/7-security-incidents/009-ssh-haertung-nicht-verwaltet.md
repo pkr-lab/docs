@@ -130,13 +130,13 @@ Kiosk-Pis (später am selben Tag, jeweils mit Backup und Rollback-Timer):
 
 Danach: Cluster, ArgoCD und die öffentlichen Hosts unverändert, `sshd -T` zeigt auf allen Hosts die neuen Werte, im SSH-Journal 0 Fehlerzeilen.
 
-**Zwischenfall bei der Umsetzung.** Zum Test des Dienstwegs habe ich den Schlüssel des `cluster-power-manager` vom homeserver zu den Workern aufgerufen. Er ist per `command=` fest auf `sudo poweroff` gesetzt, ein Testbefehl wird ignoriert. Worker-0 und worker-1 wurden dadurch um etwa 15:51 UTC heruntergefahren und liefen nach rund 30 Sekunden von selbst wieder an (wer sie geweckt hat, ist nicht geklärt, `cluster-power-manager` hat dazu nichts protokolliert). Die ENTW-VM auf worker-1 war kurz weg und lief danach wieder, auf den Workern liefen keine Workloads. Die Härtung, UFW und `k3s-agent` waren nach dem Neustart unverändert. Die Warnung steht in `docs/2-betrieb-hardware/20020-cluster-power-manager.md`, ich hatte sie vor dem Test nicht gelesen. Der Dienstweg wurde danach nur noch über das Journal belegt.
+**Zwischenfall bei der Umsetzung.** Zum Test des Dienstwegs habe ich den Schlüssel des `cluster-power-manager` vom homeserver zu den Workern aufgerufen. Er ist per `command=` fest auf `sudo poweroff` gesetzt, ein Testbefehl wird ignoriert. Worker-0 und worker-1 wurden dadurch um etwa 15:51 UTC heruntergefahren und liefen nach rund 30 Sekunden von selbst wieder an (wer sie geweckt hat, ist nicht geklärt, `cluster-power-manager` hat dazu nichts protokolliert). Die ENTW-VM auf worker-1 war kurz weg und lief danach wieder, auf den Workern liefen keine Workloads. Die Härtung, UFW und `k3s-agent` waren nach dem Neustart unverändert. Die Warnung steht in `capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md`, ich hatte sie vor dem Test nicht gelesen. Der Dienstweg wurde danach nur noch über das Journal belegt.
 
 **Geänderte Dateien.**
 
 - `capulus-ansible/roles/ssh_hardening/` (neu: `defaults/main.yml`, `tasks/main.yml`, `templates/00-hardening.conf.j2`)
 - `capulus-ansible/site.yml`, `prod.yml`, `entw.yml`, `worker-0.yml`, `worker-1.yml`, `Makefile`
-- Doku: `docs/6-hintergruende/60020-ansible-rollen.md` (Abschnitt `ssh_hardening`), `docs/a-betriebssystem/a0020-prerequisites.md`
+- Doku: `capulus-ansible/6-hintergruende/60020-ansible-rollen.md` (Abschnitt `ssh_hardening`), `capulus-ansible/a-betriebssystem/a0020-prerequisites.md`
 
 **Rollback.** Je Host `sudo rm /etc/ssh/sshd_config.d/00-hardening.conf && sudo systemctl reload ssh`. Bei Lockout: Konsole bzw. eine zweite offene Sitzung. Im Repo die Rolle aus den Playbooks nehmen. Die Sicherungskopien von `/etc/ssh` (`/root/ssh-backup-20261017-*`, sieben Stück) wurden nach der Bestätigung gelöscht, sie enthielten auch die privaten Host-Schlüssel.
 

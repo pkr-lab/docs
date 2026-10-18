@@ -28,7 +28,7 @@ Namespace `logging`.
 ## Anlass
 
 Bei einem Einsatzalarm am Vereinsheim-Alarmmonitor
-([docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](30020-vereinsheim-alarmmonitor.md))
+([capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md))
 wurde nachträglich versucht, per `journalctl` auf dem Pi zu rekonstruieren,
 was zum Zeitpunkt des Alarms lief. Ergebnis: **das lokale journald reicht
 nur ~3,5 Tage zurück** (täglicher Reboot + 20 MB Journal-Limit), der
@@ -73,7 +73,7 @@ k3s-Node (homeserver, worker-0, worker-1)
 ## Cluster-Komponente: Helm Chart `logging`
 
 Liegt unter `argocd/apps/tech/logging/`, automatisch von ArgoCD erkannt
-(siehe [docs/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)).
+(siehe [capulus-core/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)).
 
 | Datei | Zweck |
 |---|---|
@@ -107,7 +107,7 @@ Promtail/Grafana Alloy/Vector:**
   Assets war vor der Migration zu Grafana Alloy).
 - **Grafana Alloy** baut kein ARMv7 (nur `arm64`/`amd64`/`ppc64le`/`s390x`)
   — der Banana Pi M2 Ultra
-  ([docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](30020-vereinsheim-alarmmonitor.md))
+  ([capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md))
   ist reines ARMv7/32-Bit, faellt also raus.
 - **`systemd-journal-upload`** ist Teil von systemd selbst, kommt direkt
   aus den Debian/Ubuntu/Armbian-Paketquellen (kein Architektur-Problem,
@@ -119,7 +119,7 @@ Promtail/Grafana Alloy/Vector:**
 | Key | Bedeutung |
 |---|---|
 | `journal_upload_enabled` | Kill-switch, Default `true` |
-| `journal_upload_push_url` | Ziel-URL, Default `https://logs-write.tech.homeserver:443/insert/journald` (HTTPS **und** Port sind Pflicht, siehe unten) — bewusst ein **globaler** Default für alle Hosts (anders als `vmagent_remote_write_url`, das nur für Tailscale-only-Hosts gilt, siehe [capulus-ansible/roles/vmagent](30020-vereinsheim-alarmmonitor.md)) |
+| `journal_upload_push_url` | Ziel-URL, Default `https://logs-write.tech.homeserver:443/insert/journald` (HTTPS **und** Port sind Pflicht, siehe unten) — bewusst ein **globaler** Default für alle Hosts (anders als `vmagent_remote_write_url`, das nur für Tailscale-only-Hosts gilt, siehe [capulus-ansible/roles/vmagent](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)) |
 
 Die Rolle installiert nur das Paket, templated `/etc/systemd/journal-upload.conf`
 (`[Upload]\nURL=...`) und aktiviert `systemd-journal-upload.service` — kein
@@ -182,8 +182,8 @@ vorher bot.
 | `journalctl -u systemd-journal-upload`: `failed with code 308: Permanent Redirect` | Die Upload-URL steht noch auf `http://` — Rolle neu ausrollen (`journal_upload_push_url` ist `https://`). |
 | `journalctl -u systemd-journal-upload`: Zertifikatsfehler / `SSL certificate problem` | (a) steht `logs-write.tech.homeserver` in der SAN-Liste des ausgelieferten Zertifikats (Befehl siehe Abschnitt Rolle)? Sonst `certificate-homeserver-wildcard.yaml` prüfen und ArgoCD syncen. (b) liegt `/usr/local/share/ca-certificates/homeserver-root-ca.crt` auf dem Host und zeigt `TrustedCertificateFile=` in `/etc/systemd/journal-upload.conf` darauf? |
 | Worker: `Could not resolve host: logs-write.tech.homeserver` | `/etc/hosts`-Eintrag fehlt — Rolle ausrollen (`journal_upload_hosts_entry_enabled: true`). Die Worker lösen `*.homeserver` nicht per DNS auf. |
-| Ausrollen auf einzelne Hosts | Homeserver: `ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --limit homeserver --tags journal-upload`; Pi: `ansible-playbook … capulus-ansible/banana-pi-kiosks.yml --tags journal-upload`; worker: `… worker-1.yml --tags journal-upload` (jeweils mit `--vault-password-file`). |
-| `logs-write.tech.homeserver` löst nicht auf / Timeout | Gleiche Checks wie bei `alamos-apager.prod.homeserver` (Wildcard-DNS, bei Tailscale-only-Hosts zusätzlich Split-DNS + Subnetz-Route), siehe [docs/3-apps-workloads/30010-alamos-apager.md, Fehlerbehebung](30010-alamos-apager.md#fehlerbehebung) |
+| Ausrollen auf einzelne Hosts | Homeserver: `ansible-playbook -i inventory/hosts.yml site.yml --limit homeserver --tags journal-upload`; Pi: `ansible-playbook … banana-pi-kiosks.yml --tags journal-upload`; worker: `… worker-1.yml --tags journal-upload` (jeweils mit `--vault-password-file`). |
+| `logs-write.tech.homeserver` löst nicht auf / Timeout | Gleiche Checks wie bei `alamos-apager.prod.homeserver` (Wildcard-DNS, bei Tailscale-only-Hosts zusätzlich Split-DNS + Subnetz-Route), siehe [capulus-core/3-apps-workloads/30010-alamos-apager.md, Fehlerbehebung](30010-alamos-apager.md#fehlerbehebung) |
 | Dienst läuft, aber keine neuen Logs seit Neustart | `/var/lib/systemd/journal-upload/state` prüfen (Cursor) — bei sehr altem Cursor kann ein initialer Nachtrag laenger dauern, bis aktuelle Zeilen erscheinen |
 | `journalctl -u systemd-journal-upload`: `Buffer space is too small to write entry` + `operation aborted by callback`, Dienst im Restart-Loop bis `Start request repeated too quickly`, **keine** State-Datei unter `/var/lib/private/systemd/journal-upload/` | Ohne State startet der Uploader am Journal-**Anfang** und schickt das ganze Alt-Journal (homeserver: ~5 GB) als einen Request — bricht ab, bevor je ein Cursor gespeichert wird (Vorfall 2026-09-24). Rolle ausrollen: sie setzt bei fehlender State-Datei den Startpunkt auf das Journal-Ende (`--tags journal-upload`). Manuell: Datei mit `LAST_CURSOR=<Ausgabe von journalctl -q -n 1 --show-cursor>` anlegen, **Besitzer = Besitzer des State-Verzeichnisses** (sonst `Failed to read state file: Permission denied`), dann `systemctl reset-failed systemd-journal-upload && systemctl start systemd-journal-upload`. |
 | Collector-Pod auf einem Node im `CrashLoopBackOff`, Log `exec /vlagent-prod: exec format error` | Auf dem Node ist die Image-Schicht defekt: Die Datei `vlagent-prod` hat in der Snapshot-Schicht von containerd die Größe 0 (Ursache vermutlich ein unsauberes Herunterfahren, auf worker-0 seit rund 32 Tagen mit über 790 Neustarts). `crictl rmi` allein hilft nicht, containerd nutzt die bereits entpackte Schicht weiter, solange ein Pod sie referenziert oder das Image sofort neu gezogen wird. Ablauf (2026-10-18 auf worker-0): `kubectl taint node <node> maint=logging:NoSchedule`, Collector-Pod auf dem Node löschen, auf dem Node `sudo crictl rm` für übrig gebliebene vlagent-Container und `sudo crictl rmi <image-id>`, warten bis `find /var/lib/rancher/k3s/agent/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots -name vlagent-prod` nichts mehr findet, dann `kubectl taint node <node> maint=logging:NoSchedule-`. Der Pod zieht das Image neu. Vergleich mit einem gesunden Node: `sudo sh -c 'find …/snapshots -name vlagent-prod -exec ls -l {} \\;'` zeigt dort rund 19 MB. |
@@ -192,7 +192,7 @@ vorher bot.
 
 ## Relevante Links
 
-- [docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](30020-vereinsheim-alarmmonitor.md) — Vorfall, der diese Rolle ausgelöst hat
-- [docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md) — analoges Netzwerkgrenzen-Muster (`vm-write`/`alamos-apager`: kein Auth, Schutz per LAN/Tailscale)
+- [capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md) — Vorfall, der diese Rolle ausgelöst hat
+- [capulus-core/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md) — analoges Netzwerkgrenzen-Muster (`vm-write`/`alamos-apager`: kein Auth, Schutz per LAN/Tailscale)
 - [VictoriaLogs — Journald Setup](https://docs.victoriametrics.com/victorialogs/data-ingestion/journald/)
 - [VictoriaLogs — Quick Start](https://docs.victoriametrics.com/victorialogs/quickstart/)

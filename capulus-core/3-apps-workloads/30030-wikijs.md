@@ -1,6 +1,6 @@
 # Wiki.js
 
-> **Cluster:** PROD · Ordner `argocd/apps/prod/wikijs/` und `argocd/apps/prod/wiki-docs-sync/` · URL `https://wiki.prod.homeserver` und `https://wiki-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** PROD · Ordner `argocd/apps/prod/wikijs/` und `argocd/apps/prod/wiki-docs-sync/` · URL `https://wiki.prod.homeserver` und `https://wiki-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Wiki.js ist ein Open-Source-Wiki/Knowledge-Base-System mit Markdown-Editor,
 eingebauten Benutzergruppen und pfadbasierten Zugriffsregeln (Page Rules).
@@ -22,7 +22,7 @@ Wiki.js speichert **sämtliche** Inhalte — Seiten, Versionshistorie und
 hochgeladene Assets (Bilder, PDFs, etc.) — direkt in PostgreSQL. Der
 Wiki.js-Pod selbst ist zustandslos und braucht kein eigenes PVC; nur
 PostgreSQL benötigt Persistenz. PostgreSQL läuft mit `storageClassName: nas`
-(siehe [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — keine NodeAffinity
+(siehe [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — keine NodeAffinity
 mehr nötig, damit liegen alle Wiki-Daten auf dem NAS statt auf der
 Homeserver-System-SSD.
 
@@ -42,7 +42,7 @@ Homeserver-System-SSD.
 - **`nas-storage`-App ist deployt** (`argocd/apps/tech/nas-storage/`) und die
   StorageClass `nas` existiert: `kubectl get storageclass nas`
 - **NAS ist online und der NFS-Export erreichbar** (siehe
-  [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — sonst bleibt die
+  [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — sonst bleibt die
   PostgreSQL-PVC auf `Pending`
 - `kubeseal` CLI ist lokal installiert
 - `kubectl` ist mit dem Cluster verbunden
@@ -105,12 +105,12 @@ Erwartete Reihenfolge:
 
 > Falls `wikijs-postgresql-*` dauerhaft `Pending` bleibt: das NAS ist
 > offline oder die `nas`-StorageClass fehlt — siehe
-> [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
+> [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
 
 **DNS:** Wiki.js läuft im **PROD**-Cluster, deshalb steht `wiki.prod.homeserver` in
 `dnsmasq_prod_vm_hosts` (`capulus-ansible/group_vars/all.yml`) und zeigt auf die PROD-VM (`.99`); die
 allgemeine Wildcard `address=/homeserver/<server-ip>` würde auf TECH zeigen (siehe
-[docs/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge)).
+[capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge)).
 
 ---
 
@@ -177,7 +177,7 @@ Hier zusätzlich zu beachten: `PGDATA` zeigt schon auf `pgdata_fixed` (nicht
 Trick anwenden, nur mit einem weiteren neuen Unterordner:
 
 1. **Dump** (zusätzlich zum nächtlichen restic-Backup, siehe
-   [docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)):
+   [capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)):
    ```bash
    kubectl -n wikijs exec deploy/wikijs-postgresql -- \
      pg_dump -U wikijs -Fc wiki > wikijs-pg16-$(date +%F).dump
@@ -234,7 +234,7 @@ kubectl describe pvc -n wikijs wikijs-postgresql-data
 kubectl -n nas-storage get pods
 ```
 
-Details: [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
+Details: [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
 
 ---
 

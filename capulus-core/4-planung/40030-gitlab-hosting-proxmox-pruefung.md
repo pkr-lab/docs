@@ -5,12 +5,12 @@
 > geworden. Umgesetzt wurde die gestaffelte Variante **ohne Proxmox**: KVM/libvirt-VMs für PROD (auf dem
 > homeserver) und ENTW (auf worker-1), siehe
 > [40080](40080-multi-cluster-entw-prod-tech.md) und
-> [a0010](../a-betriebssystem/a0010-overview.md#1-drei-cluster-im-überblick). Die RAM-/CPU-Zahlen und die
+> [a0010](../../capulus-ansible/a-betriebssystem/a0010-overview.md#1-drei-cluster-im-überblick). Die RAM-/CPU-Zahlen und die
 > GitLab-Bewertung unten sind der Stand vom Erstellungszeitpunkt.
 
 Zwei unabhängige Fragen, gemeinsam geprüft, weil beide auf dieselbe knappe
 Ressource zielen (RAM/CPU auf `homeserver`, 32 GB, siehe
-[docs/a-betriebssystem/a0000-ubuntu-server-install.md](../a-betriebssystem/a0000-ubuntu-server-install.md)):
+[capulus-ansible/a-betriebssystem/a0000-ubuntu-server-install.md](../../capulus-ansible/a-betriebssystem/a0000-ubuntu-server-install.md)):
 
 1. Kann/soll GitLab auf dem Homeserver deployt werden, oder frisst es zu
    viele Ressourcen?
@@ -80,12 +80,12 @@ Gitaly), unabhängig davon, ob gerade jemand pusht oder nicht.
 `homeserver` hat 32 GB RAM insgesamt, und der Cluster ist bereits eng
 bemessen — siehe die Immich-OOM-Erfahrung, die erst zur Einführung von
 HPAs geführt hat
-([docs/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md)).
+([capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md)).
 8 GB dauerhaft für GitLab sind ein Viertel dieses Budgets — spürbar
 größer als jede andere App aus `docs/3-apps-workloads/`. Es ist kein
 Show-Stopper (die worker-0/1-Kapazität via WoL kann bei Bedarf
 dazugeschaltet werden, siehe
-[docs/2-betrieb-hardware/20020-cluster-power-manager.md](../2-betrieb-hardware/20020-cluster-power-manager.md)),
+[capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)),
 aber es verdrängt real anderen Workload, wenn GitLab auf `homeserver`
 selbst läuft (das dauerhaft-an-Node, siehe Teil 2.1).
 
@@ -96,7 +96,7 @@ selbst läuft (das dauerhaft-an-Node, siehe Teil 2.1).
 - **Vollständige DevOps-Plattform als Lehrobjekt** (CI/CD-Pipelines,
   Container-Registry, Security-Scanning zum Anfassen) — analog zur
   Pacman-Doppelrolle aus
-  [docs/3-apps-workloads/300f0-pacman-visitor-tracking.md](../3-apps-workloads/300f0-pacman-visitor-tracking.md)
+  [capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md](../3-apps-workloads/300f0-pacman-visitor-tracking.md)
   (öffentlicher Betrieb **und** Unterrichtsobjekt): GitLab CE ist hier
   didaktisch reichhaltiger, weil es Pipelines/Registry/Runner-Konzepte in
   einem Tool zeigt statt verteilt über GitHub + Forgejo-Actions. Kostet
@@ -106,7 +106,7 @@ selbst läuft (das dauerhaft-an-Node, siehe Teil 2.1).
   deckt das mit einem Bruchteil des Ressourcenbedarfs ab.
 - **Ersatz für github.com:** nicht empfohlen — GitHub Actions,
   Renovate-Integration
-  ([renovate.json](../../renovate.json)), PR-Review-Tooling sind bereits etabliert; ein
+  ([renovate.json](https://github.com/pkr-lab/capulus-core/blob/main/renovate.json)), PR-Review-Tooling sind bereits etabliert; ein
   Wechsel wäre ein Reset ohne erkennbaren Vorteil für ein
   Ein-Personen-/Kleinteam-Repo.
 
@@ -140,12 +140,12 @@ oder 8 GB dauerhaft reserviert werden.
 `homeserver`, `worker-0`, `worker-1` sind **drei physische Maschinen**,
 bare metal, ohne Hypervisor — Ubuntu Server 26.04 LTS direkt auf der
 Hardware, k3s direkt darauf (siehe
-[docs/b-kubernetes-gitops/b0000-k3s.md](../b-kubernetes-gitops/b0000-k3s.md)). Das ist eine bewusste
+[capulus-core/b-kubernetes-gitops/b0000-k3s.md](../b-kubernetes-gitops/b0000-k3s.md)). Das ist eine bewusste
 Architekturentscheidung: "ein Ansible-Lauf, keine offenen Ports"
-([docs/a-betriebssystem/a0010-overview.md](../a-betriebssystem/a0010-overview.md)).
+([capulus-ansible/a-betriebssystem/a0010-overview.md](../../capulus-ansible/a-betriebssystem/a0010-overview.md)).
 
 Zentral für die Bewertung: `cluster-power-manager`
-([docs/2-betrieb-hardware/20020-cluster-power-manager.md](../2-betrieb-hardware/20020-cluster-power-manager.md))
+([capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md))
 schaltet worker-0/1 per **Wake-on-LAN** (Magic Packet) an und per SSH
 `poweroff` wieder aus, abhängig von der Last auf `homeserver`. Das
 funktioniert, weil es echte, einzeln stromsparende Maschinen sind — eine
@@ -162,7 +162,7 @@ Proxmox-API-Zugriff mit größerer Rechte-Oberfläche).
   (auch mit Ballooning nur bedingt elastisch), während k8s-Pods RAM
   **dynamisch** untereinander teilen. Auf 32 GB, die schon mit
   Control-Plane + Apps eng sind (siehe die Immich-OOM-Erfahrung in
-  [docs/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md)),
+  [capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md)),
   ist das ein Rückschritt, kein Gewinn — erst recht, falls zusätzlich
   noch GitLab (8 GB, siehe Teil 1.3) dazukommt.
 - **Kein aktueller Bedarf für "mehrere Cluster".** Es gibt genau einen
@@ -172,7 +172,7 @@ Proxmox-API-Zugriff mit größerer Rechte-Oberfläche).
   in Teil 1.4). Diesen Bedarf gibt es laut aktuellem Stand noch nicht.
 - **WoL-Power-Management müsste neu gebaut werden**, s. o. — nicht
   unmöglich, aber ein Umbau eines Systems, das laut
-  [docs/2-betrieb-hardware/20020-cluster-power-manager.md](../2-betrieb-hardware/20020-cluster-power-manager.md)
+  [capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)
   bereits bewusst minimal und auditierbar gehalten ist.
 - **Migrationsrisiko ohne Not.** Alle drei Nodes müssten neu aufgesetzt
   werden (Proxmox drunter, k3s-Nodes als VMs drauf) — bei einem
@@ -221,7 +221,7 @@ Proxmox lohnt sich, sobald **mindestens einer** dieser Punkte eintritt:
    gebraucht** (z. B. vor riskanten Migrationen ein komplettes
    VM-Snapshot statt nur PVC-Backup) — aktuell deckt GitOps
    (Re-Apply aus Git) + NAS-Backup
-   ([docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)) den
+   ([capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)) den
    Bedarf ab.
 
 Solange keiner dieser Punkte zutrifft, ist der Status quo (bare metal +
@@ -243,14 +243,14 @@ Lösung.
   Motivation (DB-Trennung) stattdessen `nodeSelector` auf `homeserver`
   für die DB-tragenden Workloads (inkl. GitLab, falls gewählt) einplanen
   — deutlich kleinerer Eingriff, gleicher Effekt. Proxmox als Thema in
-  [IdeasToDeploy.md](../../IdeasToDeploy.md) oder hier vermerkt lassen und erst bei
+  [capulus-core/4-planung/IdeasToDeploy.md](IdeasToDeploy.md) oder hier vermerkt lassen und erst bei
   Eintreten eines Triggers aus 2.4 erneut aufgreifen.
 
 ## Relevante Links
 
-- [docs/b-kubernetes-gitops/b0000-k3s.md](../b-kubernetes-gitops/b0000-k3s.md) — Cluster-Topologie, StorageClasses
-- [docs/2-betrieb-hardware/20020-cluster-power-manager.md](../2-betrieb-hardware/20020-cluster-power-manager.md) — WoL-Power-Management, Grund gegen Proxmox in 2.1–2.2
-- [docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md) — bestehendes Backup-Konzept als Alternative zu VM-Snapshots
-- [docs/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md) — Beleg für bestehenden RAM-Druck (Immich-OOM)
-- [docs/3-apps-workloads/300f0-pacman-visitor-tracking.md](../3-apps-workloads/300f0-pacman-visitor-tracking.md) — Muster "Prod + IT-Unterrichtsobjekt", Vorbild für einen möglichen GitLab-/Forgejo-Zweck
-- [docs/a-betriebssystem/a0010-overview.md](../a-betriebssystem/a0010-overview.md) — Architekturprinzipien (bare metal, ein Ansible-Lauf)
+- [capulus-core/b-kubernetes-gitops/b0000-k3s.md](../b-kubernetes-gitops/b0000-k3s.md) — Cluster-Topologie, StorageClasses
+- [capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md) — WoL-Power-Management, Grund gegen Proxmox in 2.1–2.2
+- [capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md) — bestehendes Backup-Konzept als Alternative zu VM-Snapshots
+- [capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md) — Beleg für bestehenden RAM-Druck (Immich-OOM)
+- [capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md](../3-apps-workloads/300f0-pacman-visitor-tracking.md) — Muster "Prod + IT-Unterrichtsobjekt", Vorbild für einen möglichen GitLab-/Forgejo-Zweck
+- [capulus-ansible/a-betriebssystem/a0010-overview.md](../../capulus-ansible/a-betriebssystem/a0010-overview.md) — Architekturprinzipien (bare metal, ein Ansible-Lauf)

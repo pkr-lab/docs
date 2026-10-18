@@ -2,7 +2,7 @@
 
 Begründungen zu `argocd/apps/tech/pacman/` (Go-Server, Frontend-Skripte, Chart). pacman ist ein Pacman-Canvas-Fork, der in der IT-Security-Schulung zeigt, **was ein Webserver über
 einen Besucher herausfinden kann**, mit einem Grafana-Dashboard als „Auflösung“. Zweck, Ablauf und Offenlegung stehen in
-[300f0](../3-apps-workloads/300f0-pacman-visitor-tracking.md) und im [README des Charts](../../argocd/apps/tech/pacman/README.md). Hier stehen die Implementierungsentscheidungen.
+[300f0](../3-apps-workloads/300f0-pacman-visitor-tracking.md) und im [README des Charts](../komponenten/pacman.md). Hier stehen die Implementierungsentscheidungen.
 Übersicht dieser Kategorie: [60000](60000-uebersicht.md).
 
 > **Rahmen:** Die Erhebung von Besucherdaten ist ausschließlich für den abgegrenzten Schulungskontext mit informierten, einverstandenen Teilnehmenden gedacht, die vorher mündlich aufgeklärt

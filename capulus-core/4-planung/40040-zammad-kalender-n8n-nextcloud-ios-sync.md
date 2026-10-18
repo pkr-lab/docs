@@ -204,7 +204,7 @@ nach einem n8n-Neustart) legt den Termin dadurch nicht doppelt an.
 
 ## Relevante Links
 
-- [docs/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md) — Zammad-Deployment, E-Mail-Kanal-Setup (Schritt 4)
-- [docs/3-apps-workloads/30070-n8n.md](../3-apps-workloads/30070-n8n.md) — bestehende Zammad-/Webhook-/ntfy-Automatisierungsmuster
-- [docs/3-apps-workloads/300b0-nextcloud.md](../3-apps-workloads/300b0-nextcloud.md) — Nextcloud-Deployment, interne/externe Erreichbarkeit
-- [docs/1-benachrichtigungen/10010-ntfy.md](../1-benachrichtigungen/10010-ntfy.md) — ntfy-Push-Muster
+- [capulus-core/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md) — Zammad-Deployment, E-Mail-Kanal-Setup (Schritt 4)
+- [capulus-core/3-apps-workloads/30070-n8n.md](../3-apps-workloads/30070-n8n.md) — bestehende Zammad-/Webhook-/ntfy-Automatisierungsmuster
+- [capulus-core/3-apps-workloads/300b0-nextcloud.md](../3-apps-workloads/300b0-nextcloud.md) — Nextcloud-Deployment, interne/externe Erreichbarkeit
+- [capulus-core/1-benachrichtigungen/10010-ntfy.md](../1-benachrichtigungen/10010-ntfy.md) — ntfy-Push-Muster

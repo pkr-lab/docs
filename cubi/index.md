@@ -27,54 +27,30 @@ The ArgoCD view lists all apps with sync and health status. Apps with problems a
 
 <img src="pics/argocd.png" alt="ArgoCD app table with sync and health status" width="500">
 
-## Tokens
+Repository: [pkr-lab/cubi](https://github.com/pkr-lab/cubi)
 
-`cubi tokens` reads `ops/token-register.yaml` from capulus-core and lists every token with its age and expiry date, most urgent first. Enter opens the token's menu:
+## Architektur
 
-- **Rotieren** (rotate): for `scripted` tokens cubi runs the script named in the register (`rotation.command`) inside the repo after a confirmation. For `manual` tokens it shows the preparation hint, where the token is stored and the overlap rules, and opens the runbook on request. `auto` tokens need nothing.
-- **Als rotiert im Register eintragen** (record rotation): sets `issued` (and optionally `expires`) in the register without reformatting the rest of the file. After a successful script run cubi offers this step automatically.
-- **Details** and **Runbook lesen** (read runbook).
+cubi ist ein Python-3-Programm ohne Server. `bin/cubi` startet `cubi.main`, das einen Abschnitt (Modul) auswählt; jedes Modul ruft die vorhandenen Werkzeuge (`kubectl`, `argocd`, `gh`, `tailscale`, `helm`, `ssh`) als Unterprozess auf und stellt die Ausgabe mit [rich](https://github.com/Textualize/rich) als Tabelle oder Menü dar. cubi speichert keine Zugangsdaten.
 
-`c` runs `scripts/check-token-register.py`. cubi never commits: the register and any re-sealed SealedSecrets stay as working-tree changes, one PR per rotation.
+| Modul (`src/cubi/modules/`) | Aufruf | Aufgabe |
+|---|---|---|
+| `connect.py` | `cubi connect` | SSH-Verbindung zu VMs und Hosts, gruppiert nach `connect` in der Konfiguration |
+| `argocd.py` | `cubi argocd` (`argo`) | Tabelle aller Apps mit Sync- und Health-Status, Filter, Sync, Diff, Refresh; Status direkt per `kubectl` |
+| `tailscale.py` | `cubi tailscale` (`ts`) | Geräteliste, Ping, SSH, `up` und `down` |
+| `github.py` | `cubi github` (`gh`) | Workflow-Läufe, Pull Requests, Issues und Commits eines Repos, Kanban-Board |
+| `kube.py` | `cubi kubernetes` (`k8s`, `kubectl`) | Pods mit Logs und Shell, Nodes, Warnungen, Namespace- und Kontextwechsel |
+| `helm.py` | `cubi helm` | Releases mit Status, Values und Verlauf |
+| `tokens.py` | `cubi tokens` (`token`) | Alter, Ablauf und Rotation der Tokens aus dem Token-Register von capulus-core |
+| `auth.py` | `cubi login` (`auth`) | Login-Status für ArgoCD, GitHub und Tailscale samt Login-Befehlen |
 
-## Usage
+Gemeinsame Bausteine: `ui.py` (Tabellen, Menüs, Eingaben), `shell.py` (Unterprozesse), `config.py` (Konfiguration), `token_register.py` (Register lesen und fortschreiben), `argocd_config.py`, `timeutil.py`.
 
-- Enter or the right arrow opens an entry.
-- Esc or the left arrow goes back one level.
-- In tables, `r` reloads. The footer shows the extra keys of the current section.
+Beziehung zu capulus-core: Das Modul `tokens` liest `ops/token-register.yaml` und führt `scripts/check-token-register.py` im Checkout von [capulus-core](../capulus-core/index.md) aus. Runbooks mit dem Präfix `pkr-lab-docs:` öffnet es aus dem Checkout dieses Docs-Repos.
 
-## Installation
+## Seiten
 
-```
-./install.sh
-```
-
-The script checks for the Python modules `rich` and `pyyaml` and creates a symlink at `~/.local/bin/cubi`.
-
-## Requirements
-
-Python 3 with `rich` and `pyyaml`. Depending on the section you need `ssh`, `kubectl`, `argocd`, `tailscale`, `gh` and `helm`.
-
-## Configuration
-
-Hosts, ArgoCD contexts, GitHub repos and the capulus-core checkout (`tokens.repo`, default `../capulus-core` next to cubi) live in `config/targets.yaml`. The file is looked up in this order:
-
-1. The file named by the `CUBI_CONFIG` environment variable
-2. `~/.config/cubi/targets.yaml`
-3. `config/targets.yaml` in the repo
-
-The GitHub Kanban board uses the project's "Status" field (or the first single-select field with columns). Pin a default board under `github.board`, otherwise cubi lets you pick one from `gh project list` for the repo's owner:
-
-```yaml
-github:
-  board:
-    owner: pkr-lab
-    number: 3
-```
-
-Moving cards and editing issue labels/assignees needs a GitHub token with the `project` scope, which `gh auth refresh -s project,read:project` (also reachable from `cubi login` → GitHub → "Projekt-Scope aktivieren") adds on top of the default login.
-
-## Notes
-
-- `cubi` never handles passwords or tokens itself. Logins run through `argocd`, `gh` and `tailscale`, token rotation through the scripts of capulus-core. The register holds no values, only dates.
-- The ArgoCD status is read straight from the cluster with `kubectl`, so it works even when the ArgoCD server is unreachable.
+- [Installation](installation.md)
+- [Konfiguration](konfiguration.md)
+- [Nutzung](nutzung.md)
+- [Releases](releases.md)

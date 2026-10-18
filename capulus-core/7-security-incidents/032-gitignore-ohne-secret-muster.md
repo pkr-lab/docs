@@ -72,7 +72,7 @@ Die Dateien werden ignoriert, das zweite Kommando liefert nichts.
 **Geänderte Dateien.**
 
 - `.gitignore`
-- Doku: `docs/6-hintergruende/600a0-ci-workflows-und-skripte.md`
+- Doku: `capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md`
 
 **Rollback.** Die Zeilen aus `.gitignore` entfernen.
 

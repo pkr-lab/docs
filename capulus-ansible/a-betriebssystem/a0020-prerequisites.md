@@ -122,7 +122,7 @@ private Repos versorgt werden.
 Vor dem Playbook-Run die benötigten Collections installieren:
 
 ```bash
-ansible-galaxy collection install -r capulus-ansible/requirements.yml
+ansible-galaxy collection install -r requirements.yml
 ```
 
 Die `capulus-ansible/requirements.yml` liefert:
@@ -158,7 +158,7 @@ ssh ubuntu@192.168.1.100 "sudo whoami"
 ### 3. Ansible-Ping
 
 ```bash
-ansible -i capulus-ansible/inventory/hosts.yml homeserver -m ping
+ansible -i inventory/hosts.yml homeserver -m ping
 # Erwartet:
 # homeserver | SUCCESS => { "ping": "pong" }
 ```
@@ -166,7 +166,7 @@ ansible -i capulus-ansible/inventory/hosts.yml homeserver -m ping
 ### 4. Python auf dem Ziel verfügbar
 
 ```bash
-ansible -i capulus-ansible/inventory/hosts.yml homeserver -m ansible.builtin.command \
+ansible -i inventory/hosts.yml homeserver -m ansible.builtin.command \
   -a "python3 --version"
 # Erwartet: python3 3.x.x
 ```

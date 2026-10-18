@@ -43,7 +43,7 @@ argocd login argocd.tech.homeserver --grpc-web
 ```
 
 Die Promotion-Kette ruft `https://argocd.tech.homeserver` und prüft das Zertifikat gegen
-[`pki/homeserver-root-ca.pem`](../../pki/homeserver-root-ca.pem). Für das Admin-Passwort
+[`pki/homeserver-root-ca.pem`](https://github.com/pkr-lab/capulus-core/blob/main/pki/homeserver-root-ca.pem). Für das Admin-Passwort
 gilt weiter: nur in der Web-UI eingeben, für die CLI ein API-Token verwenden.
 
 ### Initial-Credentials
@@ -142,8 +142,8 @@ Der Hub kennt **drei** `ApplicationSet`-Ressourcen, je Ordner-Familie eine:
 
 | ApplicationSet | Quelle | Projekt | Ziel-Cluster | Pflege |
 |---|---|---|---|---|
-| `home-server-apps-tech` | `argocd/apps/tech/*` | `tech` | Hub-Cluster (TECH) | **generiert** aus [`bootstrap-applicationset.yaml.j2`](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/argocd/templates/bootstrap-applicationset.yaml.j2), committet als [`argocd/bootstrap/root-applicationset.yaml`](../../argocd/bootstrap/root-applicationset.yaml) |
-| `home-server-apps-prod` | explizit gelistete Manifest-Ordner unter `argocd/apps/prod/` | `prod` | Cluster `prod` | handgeschrieben in [`argocd/bootstrap-prod/`](../../argocd/bootstrap-prod/README.md) |
+| `home-server-apps-tech` | `argocd/apps/tech/*` | `tech` | Hub-Cluster (TECH) | **generiert** aus [`bootstrap-applicationset.yaml.j2`](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/argocd/templates/bootstrap-applicationset.yaml.j2), committet als [`argocd/bootstrap/root-applicationset.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/bootstrap/root-applicationset.yaml) |
+| `home-server-apps-prod` | explizit gelistete Manifest-Ordner unter `argocd/apps/prod/` | `prod` | Cluster `prod` | handgeschrieben in [`argocd/bootstrap-prod/`](../komponenten/bootstrap-prod.md) |
 | `home-server-apps-prod-charts` | jeder Ordner mit `Chart.yaml` unter `argocd/apps/prod/` | `prod` | Cluster `prod` | dito |
 
 Das TECH-Set in Kurzform (Auszug aus der generierten Datei):
@@ -181,7 +181,7 @@ spec:
   plain Manifeste, Kustomize oder ein Helm-Chart (`Chart.yaml` + `values.yaml`).
 
 **Verzeichnisstruktur** (Auszug, die vollständige Liste steht im
-[README → Repository-Layout](../../README.md#repository-layout)):
+[README → Repository-Layout](../index.md#repository-layout)):
 
 ```
 argocd/apps/
@@ -217,7 +217,7 @@ Neuentwicklung). Neue Apps starten in der Regel auf ENTW und wandern über die
    in `capulus-ansible/roles/argocd/defaults/main.yml` ergänzen. Sonst fehlt der `destinations`-Eintrag im
    Projekt `tech`, und der Sync schlägt mit
    `application destination namespace ... is not permitted in project ...` fehl.
-3. `make render-bootstrap` (aktualisiert die committeten Kopien unter `argocd/bootstrap/`).
+3. `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>` (aktualisiert die committeten Kopien unter `argocd/bootstrap/`).
 4. Committen, per PR nach `main` bringen (`main` ist geschützt, siehe
    [f0090](../f-cicd-automatisierung/f0090-branch-schutz-main.md)).
 5. Innerhalb von ~3 Minuten erkennt ArgoCD den Ordner, erzeugt die Application und synct sie.
@@ -252,7 +252,7 @@ spec:
 EOF
 
 # my-app in argocd_workloads_apps (capulus-ansible/roles/argocd/defaults/main.yml) ergänzen, dann:
-make render-bootstrap
+make render-bootstrap CORE_DIR=<Pfad zu capulus-core>
 
 git add argocd/apps/tech/my-app/ capulus-ansible/roles/argocd/defaults/main.yml argocd/bootstrap/
 git commit -m "feat(apps): add my-app"
@@ -265,10 +265,10 @@ Beispiel als Helm-Chart: Ordner `argocd/apps/tech/my-helm-app/` mit `Chart.yaml`
 ### PROD
 
 1. Verzeichnis `argocd/apps/prod/<app-name>/` anlegen.
-2. Namespace in [`argocd/bootstrap-prod/appproject.yaml`](../../argocd/bootstrap-prod/appproject.yaml)
+2. Namespace in [`argocd/bootstrap-prod/appproject.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/bootstrap-prod/appproject.yaml)
    eintragen und die Datei im Hub anwenden: `kubectl apply -f argocd/bootstrap-prod/appproject.yaml`.
 3. **Nur bei reinen Manifest-Ordnern** (ohne `Chart.yaml`): zusätzlich den Pfad in
-   [`argocd/bootstrap-prod/applicationset.yaml`](../../argocd/bootstrap-prod/applicationset.yaml)
+   [`argocd/bootstrap-prod/applicationset.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/bootstrap-prod/applicationset.yaml)
    ergänzen und anwenden. Helm-Charts werden automatisch gefunden.
 4. Für einen internen Host unter `*.prod.homeserver` den Namen in `dnsmasq_prod_vm_hosts`
    (`capulus-ansible/group_vars/all.yml`) aufnehmen und `make dnsmasq` ausführen, sonst löst der Name auf den

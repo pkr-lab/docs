@@ -1,6 +1,6 @@
 # carplay-api — Homeserver-Dashboard-API
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/carplay-api/` · URL `https://carplay-api.prod.homeserver`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/carplay-api/` · URL `https://carplay-api.prod.homeserver`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Kleine Go/Gin-API, die VictoriaMetrics (Systemmetriken pro Host), ntfy
 (Alerts) und Uptime-Kuma (Service-Status) zu einem einzigen JSON-Payload
@@ -65,11 +65,11 @@ im Cluster), ist aus Pods über die Adresse der Bridge `cni0` des homeservers
 (`POWER_AGENT_URL=http://10.42.2.1:9101`) erreichbar und:
 
 - die Bildschirmhelligkeit über `/sys/class/backlight/intel_backlight/`
-  liest/schreibt (HP ProBook 450 G9, siehe `docs/a-betriebssystem/a0010-overview.md`),
+  liest/schreibt (HP ProBook 450 G9, siehe `capulus-ansible/a-betriebssystem/a0010-overview.md`),
 - `wakeonlan` für worker-0/worker-1 auslöst,
 - worker-0/worker-1 über denselben SSH-Key wie `cluster_power_manager`
   herunterfährt (forced command, nur `sudo poweroff` möglich — siehe
-  [docs/2-betrieb-hardware/20020-cluster-power-manager.md](../2-betrieb-hardware/20020-cluster-power-manager.md)), und
+  [capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)), und
 - den Homeserver selbst herunterfährt — kein harter `poweroff`, sondern
   dieselbe geordnete Sequenz wie bei worker-0/worker-1: `kubectl cordon`
   + `kubectl drain` (jeder Pod bekommt seine `terminationGracePeriod` zum
@@ -115,7 +115,7 @@ funktioniert hätte), wurde angepasst:
 - **Paketierung**: Helm-Chart (`Chart.yaml`/`values.yaml`/`templates/`) wie
   jede andere App unter `argocd/apps/`, kein rohes Kustomize/kubectl-YAML —
   sonst hätte die App nicht automatisch über die ArgoCD-`ApplicationSet`
-  (siehe [docs/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) ausgerollt werden können.
+  (siehe [capulus-core/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) ausgerollt werden können.
 - **Namespace**: `carplay-api`, nicht `homeserver-app` — die
   `ApplicationSet` leitet den Namespace aus dem Verzeichnisnamen ab.
 - **mTLS**: nicht umgesetzt. Traefik terminiert in diesem Cluster kein
@@ -183,7 +183,7 @@ funktioniert hätte), wurde angepasst:
    `target: "homeserver"` mit `503` blockiert, worker-0/worker-1 sind
    davon nicht betroffen). Denselben Wert wie das aktuelle
    ArgoCD-Admin-Passwort verwenden (siehe
-   [docs/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) und bei jeder Passwort-Rotation hier
+   [capulus-core/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)) und bei jeder Passwort-Rotation hier
    mit erneuern:
 
    ```bash
@@ -215,7 +215,7 @@ funktioniert hätte), wurde angepasst:
 2. Slug vergeben (Default in `values.yaml`: `homeserver`) — muss exakt mit
    `config.uptimeKuma.slug` übereinstimmen.
 3. Alle Monitore hinzufügen, die im Dashboard erscheinen sollen (siehe
-   [docs/3-apps-workloads/30080-uptime-kuma.md](30080-uptime-kuma.md) für die vorhandene
+   [capulus-core/3-apps-workloads/30080-uptime-kuma.md](30080-uptime-kuma.md) für die vorhandene
    Monitor-Liste).
 4. Speichern — die Seite muss nicht öffentlich beworben werden, sie muss
    nur existieren; `carplay-api` liest sie serverseitig.
@@ -225,7 +225,7 @@ funktioniert hätte), wurde angepasst:
 Automatisiert über `.github/workflows/build-images.yml`: baut/pusht bei
 jeder Änderung an `Dockerfile`/`src/**` automatisch nach
 `ghcr.io/pkr-lab/carplay-api`. Details/Tag-Schema/manueller Rebuild:
-[docs/f-cicd-automatisierung/f0060-build-images.md](../f-cicd-automatisierung/f0060-build-images.md).
+[capulus-core/f-cicd-automatisierung/f0060-build-images.md](../f-cicd-automatisierung/f0060-build-images.md).
 
 Der Workflow setzt `values.yaml` nicht selbst — den im Job-Summary
 gemeldeten Tag manuell in `image.tag` eintragen und committen. Ist das
@@ -258,7 +258,7 @@ Vier unabhängige Schichten, keine davon mTLS (siehe oben):
 ## Konfiguration (values.yaml)
 
 Vollständige Liste + Defaults: `argocd/apps/tech/carplay-api/values.yaml`
-(kommentiert) und `argocd/apps/tech/carplay-api/README.md` (Env-Var-Tabelle).
+(kommentiert) und `capulus-core/komponenten/carplay-api.md` (Env-Var-Tabelle).
 Die wichtigsten:
 
 | Key | Bedeutung |
@@ -288,4 +288,4 @@ Die wichtigsten:
 | App meldet Erfolg beim Homeserver-Shutdown, aber der Host läuft noch minutenlang weiter | Erwartet — `kubectl drain` läuft im Hintergrund (bis zu 180s Timeout) bevor `k3s` gestoppt und `poweroff` ausgeführt wird, siehe [power-agent](#power-agent). `journalctl -u power-agent -f` auf dem Homeserver zeigt den Fortschritt |
 | `kubectl cordon`/`drain` in den power-agent-Logs schlägt sofort fehl | `NODE_NAME` in `/etc/power-agent/config.env` ≠ tatsächlicher k3s-Node-Name (`kubectl get nodes`) — Poweroff läuft trotzdem weiter (Best-Effort), nur ohne sauberes Draining |
 | App bekommt `403` nach Aktivieren der IP-Allowlist | `config.trustedProxies` fehlt/falsch — App sieht Traefik-Pod-IP statt Tailscale-IP, siehe [Absicherung](#absicherung) |
-| `carplay-api.prod.homeserver` löst nicht auf | Wildcard-DNS prüfen: `nslookup carplay-api.prod.homeserver` (siehe [docs/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md)) |
+| `carplay-api.prod.homeserver` löst nicht auf | Wildcard-DNS prüfen: `nslookup carplay-api.prod.homeserver` (siehe [capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md)) |

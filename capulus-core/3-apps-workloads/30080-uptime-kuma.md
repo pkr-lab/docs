@@ -1,6 +1,6 @@
 # Uptime Kuma — Status-Seite und Service-Alerting
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/uptime-kuma/` · URL `https://uptime-kuma.prod.homeserver` und `https://status-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/uptime-kuma/` · URL `https://uptime-kuma.prod.homeserver` und `https://status-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Uptime Kuma ist eine schlanke, selbst gehostete Status-Seite. Sie prüft
 regelmäßig ob Dienste erreichbar sind und schickt Alerts bei Ausfällen —
@@ -16,7 +16,7 @@ uptime-kuma.prod.homeserver  →  Traefik  →  uptime-kuma (Port 3001)
 ```
 
 > **Warum `local-path` statt `nas`:** War testweise auf `nas`, ist aber nach
-> Umstellung des NAS auf `all_squash` (siehe [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md))
+> Umstellung des NAS auf `all_squash` (siehe [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md))
 > mit Permission-Fehlern abgestürzt und wurde zurück auf `local-path`
 > gestellt.
 
@@ -70,7 +70,7 @@ internen Host einen externen Ingress-Host an (`status-prod.pke-lab.de` —
 bewusst ohne "uptime-kuma" im Namen, damit die eingesetzte Software nicht
 schon aus der URL erkennbar ist), erreichbar über die bestehende
 `*.pke-lab.de`-Wildcard-Route von cloudflared — kein Änderung an
-cloudflared nötig, siehe [docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#neuen-dienst-freigeben).
+cloudflared nötig, siehe [capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#neuen-dienst-freigeben).
 
 Die eigentliche Status-Page ist ein manueller Einmal-Schritt in der
 Kuma-UI (nicht Teil von Git/Helm):

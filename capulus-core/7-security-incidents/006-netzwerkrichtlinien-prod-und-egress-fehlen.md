@@ -86,7 +86,7 @@ Der Test-Pod darf den fremden Namespace nicht mehr erreichen (Timeout); die App 
 
 ## Risiko der Behebung
 
-Hoch: Eine fehlerhafte Policy trennt Traefik/cloudflared von den Apps. Beim Rollout 2026-08-13 ist genau das schon einmal passiert (`docs/d-sicherheit/d0030-network-policies.md`, Cloudflare-Tunnel-Ausfall).
+Hoch: Eine fehlerhafte Policy trennt Traefik/cloudflared von den Apps. Beim Rollout 2026-08-13 ist genau das schon einmal passiert (`capulus-core/d-sicherheit/d0030-network-policies.md`, Cloudflare-Tunnel-Ausfall).
 
 ## Behebung (2026-10-17, Stufe 1)
 
@@ -110,7 +110,7 @@ Vorher und nachher gemessen: `wiki-prod` 200, `xibo-prod` 302, `immich-prod` 200
 **Geänderte Dateien.**
 
 - `argocd/apps/prod/{wikijs,wiki-docs-sync,xibosignage,paperless-ngx,immich,nextcloud}/templates/networkpolicy.yaml` (neu) und `values.yaml` (Block `networkPolicy`)
-- Doku: `docs/d-sicherheit/d0030-network-policies.md`, `docs/6-hintergruende/60050-helm-charts-prod.md`
+- Doku: `capulus-core/d-sicherheit/d0030-network-policies.md`, `capulus-core/6-hintergruende/60050-helm-charts-prod.md`
 
 **Rollback.** Im betroffenen Chart `networkPolicy.enabled: false`, PR, Merge. Von Hand löschen hilft nicht, die PROD-Apps laufen mit `selfHeal`. Notfalls in ArgoCD den Auto-Sync der betroffenen `prod-<app>` pausieren und `default-ingress` im Namespace löschen.
 

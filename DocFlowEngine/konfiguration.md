@@ -319,7 +319,7 @@ Bei jedem Lauf wird `Whitelist geladen: '<Pfad>' (<n> Präfixe, <m> Kombinatione
 Dateien kopiert, deren Präfix/Suffix im Startbestand steht (z. B. nur `Zahlensysteme_Hexadezimal`),
 ist das ein Hinweis darauf, dass die eigenen Einträge nicht in der Datei unter diesem Pfad stehen
 oder nicht lesbar sind. Für jede abgelehnte Datei nennt das Log außerdem, ob Präfix, Suffix oder
-das Schema selbst das Problem ist (siehe [Logging.md](Logging.md#typische-meldungen)).
+das Schema selbst das Problem ist (siehe [Logging.md](logging.md#typische-meldungen)).
 
 **Ist `projectRoutesFile` gar nicht gesetzt**, entfällt die Whitelist-Prüfung komplett (und damit
 auch die Seed-Synchronisierung): Jeder syntaktisch zum Schema passende Präfix/Suffix wird akzeptiert
@@ -334,7 +334,7 @@ defaultNameFormat = '{date}_{originalName}'
 Fallback-Template, wenn keine `namingConventions`-Regel passt. `{date}_{originalName}` (statt dem
 Default `{timestamp}_{originalName}`) ist für Multi-Machine-Betrieb empfohlen: `{timestamp}` erzeugt
 bei jedem Lauf einen neuen, nicht wiedererkennbaren Namen und verhindert damit den
-Ziel-Existenz-Check (siehe [MULTI-MACHINE-SETUP.md](Konzepte/MULTI-MACHINE-SETUP.md)).
+Ziel-Existenz-Check (siehe [MULTI-MACHINE-SETUP.md](konzepte/multi-machine-setup.md)).
 
 ## `stateFile` (optional, Default `./.docflow-state.json`)
 
@@ -396,10 +396,10 @@ log = @{
 }
 ```
 
-Details siehe [Logging.md](Logging.md).
+Details siehe [Logging.md](logging.md).
 
 ## Vollständiges Beispiel
 
-Siehe [config/docflow-config.psd1](../config/docflow-config.psd1) im Repo-Root für die tatsächlich
+Siehe [config/docflow-config.psd1](https://github.com/pkr-lab/DocFlowEngine/blob/main/config/docflow-config.psd1) im Repo-Root für die tatsächlich
 genutzte Konfiguration, sowie den kommentierten Beispiel-Workflow im
-[Haupt-README](../README.md#beispiel-workflow).
+[Haupt-README](nutzung.md#beispiel-workflow).

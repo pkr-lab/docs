@@ -40,8 +40,8 @@ npx semantic-release            (.releaserc.json)
         └── @semantic-release/github                → Git-Tag + GitHub-Release erstellen
 ```
 
-Konfiguration: [`.releaserc.json`](../../.releaserc.json),
-Workflow: [`.github/workflows/release.yml`](../../.github/workflows/release.yml).
+Konfiguration: [`.releaserc.json`](https://github.com/pkr-lab/capulus-core/blob/main/.releaserc.json),
+Workflow: [`.github/workflows/release.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/release.yml).
 
 ---
 
@@ -49,7 +49,7 @@ Workflow: [`.github/workflows/release.yml`](../../.github/workflows/release.yml)
 
 - **Kein Einfluss auf ArgoCD/Deployment.** ArgoCD trackt weiterhin
   `targetRevision: main` direkt (siehe
-  [docs/a-betriebssystem/a0010-overview.md](../a-betriebssystem/a0010-overview.md)) — Releases sind reine
+  [capulus-ansible/a-betriebssystem/a0010-overview.md](../../capulus-ansible/a-betriebssystem/a0010-overview.md)) — Releases sind reine
   Versionshistorie/Nachvollziehbarkeit, kein Deployment-Gate.
 - **Kein `npm publish`.** Die `@semantic-release/npm`-Plugin ist bewusst
   nicht in der Plugin-Liste — dieses Repo ist kein npm-Paket, es gibt kein

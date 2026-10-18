@@ -92,7 +92,7 @@ Positivtests für `banana-pi-down` und `nightly-worker-update` wurden nicht ausg
 - `argocd/apps/tech/monitoring/` (`values.yaml`, `templates/sealedsecret-n8n-webhook-token.yaml`)
 - `capulus-ansible/roles/nightly_worker_wake/` (`files/nightly-worker-wake.sh`, `defaults/main.yml`, `tasks/main.yml`), `capulus-ansible/group_vars/all.yml` (nur die Vault-Variable)
 - `ops/token-register.yaml` (drei neue Einträge)
-- Doku: `docs/3-apps-workloads/30070-n8n.md`, `300h0-alamos-einsatz-zammad.md`, `300i0-alamos-relay.md`, `30020-vereinsheim-alarmmonitor.md`, `docs/2-betrieb-hardware/20030-nightly-worker-update.md`, `docs/6-hintergruende/60040-helm-charts-tech.md`
+- Doku: `capulus-core/3-apps-workloads/30070-n8n.md`, `300h0-alamos-einsatz-zammad.md`, `300i0-alamos-relay.md`, `30020-vereinsheim-alarmmonitor.md`, `capulus-ansible/2-betrieb-hardware/20030-nightly-worker-update.md`, `capulus-core/6-hintergruende/60040-helm-charts-tech.md`
 
 **Rollback.** Live: Webhook-Nodes der drei Workflows in n8n wieder auf *Authentication: None* stellen (oder die Workflows aus dem Export vor der Änderung wiederherstellen). Repo: PR #471 revertieren; ArgoCD stellt Relay, Alertmanager und n8n-Env zurück, die Credentials in n8n bleiben unbenutzt stehen und können gelöscht werden. Nightly-Wake: Rollenlauf `make nightly-worker-wake` nach dem Revert. Die Exporte der drei Workflows vom 2026-10-17 liegen nur im Scratchpad der Sitzung.
 

@@ -39,11 +39,11 @@ ArgoCD-Instanz als Vorbild), [d0060](../d-sicherheit/d0060-secrets-rotation.md)
 
 | Dienst | Heute (TECH) | Daten | Externer Host |
 |---|---|---|---|
-| Vaultwarden | [values.yaml](../../argocd/apps/tech/vaultwarden/values.yaml) | SQLite auf `local-path` (2 Gi). Nachtbackup 01:30 per [CronJob](../../argocd/apps/tech/vaultwarden/templates/backup-cronjob.yaml) auf eine NAS-PVC. | `vault-tech.pke-lab.de` |
-| n8n | [values.yaml](../../argocd/apps/tech/n8n/values.yaml), Custom-Image | SQLite auf **NFS** (`nas`, 5 Gi). `N8N_ENCRYPTION_KEY` ist nicht gesetzt, der Schlüssel liegt zufällig generiert in `/home/node/.n8n/config`. Zwei NFS-Volumes für Xibo. | keiner (nur `n8n.prod.homeserver`) |
-| ntfy | [values.yaml](../../argocd/apps/tech/ntfy/values.yaml) | SQLite (`cache.db`, `auth.db`) auf `local-path` (1 Gi). `upstream-base-url: https://ntfy.sh` für iOS-Push. | `ntfy-tech.pke-lab.de` |
+| Vaultwarden | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/vaultwarden/values.yaml) | SQLite auf `local-path` (2 Gi). Nachtbackup 01:30 per [CronJob](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/vaultwarden/templates/backup-cronjob.yaml) auf eine NAS-PVC. | `vault-tech.pke-lab.de` |
+| n8n | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/values.yaml), Custom-Image | SQLite auf **NFS** (`nas`, 5 Gi). `N8N_ENCRYPTION_KEY` ist nicht gesetzt, der Schlüssel liegt zufällig generiert in `/home/node/.n8n/config`. Zwei NFS-Volumes für Xibo. | keiner (nur `n8n.prod.homeserver`) |
+| ntfy | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/ntfy/values.yaml) | SQLite (`cache.db`, `auth.db`) auf `local-path` (1 Gi). `upstream-base-url: https://ntfy.sh` für iOS-Push. | `ntfy-tech.pke-lab.de` |
 | Gotify | `argocd/apps/tech/gotify/values.yaml` (entfernt) | SQLite auf `local-path` (1 Gi) | keiner (nur `gotify.tech.homeserver`, `gotify-api.tech.homeserver`) |
-| cloudflared | [values.yaml](../../argocd/apps/tech/cloudflared/values.yaml), zwei Tunnel: `homeserver` (TECH), `homeserver-prod` (PROD). Wildcard `*.pke-lab.de` → Traefik. | Credentials als SealedSecret | — |
+| cloudflared | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/cloudflared/values.yaml), zwei Tunnel: `homeserver` (TECH), `homeserver-prod` (PROD). Wildcard `*.pke-lab.de` → Traefik. | Credentials als SealedSecret | — |
 | Tailscale | Host-Ebene per [Ansible-Rolle](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/tailscale/tasks/main.yml), Tags `tag:tech-node`, `tag:prod-node`, `tag:entw-node`. Split-DNS nur für `*.homeserver`. | Auth-Key als Ansible-Vault-Wert | — |
 
 Weitere Randbedingungen, die den Plan prägen:
@@ -56,7 +56,7 @@ Weitere Randbedingungen, die den Plan prägen:
   (Cloudflare).
 - **SealedSecrets sind pro Cluster verschlüsselt** (aktuell 25 Dateien, 18 TECH und 7
   PROD). Der Standby braucht eigene Ciphertexte, Vorbild ist
-  [reseal-for-prod.sh](../../scripts/reseal-for-prod.sh).
+  [reseal-for-prod.sh](https://github.com/pkr-lab/capulus-core/blob/main/scripts/reseal-for-prod.sh).
 - **Zirkel im Root of Trust:** [50010](../5-incidents/50010-prod-vm-basis-image-ersetzt.md)
   legt die Sealed-Secrets-Schlüssel „in den Passwort-Manager“, also in Vaultwarden. Genau
   der Dienst, den man nach einem Ausfall wieder hochbringen will. Siehe
@@ -134,7 +134,7 @@ Umsetzung messen.
 ## Datenabgleich (alle 15 Minuten)
 
 Grundlage ist das vorhandene Muster aus dem
-[Vaultwarden-Backup-CronJob](../../argocd/apps/tech/vaultwarden/templates/backup-cronjob.yaml):
+[Vaultwarden-Backup-CronJob](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/vaultwarden/templates/backup-cronjob.yaml):
 konsistente Kopie per `sqlite3 .backup`, Restdateien per `rsync`.
 
 1. Pro App läuft ein CronJob (`*/15`) im aktiven Cluster: `sqlite3 -readonly … .backup`
@@ -170,7 +170,7 @@ Takt auf 5 Minuten verkürzen (die Last ist gering, die DB klein).
   nicht. Als SealedSecret für beide Cluster ablegen. Außerdem die PVC von `nas` auf
   `local-path` umziehen: SQLite auf NFS ist fragil, und ein `.backup` aus einem zweiten Pod
   ist dort nicht garantiert konsistent. Vorgehen wie in
-  [migrations/README.md](../../argocd/bootstrap-prod/migrations/README.md).
+  [migrations/README.md](../komponenten/bootstrap-prod-migrations.md).
 - **Standby-Overlay für n8n:** `xibosignage.enabled: false`, denn die NFS-Volumes sind vom
   externen Standort aus nicht erreichbar.
 - **NetworkPolicy:** Egress `100.64.0.0/10` auf Port 22 für die Replikations-Jobs. Falls
@@ -238,7 +238,7 @@ Neue Ansible-Rolle nach dem Muster der vorhandenen Watchdogs, z. B.
 6. ArgoCD bekommt für diese vier Deployments ein `ignoreDifferences` auf `/spec/replicas`
    (Muster wie bei `ollama` im
    [ApplicationSet-Template](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/argocd/templates/bootstrap-applicationset.yaml.j2),
-   danach `make render-bootstrap`). Sonst setzt `selfHeal` das Fencing zurück.
+   danach `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>`). Sonst setzt `selfHeal` das Fencing zurück.
 
 ### Standby-Watchdog (systemd auf dem Standby-Host)
 
@@ -381,7 +381,7 @@ ab, sobald der Workflow einen der oben genannten Marker enthält.
   prüft nebenbei, ob die neue Version zu den echten Daten passt.
 - **Secrets:** Jeder SealedSecret existiert zweimal (Primary- und Standby-Schlüssel). Das
   Skript `scripts/reseal-for-standby.sh` (nach dem Vorbild von
-  [reseal-for-prod.sh](../../scripts/reseal-for-prod.sh)) schreibt die Standby-Ciphertexte
+  [reseal-for-prod.sh](https://github.com/pkr-lab/capulus-core/blob/main/scripts/reseal-for-prod.sh)) schreibt die Standby-Ciphertexte
   in das Overlay. Der wahrscheinlichste Grund für eine gescheiterte Übernahme wäre ein nur
   auf dem Primary rotiertes Token. Dagegen helfen das Register und die dauerhaft laufenden
   Standby-Komponenten (cloudflared, Tailscale), die ihre Credentials täglich beweisen.
@@ -397,7 +397,7 @@ ab, sobald der Workflow einen der oben genannten Marker enthält.
 
 Ziel: jederzeit wissen, **welches Token wann abläuft**, rechtzeitig gewarnt werden und die
 Rotation ohne Ausfall durchführen. Anlass war unter anderem der stille Ablauf des
-Tailscale-Logins auf worker-0 ([20030](../2-betrieb-hardware/20030-nightly-worker-update.md)).
+Tailscale-Logins auf worker-0 ([20030](../../capulus-ansible/2-betrieb-hardware/20030-nightly-worker-update.md)).
 
 ### Register
 
@@ -414,7 +414,7 @@ Eine Datei `ops/token-register.yaml` im Repo, **ohne Werte**. Ein Eintrag je Tok
   max_age_days: 180
   rotation:
     mode: scripted           # auto | scripted | manual
-    runbook: docs/d-sicherheit/d0060-secrets-rotation.md
+    runbook: capulus-core/d-sicherheit/d0060-secrets-rotation.md
     overlap: true
   owner: peter
   blast_radius: "DNS-Umschaltung, TXT _active, CNAMEs in pke-lab.de"
@@ -441,7 +441,7 @@ unabhängig von beiden Clustern, also auch dann, wenn der Primary ausgefallen is
 - **Nur auf dem Standby liegende Token** (Cloudflare-DNS-Token) prüft der Watchdog selbst:
   `tokens/verify` im Selbsttest S0, Warnung ab 30 Tagen über ntfy, Gotify und Mail.
 - Das jährliche n8n-Ticket
-  ([yearly-secrets-rotation-reminder](../../argocd/apps/tech/n8n/workflows/yearly-secrets-rotation-reminder.json))
+  ([yearly-secrets-rotation-reminder](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/yearly-secrets-rotation-reminder.json))
   bleibt als grobe Rückfallebene und verweist dann auf das Register.
 
 ### Rotation
@@ -473,8 +473,8 @@ Vier Regeln:
 | Vaultwarden `ADMIN_TOKEN`, SMTP-Passwort | SealedSecret je Cluster | keiner | jährlich nach [300a0](../3-apps-workloads/300a0-vaultwarden.md), `max_age_days: 365` |
 | `N8N_ENCRYPTION_KEY` | SealedSecret je Cluster | keiner | **nicht rotieren** (analog restic-Passwort: eine Rotation verschlüsselt alle Credentials neu). Einmal setzen, identisch auf beiden Seiten, Kopie im Notfallkit. |
 | n8n-interne Credentials (Zammad, carplay-api, IMAP …) | n8n-DB (repliziert) | je Anbieter | im Register als `n8n-credential:<name>`, Rotation in der n8n-UI |
-| ArgoCD-CI-Token (Hub, ENTW, Standby) | GitHub-Secret | 365 Tage (Skript-TTL) | jährlich per [create-argocd-ci-token.sh](../../scripts/create-argocd-ci-token.sh), die alten laufen aus |
-| GitHub-PATs (github-release-watcher, wiki-docs-sync) | SealedSecret | ca. 1 Jahr | Ablauf per API-Header, Erzeugung wie in [seal-github-token.sh](../../scripts/seal-github-token.sh) |
+| ArgoCD-CI-Token (Hub, ENTW, Standby) | GitHub-Secret | 365 Tage (Skript-TTL) | jährlich per [create-argocd-ci-token.sh](https://github.com/pkr-lab/capulus-core/blob/main/scripts/create-argocd-ci-token.sh), die alten laufen aus |
+| GitHub-PATs (github-release-watcher, wiki-docs-sync) | SealedSecret | ca. 1 Jahr | Ablauf per API-Header, Erzeugung wie in [seal-github-token.sh](https://github.com/pkr-lab/capulus-core/blob/main/scripts/seal-github-token.sh) |
 | Sealed-Secrets-Schlüssel (TECH, PROD, ENTW, Standby) | im Cluster | Controller rotiert alle 30 Tage | **Backup jedes Clusters außerhalb des Clusters**, siehe unten |
 | SMTP-Zugang des Watchdogs (netcup) | Standby-Host (Ansible-Vault) | keiner | eigenes Postfach-Passwort, nicht dasselbe wie bei Vaultwarden |
 

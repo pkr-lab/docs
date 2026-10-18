@@ -1,49 +1,26 @@
-# Dev Tools Bootstrap
+# ui-terminal-config
 
-One script, for Ubuntu Desktop: installs **Starship** (plus its config), the **JetBrainsMono Nerd Font**, and whichever **AI CLI tools** you opt into. Nothing else — no editor config, no plugins.
+Ein Skript für Ubuntu Desktop, das eine einheitliche Terminal-Oberfläche einrichtet: den Prompt [Starship](https://starship.rs) samt Konfiguration, die Schrift JetBrainsMono Nerd Font und optional KI-Kommandozeilenwerkzeuge. Mehr nicht, keine Editor-Konfiguration, keine Plugins.
 
-## Usage
+Repository: [pkr-lab/ui-terminal-config](https://github.com/pkr-lab/ui-terminal-config)
 
-```sh
-git clone <repo-url> ~/dev-tools-bootstrap
-cd ~/dev-tools-bootstrap
-./install.sh
+## Überblick
+
+| Datei | Aufgabe |
+|---|---|
+| `install.sh` | installiert Starship, verlinkt die Konfiguration, installiert optional KI-CLIs und die Nerd Font; mehrfach ausführbar, jeder Schritt überspringt Vorhandenes |
+| `starship-toml-template` | Starship-Konfiguration: farbige Powerline-Segmente (OS, Benutzer, Verzeichnis, Git, Sprachen, Dauer), Palette Catppuccin Mocha |
+
+Der Ablauf von `install.sh` in drei Abschnitten:
+
+```mermaid
+flowchart LR
+  A["1. Starship"] --> B["2. KI-CLIs (optional)"] --> C["3. Nerd Font"]
 ```
 
-Safe to re-run any time — every step skips what's already installed.
+## Seiten
 
-### What it installs
-
-1. **Starship** — via its official install script, to `~/.local/bin`; its config (`starship-toml-template`) is symlinked to `~/.config/starship.toml` (an existing, differing file there is backed up first)
-2. **AI CLI tools**, opt-in per tool (default: none installed):
-   ```sh
-   INSTALL_CLAUDE=true ./install.sh   # just Claude Code
-   INSTALL_CODEX=true ./install.sh    # just Codex CLI
-   INSTALL_GEMINI=true ./install.sh   # just Gemini CLI
-   INSTALL_AGY=true ./install.sh      # just the Antigravity CLI
-   # or combine any of the four
-   ```
-   `claude`/`codex`/`gemini` are installed via `npm install -g` (needs Node/npm on PATH already); `agy` via its own `curl | bash` installer.
-3. **JetBrainsMono Nerd Font** — downloaded from the [nerd-fonts releases](https://github.com/ryanoasis/nerd-fonts/releases) (not in Ubuntu's apt repos) into `~/.local/share/fonts`
-
-## Prerequisites
-
-`install.sh` needs `curl` to even run — install it first if it's missing:
-
-```sh
-sudo apt install curl
-```
-
-Optionally, `npm`/`nodejs` if you want the `claude`/`codex`/`gemini` CLI tools:
-
-```sh
-sudo apt install nodejs npm
-```
-
-`unzip` is installed automatically (via `sudo apt-get install unzip`) if missing, only when the font needs unpacking.
-
-## After install
-
-- Add `~/.local/bin` to your `PATH` if it isn't already, so `starship` is found
-- Set your shell prompt to use Starship (e.g. in `~/.bashrc`: `eval "$(starship init bash)"`)
-- Set your terminal emulator's font to `JetBrainsMono Nerd Font Mono`
+- [Installation](installation.md)
+- [Konfiguration](konfiguration.md)
+- [Nutzung](nutzung.md)
+- [Releases](releases.md)

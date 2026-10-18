@@ -20,7 +20,7 @@ das Limit selbst erhöht werden. Für Immich konkret: viele parallele
 Uploads verteilen sich jetzt auf mehrere `immich-server`-Pods, ein
 einzelnes 4K-Video, das für sich allein schon >4Gi RAM braucht, crasht
 trotzdem (siehe `server.resources.limits` in
-[argocd/apps/prod/immich/values.yaml](../../argocd/apps/prod/immich/values.yaml)).
+[argocd/apps/prod/immich/values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/prod/immich/values.yaml)).
 
 ---
 
@@ -29,7 +29,7 @@ trotzdem (siehe `server.resources.limits` in
 ### 1. ArgoCD `selfHeal` vs. HPA — das `replicas`-Problem
 
 Das Root-ApplicationSet
-([argocd/bootstrap/root-applicationset.yaml](../../argocd/bootstrap/root-applicationset.yaml))
+([argocd/bootstrap/root-applicationset.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/bootstrap/root-applicationset.yaml))
 läuft mit `syncPolicy.automated.selfHeal: true` **und**
 `syncOptions: [ServerSideApply=true]`. Ohne Gegenmaßnahme würde ArgoCD bei
 jedem Sync die von git/Helm vorgegebene, statische `replicas`-Zahl wieder
@@ -133,7 +133,7 @@ sie haben schlicht kein PVC (Wiki.js speichert alles in PostgreSQL).
 Alle Schwellenwerte sind bewusst konservativ gewählt (CPU 70–75%, RAM 80%)
 — lieber eine Replica zu früh dazu als spät, da Homeserver aktuell der
 einzige durchgehend laufende Node ist (siehe
-[../2-betrieb-hardware/20020-cluster-power-manager.md](../2-betrieb-hardware/20020-cluster-power-manager.md)).
+[../2-betrieb-hardware/20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)).
 
 ---
 

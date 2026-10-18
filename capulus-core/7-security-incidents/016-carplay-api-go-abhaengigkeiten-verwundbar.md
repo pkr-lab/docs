@@ -83,7 +83,7 @@ Niedrig: Minor-Updates von Hilfsbibliotheken. Build und Tests laufen in CI.
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/carplay-api/src/go.mod`, `go.sum`
-- Doku: `docs/6-hintergruende/60080-carplay-api-und-ios-app.md` (Abschnitt „Abhängigkeiten und Schwachstellen“), `docs/d-sicherheit/d0080-codeql-dependabot.md`
+- Doku: `capulus-core/6-hintergruende/60080-carplay-api-und-ios-app.md` (Abschnitt „Abhängigkeiten und Schwachstellen“), `capulus-core/d-sicherheit/d0080-codeql-dependabot.md`
 
 **Rollback.** `go.mod` und `go.sum` aus Git zurückholen und das vorherige Image-Tag in `values.yaml` setzen (`sha-4e05141`, davor `sha-04f6d88`). Die Sicherungskopien der Dateien vor dem Endstand liegen im Scratchpad der Sitzung.
 

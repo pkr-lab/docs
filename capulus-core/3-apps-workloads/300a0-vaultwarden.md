@@ -1,6 +1,6 @@
 # Vaultwarden — Passwort-Manager
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/vaultwarden/` · URL `https://vault.tech.homeserver` und `https://vault-tech.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/vaultwarden/` · URL `https://vault.tech.homeserver` und `https://vault-tech.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 [Vaultwarden](https://github.com/dani-garcia/vaultwarden) ist eine
 leichtgewichtige Rust-Implementierung der Bitwarden-Server-API. Alle
@@ -146,7 +146,7 @@ Erwartet:
 **Nutzer-Inventar:** Wer einen Account hat, wird zusätzlich (verschlüsselt,
 außerhalb der App-DB) in `capulus-ansible/group_vars/user_inventory_vault.yml`
 festgehalten — `make user-inventory-edit` zum Bearbeiten, siehe
-[docs/4-planung/40080-multi-cluster-entw-prod-tech.md → Baustein 7](../4-planung/40080-multi-cluster-entw-prod-tech.md#7-nutzer-daten-inventar-für-immich--vaultwarden)
+[capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md → Baustein 7](../4-planung/40080-multi-cluster-entw-prod-tech.md#7-nutzer-daten-inventar-für-immich--vaultwarden)
 für den Zweck (Dokumentation, kein Ersatz für die eigentliche DB).
 
 ---
@@ -273,7 +273,7 @@ Secret im Cluster löschen, falls ArgoCD es nicht automatisch prunt.
 
 Eine Migration von `persistence.storageClassName` auf die NFS-`nas`-
 StorageClass (wie beim Großteil der übrigen Apps, siehe
-[docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) wurde erwogen, aber **bewusst
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) wurde erwogen, aber **bewusst
 verworfen**: das NAS erzwingt inzwischen `all_squash` (kein
 `no_root_squash` mehr verfügbar), was bei Vaultwardens SQLite-Datei zu
 Permission-Problemen führt — siehe [60040](../6-hintergruende/60040-helm-charts-tech.md#vaultwarden). Die Haupt-PVC bleibt daher auf
@@ -283,7 +283,7 @@ Stattdessen sichert ein nächtlicher `backup`-CronJob (eigene PVC, bewusst
 `storageClassName: nas`, siehe `backup-cronjob.yaml`) die SQLite-Datenbank
 per `sqlite3 .backup` (nutzt SQLites eigene Online-Backup-API, sicher auch
 bei einer laufenden, offenen DB) auf das NAS — Details:
-[docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md).
+[capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md).
 
 Zusätzlich läuft ein verschlüsselter, versionierter restic-Job (`restic-cronjob.yaml`, Einrichtung und Wiederherstellungstest: [20010](../2-betrieb-hardware/20010-nas-backup.md#restic-für-vaultwarden-im-cluster)). Der Spiegel oben bleibt, bis die Rolle `vaultwarden_restore` aus restic wiederherstellen kann.
 
@@ -298,7 +298,7 @@ verschlüsselt in `db.sqlite3` + `rsa_key.pem`. Der Account ist deshalb
 nach einem Redeploy (z. B. verlorene `local-path`-PVC nach einem
 Node-Wechsel) automatisch wieder vollständig da, sobald diese Dateien aus
 dem NAS-Backup (siehe [Abschnitt 7](#7-warum-kein-nas-storage-für-die-haupt-pvc)
-und [docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)) zurückkopiert sind — ein
+und [capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md)) zurückkopiert sind — ein
 separater Schritt, um den Nutzer "neu anzulegen", ist nicht nötig.
 
 Dafür gibt es die Ansible-Rolle `vaultwarden_restore`
@@ -334,7 +334,7 @@ NAS noch existiert und der letzte nächtliche `backup-cronjob.yaml`-Lauf
 erfolgreich war (`kubectl -n vaultwarden get jobs`). Ist auch dieser Stand
 verloren (z. B. NAS-Totalausfall), bleibt nur der manuelle
 restic-Restore von der externen USB-Platte, siehe
-[docs/2-betrieb-hardware/20010-nas-backup.md → Wiederherstellung](../2-betrieb-hardware/20010-nas-backup.md#wiederherstellung)
+[capulus-core/2-betrieb-hardware/20010-nas-backup.md → Wiederherstellung](../2-betrieb-hardware/20010-nas-backup.md#wiederherstellung)
 — das NAS selbst bleibt bewusst außerhalb von Ansible verwaltet, dieser
 Pfad wird nicht automatisiert.
 

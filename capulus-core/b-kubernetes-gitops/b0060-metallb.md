@@ -2,7 +2,7 @@
 
 MetalLB vergibt die LAN-Adresse `192.168.178.200` an den Traefik-Service (`LoadBalancer`), über die alle `*.homeserver`-Hosts im Heimnetz erreichbar sind. Die Installation liegt **nicht** im Repo, sondern wurde von Hand per Helm eingespielt. Dieses Doc hält den Ist-Zustand fest, damit er nach einem Neuaufbau reproduzierbar ist.
 
-> **Cluster:** TECH · Namespace `metallb-system` · kein Ordner unter `argocd/apps/`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Namespace `metallb-system` · kein Ordner unter `argocd/apps/`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 ---
 
@@ -69,7 +69,7 @@ Das Wrapper-Chart `argocd/pending/metallb-system/` enthält das Subchart `metall
 
 Ablauf (ruhiges Zeitfenster; der Pfad zu den Diensten läuft über den Homeserver `192.168.178.94`, nicht über `.200`, ein Ausfall betrifft deshalb nur die Adresse `.200` selbst):
 
-1. Rolle rendern: `make render-bootstrap` (Vault-Passwort). Die Vorlage `bootstrap-appprojects.yaml.j2` enthält `metallb-system` schon als festes Ziel im Projekt `tech` (wie `cert-manager`, ohne tier-default-ingress-NetworkPolicy); das Ergebnis `argocd/bootstrap/projects.yaml` committen und im Hub anwenden (`kubectl apply -f argocd/bootstrap/projects.yaml`).
+1. Rolle rendern: `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>` (Vault-Passwort). Die Vorlage `bootstrap-appprojects.yaml.j2` enthält `metallb-system` schon als festes Ziel im Projekt `tech` (wie `cert-manager`, ohne tier-default-ingress-NetworkPolicy); das Ergebnis `argocd/bootstrap/projects.yaml` committen und im Hub anwenden (`kubectl apply -f argocd/bootstrap/projects.yaml`).
 2. Sicherung: `kubectl get ipaddresspool,l2advertisement -n metallb-system -o yaml > metallb-crs-backup.yaml`.
 3. Nur die Workloads löschen: `kubectl -n metallb-system delete deployment metallb-controller metallb-frr-k8s-statuscleaner && kubectl -n metallb-system delete daemonset metallb-speaker metallb-frr-k8s`. CRDs, RBAC, Services, Webhooks und die beiden Objekte bleiben.
 4. `git mv argocd/pending/metallb-system argocd/apps/tech/metallb-system`, committen, mergen. ArgoCD legt die Application an, übernimmt die vorhandenen Objekte und erstellt Controller und Speaker neu (ohne FRR).

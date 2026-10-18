@@ -64,7 +64,7 @@ Mittel: Image-Wechsel bei Datenbanken (Zammad-PostgreSQL) erfordert Backup und g
 **Geändert.**
 
 - **Punkt 3, kaniko:** `argocd/apps/tech/argo-workflows/templates/workflowtemplates.yaml` nutzt `gcr.io/kaniko-project/executor:v1.24.0` statt `:latest`. `latest` und `v1.24.0` haben denselben Digest (`sha256:4e7a52dd…`), das Verhalten bleibt gleich. Das kaniko-Projekt ist archiviert (keine Updates mehr); Scan-Ergebnis des festen Tags: 5 CRITICAL, 157 HIGH.
-- **Punkt 4, Scan:** Neu `scripts/scan-cluster-images.sh` (Trivy, lokal oder per Docker) liest alle Images der laufenden Pods und scannt sie; `--summary` liefert eine Zeile je Image. Beschrieben in `docs/f-cicd-automatisierung/f0070-ci-lint.md`. Einen CI-Job habe ich nicht angelegt, weil es eine Entscheidung braucht, ob Funde den Merge blockieren dürfen.
+- **Punkt 4, Scan:** Neu `scripts/scan-cluster-images.sh` (Trivy, lokal oder per Docker) liest alle Images der laufenden Pods und scannt sie; `--summary` liefert eine Zeile je Image. Beschrieben in `capulus-core/f-cicd-automatisierung/f0070-ci-lint.md`. Einen CI-Job habe ich nicht angelegt, weil es eine Entscheidung braucht, ob Funde den Merge blockieren dürfen.
 
 **Befund zu den genannten Images.** Die meisten Funde kommen aus den Basis-Paketen der Upstream-Images, nicht aus alten Tags: Das laufende `louislam/uptime-kuma:2.5.6` und `semaphoreui/semaphore:v2.19.16` sind laut Docker Hub jeweils das neueste Release, `lldap` steht seit Incident 023 auf `v0.6.3` (neueste 0.6-Version). Ein Version-Bump bringt dort nichts, ein Hersteller-Rebuild oder ein Image-Wechsel wäre nötig. Bei Grafana läuft 13.1.1 (Chart `victoria-metrics-k8s-stack`), aktuell ist 13.2.4; das Anheben gehört zum Chart-Update von Renovate.
 
@@ -87,7 +87,7 @@ Mittel: Image-Wechsel bei Datenbanken (Zammad-PostgreSQL) erfordert Backup und g
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/argo-workflows/templates/workflowtemplates.yaml`, `scripts/scan-cluster-images.sh` (neu)
-- Doku: `docs/f-cicd-automatisierung/f0070-ci-lint.md`, `docs/6-hintergruende/60040-helm-charts-tech.md`
+- Doku: `capulus-core/f-cicd-automatisierung/f0070-ci-lint.md`, `capulus-core/6-hintergruende/60040-helm-charts-tech.md`
 
 **Rollback.** `git revert`.
 

@@ -83,7 +83,7 @@ python3 -c "import yaml; yaml.safe_load(open('/etc/rancher/k3s/config.yaml'))"
 sudo /usr/local/bin/k3s-uninstall.sh
 
 # Re-Install via Ansible
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --tags k3s --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml site.yml --tags k3s --ask-vault-pass
 ```
 
 ---
@@ -141,7 +141,7 @@ kubectl exec -n argocd deployment/argocd-repo-server -- \
 
 **Privates Repo ohne Credentials:**
 
-Credentials hinterlegen wie in [../b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md#privates-repository) beschrieben.
+Credentials hinterlegen wie in [../b-kubernetes-gitops/b0010-argocd.md](../../capulus-core/b-kubernetes-gitops/b0010-argocd.md#privates-repository) beschrieben.
 
 **Falsche Repo-URL im ApplicationSet:**
 
@@ -473,7 +473,7 @@ kubectl get pods -n <namespace> -l <selector-key>=<selector-value>
 ssh -i ~/.ssh/id_rsa ubuntu@192.168.1.100 "echo connected"
 
 # Inventory
-ansible -i capulus-ansible/inventory/hosts.yml homeserver -m ping
+ansible -i inventory/hosts.yml homeserver -m ping
 ```
 
 **sudo verlangt Passwort:**
@@ -487,7 +487,7 @@ echo "ubuntu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/ubuntu-nopasswd
 **Galaxy-Collection fehlt:**
 
 ```bash
-ansible-galaxy collection install -r capulus-ansible/requirements.yml --force
+ansible-galaxy collection install -r requirements.yml --force
 ```
 
 **Falsches Vault-Passwort:**
@@ -512,9 +512,9 @@ Alle Abschnitte oben gelten für den TECH-Cluster. Für PROD und ENTW kommen die
 | Für einen neuen PROD-Ordner entsteht keine `prod-<app>`-Application | Reiner Manifest-Ordner (ohne `Chart.yaml`) fehlt in `home-server-apps-prod`, oder der Ordner liegt noch nicht auf `main` (die ApplicationSets lesen `main`) | `path` in `argocd/bootstrap-prod/applicationset.yaml` ergänzen und im Hub anwenden; Ordner mergen |
 | SealedSecret in PROD bleibt ohne Secret, Controller meldet „no key could decrypt secret“ | Mit dem TECH-Schlüssel versiegelt, jeder Cluster hat eigene Schlüssel | Für den PROD-Controller neu versiegeln (`scripts/reseal-for-prod.sh`, Kopf des Skripts) |
 | SSH (22) auf `prod-vm` läuft ins Timeout, Ping geht | UFW auf dem homeserver verwirft geroutete Bridge-Pakete (mit `br_netfilter` laufen sie durch die FORWARD-Kette) | Regel `ufw route allow in on br0 out on br0` — die Rolle `libvirt_host` setzt sie, `make libvirt-host` erneut ausführen |
-| homeserver ist nach einem Neustart eingeschaltet, aber im LAN nicht erreichbar (ARP `INCOMPLETE`, „no route to host“, auch `.99`) | Der NIC-Name hat sich geändert (`network_interface` zeigt auf ein nicht existierendes Interface), Netplan hat `br0` ohne physischen Port angelegt | Per Konsole oder IPv6-SSH (`ssh ubuntu@fe80::…%<NIC>`) `/etc/netplan/99-libvirt-bridge.yaml` korrigieren; Vorgehen mit Rollback-Timer in [40080, Phase 1.2](../4-planung/40080-multi-cluster-entw-prod-tech.md). Vorbeugung: `libvirt_host` prüft das Interface per `assert`, nach jeder Netzwerkumstellung einen Reboot-Test machen |
+| homeserver ist nach einem Neustart eingeschaltet, aber im LAN nicht erreichbar (ARP `INCOMPLETE`, „no route to host“, auch `.99`) | Der NIC-Name hat sich geändert (`network_interface` zeigt auf ein nicht existierendes Interface), Netplan hat `br0` ohne physischen Port angelegt | Per Konsole oder IPv6-SSH (`ssh ubuntu@fe80::…%<NIC>`) `/etc/netplan/99-libvirt-bridge.yaml` korrigieren; Vorgehen mit Rollback-Timer in [40080, Phase 1.2](../../capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md). Vorbeugung: `libvirt_host` prüft das Interface per `assert`, nach jeder Netzwerkumstellung einen Reboot-Test machen |
 | Pods in PROD lösen `*.homeserver` nicht auf | Die PROD-VM nutzt ausschließlich den dnsmasq des homeservers als Resolver; steht dnsmasq/Pi-hole, hat PROD kein DNS | `systemctl status dnsmasq` auf dem homeserver, Pi-hole-Pod in TECH prüfen |
-| ENTW-ArgoCD zeigt eine neue App nicht | Der Ordner liegt nicht auf dem **Branch `entw`** (ENTW liest nicht `main`) | Ordner per PR auf `entw` bringen, [b0050](../b-kubernetes-gitops/b0050-entw-argocd.md) |
+| ENTW-ArgoCD zeigt eine neue App nicht | Der Ordner liegt nicht auf dem **Branch `entw`** (ENTW liest nicht `main`) | Ordner per PR auf `entw` bringen, [b0050](../../capulus-core/b-kubernetes-gitops/b0050-entw-argocd.md) |
 | `kubectl` auf dem homeserver zeigt keine PROD-Pods | Falscher Cluster: die PROD-Ressourcen liegen in der `prod-vm` | `ssh ubuntu@192.168.178.99 'sudo k3s kubectl get pods -A'`; die Applications selbst siehst du im Hub (`kubectl -n argocd get applications \| grep '^prod-'`) |
 
 ---

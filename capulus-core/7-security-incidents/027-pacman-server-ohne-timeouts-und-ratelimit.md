@@ -74,7 +74,7 @@ Niedrig.
 
 - `argocd/apps/tech/pacman/server/cmd/server/main.go`, `ratelimit.go` (neu), `main_test.go` (neu), `server/go.mod`, `server/go.sum`
 - `argocd/apps/tech/pacman/templates/deployment.yaml`, `values.yaml`
-- Doku: `docs/6-hintergruende/60090-pacman-schulungsobjekt.md`, `docs/3-apps-workloads/300f0-pacman-visitor-tracking.md`
+- Doku: `capulus-core/6-hintergruende/60090-pacman-schulungsobjekt.md`, `capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md`
 
 **Rollback.** `git revert` bzw. in `values.yaml` den vorherigen `image.tag` (aktuell `sha-4888771`) setzen.
 

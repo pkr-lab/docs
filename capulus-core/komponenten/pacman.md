@@ -5,7 +5,7 @@ HTML5-Pacman-Spiel, self-hosted für den öffentlichen Zugriff. Ausgeliefert
 serviert **und** pro Request eine strukturierte JSON-Zugriffszeile loggt
 (Client-IP inkl. IPv6, User-Agent, optional GeoIP-Standort) — für die
 Schulung, die zeigt, was ein Webserver über einen Besucher herausfindet.
-Details/Setup der GeoIP-Anreicherung: [docs/3-apps-workloads/300f0-pacman-visitor-tracking.md](../../../../docs/3-apps-workloads/300f0-pacman-visitor-tracking.md).
+Details/Setup der GeoIP-Anreicherung: [capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md](../3-apps-workloads/300f0-pacman-visitor-tracking.md).
 
 Das Spiel selbst (`src/`) ist vendored von
 [platzhersh/pacman-canvas](https://github.com/platzhersh/pacman-canvas)
@@ -24,7 +24,7 @@ dabei immer der Ordnername, hier also **`pacman`**.
 
 Damit `pacman` als eigenes AppProject-Ziel erlaubt ist, muss der Namespace
 zusätzlich in `argocd_workloads_apps` (`capulus-ansible/roles/argocd/defaults/main.yml`)
-stehen und `make render-bootstrap` gelaufen sein (für dieses Chart bereits
+stehen und `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>` gelaufen sein (für dieses Chart bereits
 erledigt) — **und** `make argocd` einmal gegen den Cluster gelaufen sein,
 damit die AppProject-Änderung tatsächlich angewendet wird (die
 ApplicationSet-Erkennung neuer Ordner ist automatisch, das AppProject
@@ -32,13 +32,13 @@ selbst aktualisiert sich nicht von allein aus Git).
 
 ## Image bauen
 
-Automatisiert über [`.github/workflows/build-images.yml`](../../../../.github/workflows/build-images.yml):
+Automatisiert über [`.github/workflows/build-images.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/build-images.yml):
 bei jedem Push auf `main`, der `Dockerfile`, `server/**` oder `src/**`
 dieses Charts ändert, baut ein GitHub-Actions-Job das Image per
 `docker/build-push-action` und pusht es nach `ghcr.io/pkr-lab/pacman` —
 kein `argo submit`/Cluster-Zugriff mehr nötig. Der Workflow deckt
 `pacman`, `carplay-api` und `n8n` in einer Matrix ab; Details/Doku:
-[docs/f-cicd-automatisierung/f0060-build-images.md](../../../../docs/f-cicd-automatisierung/f0060-build-images.md).
+[capulus-core/f-cicd-automatisierung/f0060-build-images.md](../f-cicd-automatisierung/f0060-build-images.md).
 
 Der resultierende Tag (`sha-<kurzer-commit-sha>`) steht im Job-Summary
 des jeweiligen Workflow-Runs (GitHub → Actions → "Build Workload Images").
@@ -80,7 +80,7 @@ docker run --rm --read-only --user 65532:65532 -p 8080:8080 pacman-local
 ## Extern erreichbar
 
 `values.yaml` trägt bereits einen zweiten Ingress-Host
-(`pacman-prod.pke-lab.de`) gemäß [docs/c-netzwerk-dns/c0040-domain-tiers.md](../../../../docs/c-netzwerk-dns/c0040-domain-tiers.md)
+(`pacman-prod.pke-lab.de`) gemäß [capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md)
 — Tier **prod**, da Endnutzer-Content ohne eigenen Betriebs-/Admin-Zweck.
 `cloudflared/values.yaml` muss dafür **nicht** angepasst werden (siehe
 dortige Wildcard-Regel), Traefik matcht den Host direkt aus dieser
@@ -89,7 +89,7 @@ dortige Wildcard-Regel), Traefik matcht den Host direkt aus dieser
 ## GeoIP-Anreicherung
 
 Standardmäßig an (`geoip.enabled: true`) — das ist der eigentliche Zweck
-dieser App (Schulungs-Demo, siehe docs/3-apps-workloads/300f0-pacman-visitor-tracking.md). Bei Bedarf abschaltbar:
+dieser App (Schulungs-Demo, siehe capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md). Bei Bedarf abschaltbar:
 
 ```yaml
 geoip:
@@ -107,7 +107,7 @@ Ein initContainer (`curlimages/curl`) lädt die aktuelle DB-IP-City-Lite-DB
 gemeinsames `emptyDir`. Schlägt der Download fehl, läuft der Pod trotzdem
 an — `pacman-server` erkennt die fehlende `.mmdb`-Datei und loggt dann nur
 die rohe IP (siehe `openGeoIP()` in `server/cmd/server/main.go`), kein
-CrashLoop. Details/Datenschutz-Kontext: docs/3-apps-workloads/300f0-pacman-visitor-tracking.md.
+CrashLoop. Details/Datenschutz-Kontext: capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md.
 
 **`curlimages/curl` braucht eine explizite numerische UID/GID:** Das Image
 setzt `USER curl_user` (symbolisch, UID 100 / GID 101), nicht numerisch —
@@ -163,19 +163,19 @@ Namensfeld im Nickname-Overlay serverseitig (`window.PACMAN_TRAINING_MODE`,
 gerendert in `main.go`'s `serveIndexWithFingerprint()`) an dieselbe
 versteckte Autofill-Ernte, die `fingerprint.js`'s `harvestAutofill()`
 bereits für ihr eigenes Ecken-Widget nutzt (siehe
-[docs/3-apps-workloads/300f0-pacman-visitor-tracking.md](../../../../docs/3-apps-workloads/300f0-pacman-visitor-tracking.md)): unsichtbare
+[capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md](../3-apps-workloads/300f0-pacman-visitor-tracking.md)): unsichtbare
 E-Mail-/Tel-/Adresse-/PLZ-Felder im **selben** `<form>` wie das sichtbare
 Namensfeld, siehe `addHiddenAutofillFields()` in `src/nickname.js`. Nimmt
 der Browser eine gespeicherte Autofill-Vorschlag für "Name" an, füllt er
 typischerweise alle Felder im selben Formular mit — die verdeckten Werte
 gehen an `/api/fingerprint` (serverseitiges Log, `client_fingerprint`-Zeile,
-siehe docs/3-apps-workloads/300f0-pacman-visitor-tracking.md), nie an `/api/leaderboard`. Der Spitzname/die öffentliche
+siehe capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md), nie an `/api/leaderboard`. Der Spitzname/die öffentliche
 Bestenliste bleiben davon unberührt.
 
 **Für den Unterrichtseinsatz gedacht:** Schüler geben ihren echten Namen
 ein, im Anschluss werden die geloggten Daten (inkl. evtl. mitgelaufener
 E-Mail/Tel/Adresse) live im Grafana-Dashboard gezeigt und danach gelöscht
-— siehe docs/3-apps-workloads/300f0-pacman-visitor-tracking.md für Aufbewahrung/Löschung (VictoriaLogs-Retention, aktuell
+— siehe capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md für Aufbewahrung/Löschung (VictoriaLogs-Retention, aktuell
 14 Tage, oder manuell vorher).
 
 **Kein UI-Hinweis/Banner** — bewusst so gewünscht: das Namensfeld im
@@ -198,7 +198,7 @@ den Hostnamen:
 > Der Serverstart loggt bei `enabled: true` zusätzlich eine
 > `"training mode ENABLED"`-Warnzeile als Erinnerung (siehe `main.go`).
 > `fingerprint.js`'s eigenes Ecken-Widget läuft davon unabhängig bereits
-> heute unconditional — siehe docs/3-apps-workloads/300f0-pacman-visitor-tracking.md.
+> heute unconditional — siehe capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md.
 
 ## Sicherheits-Notizen
 
@@ -214,7 +214,7 @@ den Hostnamen:
   Direct-Download, ohne Auth/Account.
 - Die Zugriffslogs (inkl. IP/GeoIP bei aktivierter Anreicherung) landen im
   zentralen Logging-Stack (`argocd/apps/tech/logging/`,
-  VictoriaLogs) — Aufbewahrung/Zweckbindung siehe docs/3-apps-workloads/300f0-pacman-visitor-tracking.md.
+  VictoriaLogs) — Aufbewahrung/Zweckbindung siehe capulus-core/3-apps-workloads/300f0-pacman-visitor-tracking.md.
 
 ## Autoscaling
 
@@ -223,4 +223,4 @@ den Hostnamen:
 RAM-lastiges Verhalten hat. Kein `ReadWriteOnce`-Storage im Spiel, also
 auch keine Notwendigkeit für erzwungene Node-Co-Location per
 `podAffinity` (anders als z. B. immich/nextcloud). Details/Konventionen:
-[docs/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../../../../docs/b-kubernetes-gitops/b0040-hpa-autoscaling.md).
+[capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md).

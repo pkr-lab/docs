@@ -6,7 +6,7 @@ freigeben, Secrets rotieren, Troubleshooting.
 
 > Konzept, Architektur und Erstinstallation (Tunnel anlegen, Domain zu
 > Cloudflare hinzufügen, Credentials versiegeln) stehen in
-> [docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](e0000-cloudflare-tunnel.md). Diese Anleitung
+> [capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](e0000-cloudflare-tunnel.md). Diese Anleitung
 > setzt voraus, dass du dort bis einschließlich Schritt 5
 > (`values.yaml` befüllt) durch bist.
 
@@ -28,11 +28,11 @@ freigeben, Secrets rotieren, Troubleshooting.
 
 ## Voraussetzungen
 
-- Tunnel via `cloudflared tunnel create` angelegt (docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 2).
+- Tunnel via `cloudflared tunnel create` angelegt (capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 2).
 - `tunnel.id` und `tunnel.encryptedCredentialsJson` in
   `argocd/apps/tech/cloudflared/values.yaml` eingetragen.
 - Mindestens ein DNS-Route-Eintrag via `cloudflared tunnel route dns`
-  angelegt (docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 4).
+  angelegt (capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 4).
 - ArgoCD läuft und das Root-ApplicationSet ist aktiv
   (`argocd/bootstrap/root-applicationset.yaml`).
 - Sealed-Secrets-Controller ist deployt (`argocd/apps/tech/sealed-secrets/`).
@@ -106,7 +106,7 @@ curl -I https://wiki.deine-domain.de
 ```
 
 Erwartet: `HTTP/2 200` (oder ggf. eine Cloudflare-Access-Login-Seite,
-falls Option B aus docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md aktiv ist).
+falls Option B aus capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md aktiv ist).
 
 ---
 
@@ -115,14 +115,14 @@ falls Option B aus docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md akti
 `cloudflared/values.yaml` selbst (`argocd/apps/tech/cloudflared/` bzw. `argocd/apps/prod/cloudflared/`)
 bleibt dabei **unangetastet** — sie enthält nur noch **eine einzige** Wildcard-Regel
 (`*.deine-domain.de`), die pauschal an Traefik weiterreicht, unabhängig
-vom Tier (siehe [docs/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md), warum eine
+vom Tier (siehe [capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md), warum eine
 Regel pro Tier bei cloudflared technisch nicht funktioniert). Freigeben
 passiert stattdessen direkt in der `values.yaml` des jeweiligen Dienstes,
 analog zum internen `*.homeserver`-Host — **mit Bindestrich statt Punkt**
 vor dem Tier. Kompletter Ablauf am Beispiel Grafana:
 
 Mit der empfohlenen Wildcard-DNS-Route aus
-[docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 4](e0000-cloudflare-tunnel.md#schritt-4--dns-routing-wildcard-statt-einzel-records)
+[capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 4](e0000-cloudflare-tunnel.md#schritt-4--dns-routing-wildcard-statt-einzel-records)
 ist dafür **kein DNS-Schritt** mehr nötig — `grafana-tech.deine-domain.de`
 löst durch den bestehenden `*`-Record bereits zum Tunnel auf.
 
@@ -135,7 +135,7 @@ grafana:
       - grafana-tech.deine-domain.de          # neu — macht Grafana extern erreichbar
 ```
 
-> **Nur falls du dich in docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md für die Alternative mit expliziten
+> **Nur falls du dich in capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md für die Alternative mit expliziten
 > Einzel-Records entschieden hast:** zusätzlich
 > `cloudflared tunnel route dns homeserver grafana-tech.deine-domain.de`
 > ausführen.
@@ -181,7 +181,7 @@ git commit -m "feat(monitoring): remove grafana from external access"
 git push
 ```
 
-> **Nur bei expliziten Einzel-Records (Alternative aus docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md):**
+> **Nur bei expliziten Einzel-Records (Alternative aus capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md):**
 > zusätzlich den `CNAME` im Cloudflare-Dashboard unter **DNS → Records**
 > löschen, sonst bleibt der verwaiste Record stehen (harmlos, aber
 > unübersichtlich).
@@ -201,7 +201,7 @@ cloudflared tunnel delete homeserver
 cloudflared tunnel create homeserver
 
 # 3. Neue Tunnel-ID + neu versiegelte Credentials in values.yaml eintragen
-#    (siehe docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 2 + 3)
+#    (siehe capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 2 + 3)
 
 # 4. DNS-Route(n) neu anlegen (zeigen sonst noch auf die alte Tunnel-ID)
 #    Mit Wildcard-Setup reicht ein einziger Befehl für alle Hostnamen:
@@ -231,7 +231,7 @@ als Fallback-Wert stehen, greift aber nur, falls `autoscaling.enabled`
 auf `false` gesetzt wird.
 
 Da der Homeserver der einzige Dauerläufer ist (TECH läuft direkt darauf, die
-PROD-VM ebenfalls, siehe [a0010](../a-betriebssystem/a0010-overview.md#1-drei-cluster-im-überblick)),
+PROD-VM ebenfalls, siehe [a0010](../../capulus-ansible/a-betriebssystem/a0010-overview.md#1-drei-cluster-im-überblick)),
 schützt eine höhere Replica-Zahl primär vor Pod-Neustarts/Rolling-Updates, nicht
 vor einem Host-Ausfall — die grundsätzliche Verfügbarkeit hängt weiterhin am
 Homeserver selbst.
@@ -240,7 +240,7 @@ Homeserver selbst.
 
 ## Troubleshooting
 
-Siehe primär [docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md → Troubleshooting](e0000-cloudflare-tunnel.md#troubleshooting).
+Siehe primär [capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md → Troubleshooting](e0000-cloudflare-tunnel.md#troubleshooting).
 Ergänzend für den Deploy-Kontext:
 
 ### ArgoCD zeigt `OutOfSync`, synct aber nicht automatisch
@@ -278,7 +278,7 @@ ssh ubuntu@192.168.178.94 \
 
 Falls das `Secret` fehlt, obwohl die `SealedSecret` existiert: Der
 Sealed-Secrets-Controller konnte den Ciphertext nicht entschlüsseln
-(falscher Namespace/Name beim `kubeseal`-Aufruf in docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 3) —
+(falscher Namespace/Name beim `kubeseal`-Aufruf in capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 3) —
 Ciphertext neu erzeugen und `values.yaml` korrigieren.
 
 ---

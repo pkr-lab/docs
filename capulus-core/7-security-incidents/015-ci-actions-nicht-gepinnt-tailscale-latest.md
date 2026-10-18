@@ -94,7 +94,7 @@ Der Lauf der CI im PR ist der eigentliche Funktionstest der Pins. Nicht im PR la
 
 - `.github/workflows/` (`build-images.yml`, `ci.yml`, `codeql.yml`, `promote-chain.yml`, `promote-entw.yml`, `release.yml`, `renovate.yml`, `security-issues.yml`, `sync-entw.yml`, `tailscale-poc.yml`, `token-watch.yml`), `ops/token-register.yaml` (Eintrag `tailscale-ci-federated-identity`)
 - `renovate.json`, `CLAUDE.md`
-- Doku: `docs/6-hintergruende/600a0-ci-workflows-und-skripte.md`, `docs/f-cicd-automatisierung/f0020-renovate.md`, `f00b0-promotion-chain.md`, `docs/d-sicherheit/d0080-codeql-dependabot.md`
+- Doku: `capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md`, `capulus-core/f-cicd-automatisierung/f0020-renovate.md`, `f00b0-promotion-chain.md`, `capulus-core/d-sicherheit/d0080-codeql-dependabot.md`
 
 **Rollback.** PR revertieren. Danach stehen wieder die Tags und `version: latest` im Workflow. Einzelne Pins lassen sich auch ohne Revert auf einen älteren Tag zurücksetzen (SHA durch `vX` ersetzen).
 

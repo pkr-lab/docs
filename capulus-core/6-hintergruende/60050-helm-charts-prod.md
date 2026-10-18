@@ -9,7 +9,7 @@ Die Datenmigration von TECH nach PROD steht in [60030](60030-argocd-und-bootstra
 ## Regeln für alle PROD-Kopien
 
 - **Nie mit leeren Volumes starten.** Die PROD-Kopien (Nextcloud, Immich, Paperless-ngx, Wiki.js, Xibo) sind am **2026-09-19** aus TECH
-  übernommen worden ([migrations/README](../../argocd/bootstrap-prod/migrations/README.md)). Ein Start mit leerem Volume legt eine neue
+  übernommen worden ([migrations/README](../komponenten/bootstrap-prod-migrations.md)). Ein Start mit leerem Volume legt eine neue
   Datenbank, neue Konten und neue Secrets an. Beim Umschalten (Teil B der Migration) steht die App während der Endkopie auf `0`, weil der
   Kopier-Job das Zielvolume leert, danach auf `1`. Die Postgres-/MySQL-Deployments haben einen eigenen Schalter (`replicas: 0` = gestoppt, für
   Umzug oder Wartung).

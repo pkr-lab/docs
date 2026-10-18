@@ -78,7 +78,7 @@ Niedrig bis mittel: Der Readiness-Probe-Zugriff und das Monitoring dürfen durch
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/mediamtx/templates/configmap.yaml`, `templates/deployment.yaml`, `templates/service.yaml`, `values.yaml`
-- Doku: `docs/6-hintergruende/60040-helm-charts-tech.md` (Abschnitt mediamtx, außerdem die falsche Aussage „SHA256-Hash können gefahrlos in Git landen“ korrigiert)
+- Doku: `capulus-core/6-hintergruende/60040-helm-charts-tech.md` (Abschnitt mediamtx, außerdem die falsche Aussage „SHA256-Hash können gefahrlos in Git landen“ korrigiert)
 
 **Rollback.** `git revert` des Commits; ArgoCD stellt API-Port, Service-Port, `any`-Benutzer und HTTP-Readiness wieder her.
 
@@ -89,4 +89,4 @@ Niedrig bis mittel: Der Readiness-Probe-Zugriff und das Monitoring dürfen durch
 
 ## Entscheidung des Betreibers (2026-10-18)
 
-Keine Rotation der Zugangsdaten `streamer` und `viewer`; Punkt 1 (Wechsel auf `argon2:` mit SealedSecret) und Punkt 3 (RTMPS/RTSPS) sind damit als **akzeptiertes Restrisiko** verbucht. Die `sha256:`-Hashes bleiben in `values.yaml` im öffentlichen Repo; ihre Stärke hängt allein von der Passwortlänge ab. Wer sie später ändern will: neues langes Zufallspasswort wählen, den Hash nach dem Verfahren in `docs/3-apps-workloads/30040-mediamtx.md` erzeugen, in `values.yaml` eintragen und Encoder sowie Zuschauer informieren.
+Keine Rotation der Zugangsdaten `streamer` und `viewer`; Punkt 1 (Wechsel auf `argon2:` mit SealedSecret) und Punkt 3 (RTMPS/RTSPS) sind damit als **akzeptiertes Restrisiko** verbucht. Die `sha256:`-Hashes bleiben in `values.yaml` im öffentlichen Repo; ihre Stärke hängt allein von der Passwortlänge ab. Wer sie später ändern will: neues langes Zufallspasswort wählen, den Hash nach dem Verfahren in `capulus-core/3-apps-workloads/30040-mediamtx.md` erzeugen, in `values.yaml` eintragen und Encoder sowie Zuschauer informieren.

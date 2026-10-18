@@ -3,7 +3,7 @@
 Persistenter Speicher für die k3s-Cluster liegt auf dem UGREEN NAS
 (192.168.178.97, DNS-Name `ugreen-nas`) und ist als Kubernetes-StorageClass
 `nas` verfügbar. Das NAS ist eine **gemeinsame Abhängigkeit aller drei Cluster**
-(TECH, PROD, ENTW, siehe [a0010](../a-betriebssystem/a0010-overview.md#1-drei-cluster-im-überblick)):
+(TECH, PROD, ENTW, siehe [a0010](../../capulus-ansible/a-betriebssystem/a0010-overview.md#1-drei-cluster-im-überblick)):
 TECH und PROD haben je eine eigene Provisioner-App `nas-storage` (`argocd/apps/tech/nas-storage/`,
 `argocd/apps/prod/nas-storage/`), die auf dieselben NFS-Exporte zeigen. Ein NAS-Ausfall trifft
 deshalb alle NFS-Apps in beiden Clustern. Anders als die frühere `hdd`-StorageClass (7,3-TB-Platte
@@ -17,7 +17,7 @@ homeserver/worker-0/worker-1 verteilen.
 > `immich-nas` (→ `/volume2/immich-storage`, App
 > `argocd/apps/prod/immich-storage/` für Immich in PROD; die App `argocd/apps/tech/immich-storage/` gibt es im TECH-Cluster ebenfalls) — bewusst getrennt, damit die
 > Fotobibliothek nicht im geteilten Cluster-Storage-Export landet. Details:
-> [docs/3-apps-workloads/300c0-immich.md](../3-apps-workloads/300c0-immich.md).
+> [capulus-core/3-apps-workloads/300c0-immich.md](../3-apps-workloads/300c0-immich.md).
 
 ---
 
@@ -127,7 +127,7 @@ vmstaticscrape-ugreen-nas.yaml` zapft beide per `VMStaticScrape` an und setzt
 dabei `host: ugreen-nas` / `kind: nas` — darüber erscheint das NAS in den
 Dashboards im Grafana-Ordner **Hardware** ("Hardware Übersicht",
 "Server-Detail", "Speicher & Laufwerke", siehe
-[Hardware-Monitoring](20060-hardware-monitoring.md)): CPU/RAM/Netzwerk/
+[Hardware-Monitoring](../../capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md)): CPU/RAM/Netzwerk/
 Temperatur, Füllstand von `/volume1`, `/volume2`, `/overlay` und der USB-Platte,
 RAID-Zustand (`md1`/`md2`) und die S.M.A.R.T.-Tabelle.
 
@@ -417,7 +417,7 @@ automatisch etwas an.
 Konkretes Beispiel für beide Situationen zusammen (Xibo-CMS-eigene Bibliothek
 über die dynamische `nas`-StorageClass, geteilter Inbox/Display-Ordner über
 die statische-PV-Technik für n8n **und** einen Raspberry Pi gleichzeitig):
-[docs/3-apps-workloads/300e0-xibosignage.md](../3-apps-workloads/300e0-xibosignage.md).
+[capulus-core/3-apps-workloads/300e0-xibosignage.md](../3-apps-workloads/300e0-xibosignage.md).
 
 ---
 
@@ -428,4 +428,4 @@ Eine externe USB-Platte hängt direkt am UGREEN NAS und sichert regelmäßig
 `immich-storage`) per restic (inkrementell, dedupliziert, verschlüsselt).
 Läuft als UGOS-Task-Scheduler-Job direkt auf dem NAS, analog zur
 Monitoring-Exporter-Einrichtung oben. Vollständige Anleitung inkl.
-Zeitplan-Empfehlungen und Restore: **[docs/2-betrieb-hardware/20010-nas-backup.md](20010-nas-backup.md)**.
+Zeitplan-Empfehlungen und Restore: **[capulus-core/2-betrieb-hardware/20010-nas-backup.md](20010-nas-backup.md)**.

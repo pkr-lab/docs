@@ -1,7 +1,7 @@
 # Wake-on-LAN am Standort vereinsheim-alarmmonitor (+ Router-VPN-Fallback)
 
 Architektur-Plan für Wake-on-LAN an einem externen Standort, siehe
-[docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md).
+[capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md).
 **Umgesetzt**: Ansible-Teil (Abschnitt 1) und iOS-App-Anbindung
 (Abschnitt 3). Der Router-VPN-Fallback (Abschnitt 2) bleibt ein
 manueller, noch offener Schritt (Router-Zugriff vor Ort erforderlich).
@@ -141,7 +141,7 @@ Betroffene Dateien (iOS): `Models/RemoteWolTarget.swift`,
 `Services/RemoteWolAgentClient.swift` (neu), `Utilities/Constants.swift`,
 `Services/KeychainService.swift`, `ViewModels/PowerViewModel.swift`,
 `Views/PowerView.swift`, `Views/SettingsView.swift` (erweitert). Details
-siehe [docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, "iOS-App"](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md#ios-app).
+siehe [capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, "iOS-App"](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md#ios-app).
 
 Kein `project.yml`/ATS-Eintrag nötig für die neue Base-URL: App Transport
 Security gilt laut Apple-Doku ausschließlich für Domainnamen, nicht für
@@ -162,5 +162,5 @@ nackte IP-Adressen — anders als bei `*.homeserver` ist hier also keine
 
 ## Relevante Links
 
-- [docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md) — Basis-Architektur des Standorts
-- [docs/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md) — Tailscale-Grundlagen
+- [capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md) — Basis-Architektur des Standorts
+- [capulus-core/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md) — Tailscale-Grundlagen

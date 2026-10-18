@@ -8,7 +8,7 @@ Tailscale verbinden musst.
 
 > **Deploy-/Rollout-Schritte** (Day-2-Betrieb, neuen Dienst freigeben,
 > Troubleshooting) stehen separat in
-> [docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](e0010-cloudflare-deploy.md).
+> [capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](e0010-cloudflare-deploy.md).
 
 ---
 
@@ -32,7 +32,7 @@ Tailscale verbinden musst.
 
 Der Home-Server sitzt hinter der Fritz!Box, hat keine öffentliche IP und
 soll auch keine bekommen. Bisher ist der einzige Weg von außen Tailscale
-(siehe [docs/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md)) — super für dich selbst,
+(siehe [capulus-core/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md)) — super für dich selbst,
 aber unpraktisch, wenn z. B. ein DLRG-Kamerad im Wachdienst schnell im Wiki
 nachschauen will und weder Tailscale installiert noch einen Account hat.
 
@@ -108,7 +108,7 @@ Tunnel-Name `homeserver-prod` und den Dateien unter `argocd/apps/prod/cloudflare
   ```
 
 - `kubeseal` CLI lokal installiert (bereits Voraussetzung für
-  [docs/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md)).
+  [capulus-core/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md)).
 - `kubectl` mit dem Cluster verbunden (für den DNS-Routing-Schritt reicht
   aber die Cloudflare-Anmeldung, `kubectl` wird nur für kubeseal gebraucht).
 
@@ -195,7 +195,7 @@ Tunnel — **niemals im Klartext committen**.
 ## Schritt 3 — Credentials versiegeln
 
 Analog zum bestehenden SealedSecrets-Workflow, z. B.
-[docs/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md#schritt-1--secrets-generieren-und-versiegeln):
+[capulus-core/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md#schritt-1--secrets-generieren-und-versiegeln):
 
 ```bash
 kubeseal --raw \
@@ -261,7 +261,7 @@ cloudflared tunnel route dns homeserver support.deine-domain.de
 
 Bei dieser Variante muss der DNS-Schritt bei jedem neuen freigegebenen
 Dienst wiederholt werden (siehe
-[docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Neuen Dienst freigeben](e0010-cloudflare-deploy.md#neuen-dienst-freigeben)).
+[capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Neuen Dienst freigeben](e0010-cloudflare-deploy.md#neuen-dienst-freigeben)).
 
 Beide Varianten lassen sich auch manuell im Dashboard unter
 **DNS → Records** anlegen/prüfen.
@@ -283,7 +283,7 @@ tunnel:
   # EINE Wildcard-Regel für die ganze Zone deckt alle aktuellen und
   # künftigen Apps ab, unabhängig vom Tier (cloudflared kann nur "*" als
   # komplettes Label matchen, keine Tier-spezifischen Muster wie
-  # "*.tech.deine-domain.de" — Details/Begründung: docs/c-netzwerk-dns/c0040-domain-tiers.md).
+  # "*.tech.deine-domain.de" — Details/Begründung: capulus-core/c-netzwerk-dns/c0040-domain-tiers.md).
   #
   # HTTPS (443), nicht Klartext-Port 80: seit dem früheren SSO-Rollout
   # (Authelia, später Authentik) werden Session-Cookies über eine als "unsicher" gemeldete Verbindung
@@ -293,7 +293,7 @@ tunnel:
   # Das interne Zertifikat kommt von der privaten Homeserver-CA. cloudflared
   # prüft es mit dieser CA (caPool, als Datei aus der ConfigMap des Charts)
   # gegen einen Namen aus der SAN-Liste (originServerName), siehe
-  # docs/6-hintergruende/60040-helm-charts-tech.md, Abschnitt cloudflared.
+  # capulus-core/6-hintergruende/60040-helm-charts-tech.md, Abschnitt cloudflared.
   ingress:
     rules:
       - hostname: "*.deine-domain.de"
@@ -310,13 +310,13 @@ tunnel:
 > der `values.yaml` des jeweiligen Dienstes: dort in `ingress.hosts` einen
 > zusätzlichen Eintrag mit dem externen Hostnamen
 > (`<app>-<tier>.deine-domain.de` — **Bindestrich**, nicht Punkt, siehe
-> docs/c-netzwerk-dns/c0040-domain-tiers.md) neben dem internen `<app>.<tier>.homeserver`-Host ergänzen —
+> capulus-core/c-netzwerk-dns/c0040-domain-tiers.md) neben dem internen `<app>.<tier>.homeserver`-Host ergänzen —
 > Traefik matcht dann automatisch anhand des Host-Headers, ganz ohne
 > Umweg über diese Datei. Siehe
-> [docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Neuen Dienst freigeben](e0010-cloudflare-deploy.md#neuen-dienst-freigeben).
+> [capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Neuen Dienst freigeben](e0010-cloudflare-deploy.md#neuen-dienst-freigeben).
 
 Danach committen und pushen (siehe
-[docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](e0010-cloudflare-deploy.md) für den vollen
+[capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](e0010-cloudflare-deploy.md) für den vollen
 Rollout- und Verifikations-Ablauf).
 
 ---
@@ -404,7 +404,7 @@ curl -sI https://grafana-tech.pke-lab.de | head -1
 | **Zammad** | Freigeben (mit Access-Policy) | Sinnvoll, wenn Tickets/Support-Anfragen auch von Leuten ohne VPN-Zugang reinkommen sollen. Cloudflare Access oder mindestens ein Rate-Limit vorschalten, da das Formular öffentlich erreichbar ist. |
 | **Grafana** | Optional | Praktisch, um Pegel-/Wetter-Dashboards unterwegs zu checken. Login läuft über den lokalen Grafana-Account (kein SSO). Zusätzlich mit Cloudflare-Access-Policy auf den eigenen Account freigeben — sonst sind Cluster-/Infra-Metriken hinter nur einem Passwort öffentlich erreichbar. |
 | **Immich** | Freigeben | Kernanwendungsfall ist automatisches Foto-Backup vom Handy — ohne externe Erreichbarkeit synct die App nur im WLAN. Absicherung über den eigenen Immich-Login (E-Mail + Passwort, optional 2FA). |
-| **Nextcloud** | Freigeben | Datei-Sync/Kalender/Kontakte sind für Mobile-/Desktop-Clients unterwegs gedacht. Eigener Login schützt den Zugriff, siehe [docs/3-apps-workloads/300b0-nextcloud.md](../3-apps-workloads/300b0-nextcloud.md). |
+| **Nextcloud** | Freigeben | Datei-Sync/Kalender/Kontakte sind für Mobile-/Desktop-Clients unterwegs gedacht. Eigener Login schützt den Zugriff, siehe [capulus-core/3-apps-workloads/300b0-nextcloud.md](../3-apps-workloads/300b0-nextcloud.md). |
 | **ArgoCD** | Nicht freigeben | Voller GitOps-Controller-Zugriff auf den Cluster. Bleibt Tailscale-only. |
 | **Semaphore** | Nicht freigeben | Kann Ansible-Playbooks mit Root-Rechten auf beiden Servern ausführen. Bleibt Tailscale-only. |
 | **Headlamp** | Nicht freigeben | Kubernetes-Admin-Dashboard, voller Cluster-Zugriff. Bleibt Tailscale-only. |
@@ -423,7 +423,7 @@ mit einer Cloudflare-Access-Policy davor.
 
 - **UFW-Firewall bleibt unverändert.** `cloudflared` braucht keinen
   eingehenden Port — es öffnet nur eine ausgehende Verbindung. Die
-  bestehende Firewall-Tabelle in [README.md](../../README.md#networking--security)
+  bestehende Firewall-Tabelle in [README.md](../konfiguration.md#netzwerk-und-sicherheit)
   bleibt exakt so, wie sie ist.
 - **Opt-in pro Dienst.** Es wird nichts automatisch öffentlich — nur
   Hostnamen, die explizit in `tunnel.ingress.rules` stehen, sind über
@@ -480,7 +480,7 @@ dig +short NS deine-domain.de
 
 Solange hier `ns*.netcup.net` erscheint statt der Cloudflare-Nameserver,
 ist die Umstellung im Netcup CCP entweder noch nicht gespeichert oder
-noch nicht propagiert (siehe docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 1.3).
+noch nicht propagiert (siehe capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md, Schritt 1.3).
 
 Weitere Rollout- und Betriebsschritte:
-**[docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](e0010-cloudflare-deploy.md)**.
+**[capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](e0010-cloudflare-deploy.md)**.

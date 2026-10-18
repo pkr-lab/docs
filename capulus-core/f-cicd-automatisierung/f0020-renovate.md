@@ -17,9 +17,9 @@ Sicherheitsupdates.
 | `argocd/apps/*/Chart.yaml` | `helmv3` | `dependencies[].version` (Subchart-Versionen) |
 | `.github/workflows/*.yml` | `github-actions` | `uses: actions/checkout@<Commit-SHA> # vX.Y.Z` (gepinnt, Preset `helpers:pinGitHubActionDigests`) |
 | `.github/workflows/promote-chain.yml`, `tailscale-poc.yml` | `customManagers` (Regex) | Tailscale-Client hinter `tags: tag:ci` (`version: 1.104.1`), nur Stable-Releases |
-| `capulus-ansible/roles/k3s/defaults/main.yml` | `customManagers` (Regex) | Helm-Release der Rolle k3s (`k3s_helm_release: "v3.22.1"`), nur Helm 3. Die Prüfsumme kommt bei der Installation live von `get.helm.sh`, ein Bump braucht keinen Hash ([60020](../6-hintergruende/60020-ansible-rollen.md#installer-und-prüfsummen-incident-017)). |
+| `capulus-ansible/roles/k3s/defaults/main.yml` | `customManagers` (Regex) | Helm-Release der Rolle k3s (`k3s_helm_release: "v3.22.1"`), nur Helm 3. Die Prüfsumme kommt bei der Installation live von `get.helm.sh`, ein Bump braucht keinen Hash ([60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#installer-und-prüfsummen-incident-017)). |
 
-Config liegt in [`renovate.json`](../../renovate.json) im Repo-Root.
+Config liegt in [`renovate.json`](https://github.com/pkr-lab/capulus-core/blob/main/renovate.json) im Repo-Root.
 
 **Digest-Pinning:** Für Docker-Images gilt `pinDigests: true`. Renovate hängt an jeden Tag den Digest (`tag@sha256:…`), die Charts setzen `repository:tag` zusammen, das bleibt gültig. Ausgenommen sind die selbst gebauten Images unter `ghcr.io/pkr-lab/**`: Deren Tag (`sha-<commit>`) setzen `build-images.yml` und `bump-image-tag.py` neu, ein von Renovate festgeschriebener Digest würde dabei veralten. Der erste Lauf öffnet einen größeren PR je App, der die Digests ergänzt.
 
@@ -61,9 +61,9 @@ Renovate-PR gegen eine generierte Lockdatei.
 - Es rollt nichts im Cluster aus — erst nach dem Merge auf `main` greift der
   normale GitOps-Kreislauf: ArgoCD pollt das Repo und synct die geänderte
   `values.yaml` wie jede andere Änderung auch (siehe
-  [docs/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)).
+  [capulus-core/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)).
 - Ein Merge auf `main` löst zusätzlich automatisch ein neues GitHub-Release
-  aus, siehe [docs/f-cicd-automatisierung/f0030-release-automation.md](f0030-release-automation.md).
+  aus, siehe [capulus-core/f-cicd-automatisierung/f0030-release-automation.md](f0030-release-automation.md).
 
 ---
 
@@ -102,7 +102,7 @@ irgendwo im Repo selbst.
 ## Self-hosted Fallback (GitHub Actions)
 
 Falls die GitHub App (wieder) den Zugriff verliert, öffnet
-[`.github/workflows/renovate.yml`](../../.github/workflows/renovate.yml) die
+[`.github/workflows/renovate.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/renovate.yml) die
 gleichen PRs unabhängig davon — über
 [`renovatebot/github-action`](https://github.com/renovatebot/github-action)
 mit einem PAT statt der App. Er nutzt dieselbe `renovate.json`, es gibt also

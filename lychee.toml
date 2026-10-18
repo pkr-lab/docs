@@ -1,0 +1,15 @@
+max_concurrency = 8
+max_retries = 2
+timeout = 20
+accept = [200, 206, 429]
+exclude_all_private = true
+exclude = [
+  '\.homeserver',
+  '^https?://localhost',
+  '^https?://127\.0\.0\.1',
+  '^https?://100\.',
+  '^https?://(www\.)?example\.',
+  '^https://api\.github\.com',
+  'shields\.io',
+]
+exclude_path = ['.git']

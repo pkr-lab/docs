@@ -54,7 +54,7 @@ Nicht umgesetzt, weil die Umsetzung Änderungen an allen schreibenden Hosts brau
 
 ## Umsetzung (2026-10-18, nach Freigabe)
 
-Gebaut ist `basicAuth` an beiden Ingresses, **standardmäßig aus**. Beschreibung, Begründung und Reihenfolge: `docs/6-hintergruende/60060-monitoring-und-alerting.md`, Abschnitt „Schreib-Endpunkte“.
+Gebaut ist `basicAuth` an beiden Ingresses, **standardmäßig aus**. Beschreibung, Begründung und Reihenfolge: `capulus-core/6-hintergruende/60060-monitoring-und-alerting.md`, Abschnitt „Schreib-Endpunkte“.
 
 - Server: `argocd/apps/tech/monitoring/templates/write-auth.yaml` und `argocd/apps/tech/logging/templates/write-auth.yaml` (SealedSecret plus Traefik-`Middleware`), Annotation an `ingress-vm-write.yaml` und `ingress-journal-push.yaml`, Schalter `writeAuth.enabled` und `writeAuth.encryptedUsers` in den `values.yaml`.
 - Clients: Rollen `vmagent` und `journal_upload` (Zugangsdaten aus Vault-Variablen, ohne Variablen unverändert).

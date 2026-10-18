@@ -1,6 +1,6 @@
 # k3s Secrets-Encryption-at-Rest + Audit-Log (Security-Härtung Phase 4)
 
-Detail-Doku zu Phase 4 aus [docs/d-sicherheit/d0010-security-hardening-roadmap.md](d0010-security-hardening-roadmap.md).
+Detail-Doku zu Phase 4 aus [capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md](../../capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md).
 
 **Status (13.08.2026): Fertig, live und verifiziert.** Rollout
 durchgeführt: Config ausgerollt, Datastore-Backup (`tar` bei gestopptem
@@ -28,7 +28,7 @@ Dienst), zwei kontrollierte Neustarts, `rotate-keys` bis
 
 ## Ziel
 
-Sealed Secrets ([docs/…](.)) verschlüsselt nur den Git-Zustand — der
+Sealed Secrets ([docs/…](https://github.com/pkr-lab/capulus-core/tree/main/docs/d-sicherheit)) verschlüsselt nur den Git-Zustand — der
 private Schlüssel, mit dem der `sealed-secrets-controller` sie beim
 Cluster-Sync entschlüsselt, landet als **Klartext-Secret** im
 k3s-Datastore (`/var/lib/rancher/k3s/server/db/state.db`, SQLite). Jeder,
@@ -53,7 +53,7 @@ angelegt/geändert/gelöscht hat.
 Cluster läuft `v1.36.3+k3s1` (deutlich über der `v1.28`-Schwelle, ab der
 k3s den modernen `rotate-keys`-Befehl anbietet). Der alte
 `prepare` → `rotate` → `reencrypt`-Dreischritt (so ursprünglich in
-docs/d-sicherheit/d0010-security-hardening-roadmap.md skizziert) ist für diese Version **deprecated** — hier bewusst
+capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md skizziert) ist für diese Version **deprecated** — hier bewusst
 durch den modernen Weg ersetzt:
 
 ```
@@ -261,7 +261,7 @@ nicht wieder dieselbe Config schreibt.
   laufen auf TECH und PROD (Defaults in `capulus-ansible/group_vars/all.yml`), auf ENTW sind sie bewusst
   abgeschaltet (`host_vars/entw-vm/vars.yml`).
 - **Encryption-Key-Rotation danach:** Für künftige Rotationen (z. B.
-  turnusmäßig, siehe Phase 7 in docs/d-sicherheit/d0010-security-hardening-roadmap.md) reicht danach ein einzelnes
+  turnusmäßig, siehe Phase 7 in capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md) reicht danach ein einzelnes
   `sudo k3s secrets-encrypt rotate-keys` + Restart, kein erneutes
   Ersteinrichtungs-Prozedere.
 - **`sqlite3`-Paket** wird nur für den optionalen Verifikations-Schritt 7

@@ -19,7 +19,7 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 
 | Funktion | Zweck |
 |---|---|
-| `Write-Log -Level <Trace\|Debug\|Info\|Warning\|Error> -Message <string>` | Schreibt nach `Write-Host` und (falls konfiguriert) in die Log-Datei, gefiltert nach `log.level`. Siehe [Logging.md](Logging.md). |
+| `Write-Log -Level <Trace\|Debug\|Info\|Warning\|Error> -Message <string>` | Schreibt nach `Write-Host` und (falls konfiguriert) in die Log-Datei, gefiltert nach `log.level`. Siehe [Logging.md](logging.md). |
 | `Expand-Template -Template <string> -Context <hashtable>` | Ersetzt `{key}`-Platzhalter im Template durch Werte aus `Context`. |
 | `Resolve-PathOrAbsolute -PathValue <string>` | Löst einen (ggf. wildcardhaltigen) Pfad zu einem absoluten Pfad auf, auch wenn er noch nicht existiert (schneidet Segmente vom Ende ab, bis ein existierender - ggf. ebenfalls wildcardhaltiger - Elternordner gefunden wird). |
 | `Resolve-SourcePaths -PathValue <string>` | Löst einen Quellpfad zu allen tatsächlich existierenden, passenden Ordnern auf (`Resolve-Path`, kann bei Wildcards mehrere Treffer liefern). |
@@ -36,10 +36,10 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 
 | Funktion | Zweck |
 |---|---|
-| `Load-Config -Path <string>` | Lädt die `.psd1`-Konfiguration, validiert Pflichtfelder (`sources`, `namingConventions`, sowie `aufgabenRoot` oder `targets`), setzt Defaults für alle optionalen Felder und ersetzt zum Schluss die `{name}`-Verweise auf den `paths`-Block. Details siehe [Configuration.md](Configuration.md). |
+| `Load-Config -Path <string>` | Lädt die `.psd1`-Konfiguration, validiert Pflichtfelder (`sources`, `namingConventions`, sowie `aufgabenRoot` oder `targets`), setzt Defaults für alle optionalen Felder und ersetzt zum Schluss die `{name}`-Verweise auf den `paths`-Block. Details siehe [Configuration.md](konfiguration.md). |
 | `Resolve-DocFlowPathVariables -Paths <hashtable>` | Löst die Einträge des `paths`-Blocks auf, inklusive Verweisen untereinander. Wirft bei unbekannten Namen und zirkulären Verweisen. |
 | `Expand-DocFlowPathValue -Value <string> -PathVariables <hashtable> [-FieldName <string>]` | Ersetzt alle `{name}`-Verweise in einem einzelnen Pfadwert. `FieldName` erscheint in der Fehlermeldung, wenn ein Name fehlt. |
-| `Expand-DocFlowConfigPaths -Config <hashtable>` | Wendet `Expand-DocFlowPathValue` auf alle Pfadfelder der Konfiguration an (Liste siehe [Configuration.md](Configuration.md#paths-optional-empfohlen---pfade-nur-ganz-oben-anpassen)). |
+| `Expand-DocFlowConfigPaths -Config <hashtable>` | Wendet `Expand-DocFlowPathValue` auf alle Pfadfelder der Konfiguration an (Liste siehe [Configuration.md](konfiguration.md#paths-optional-empfohlen---pfade-nur-ganz-oben-anpassen)). |
 
 ## `State.ps1` - Zustandsdatei
 
@@ -47,7 +47,7 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 |---|---|
 | `Load-State -StatePath <string>` | Lädt `.docflow-state.json`; liefert `@{ processed = @{}; reviewedFiles = @{} }`, falls die Datei fehlt oder nicht lesbar ist. |
 | `Save-State -StatePath <string> -State <hashtable>` | Schreibt den State als JSON zurück, legt das Zielverzeichnis bei Bedarf an. |
-| `Remove-DocFlowExpiredState -State <hashtable> -RetentionYears <int>` | Entfernt aus `processed` und `reviewedFiles` alle Einträge, deren `processedAt` älter als `RetentionYears` ist (Einträge ohne auswertbaren Zeitstempel bleiben erhalten). Gibt die Anzahl entfernter Einträge zurück. Wird in `Invoke-DocFlowEngine` vor `Save-State` aufgerufen (siehe [Configuration.md](Configuration.md), `stateRetentionYears`). |
+| `Remove-DocFlowExpiredState -State <hashtable> -RetentionYears <int>` | Entfernt aus `processed` und `reviewedFiles` alle Einträge, deren `processedAt` älter als `RetentionYears` ist (Einträge ohne auswertbaren Zeitstempel bleiben erhalten). Gibt die Anzahl entfernter Einträge zurück. Wird in `Invoke-DocFlowEngine` vor `Save-State` aufgerufen (siehe [Configuration.md](konfiguration.md), `stateRetentionYears`). |
 
 ## `Lock.ps1` - Multi-Machine-Lock
 

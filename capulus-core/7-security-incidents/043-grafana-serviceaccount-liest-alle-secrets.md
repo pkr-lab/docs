@@ -94,7 +94,7 @@ Niedrig: Es gibt keine Secrets mit Grafana-Labels; die Dashboards (72) und Datas
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/monitoring/values.yaml`, `argocd/apps/tech/monitoring/templates/rbac-grafana-sidecar.yaml` (neu)
-- Doku: `docs/6-hintergruende/60060-monitoring-und-alerting.md`
+- Doku: `capulus-core/6-hintergruende/60060-monitoring-und-alerting.md`
 
 **Rollback.** `git revert`; ArgoCD legt `monitoring-grafana-clusterrole` und das alte Binding wieder an.
 

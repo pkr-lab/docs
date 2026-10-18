@@ -1,7 +1,7 @@
 # GitLab-Mirror — Redundanz-Kopie für den Fall, dass GitHub ausfällt
 
 Alle sechs Stunden sowie bei jedem Push auf `main` und bei jedem neuen Tag
-spiegelt [`.github/workflows/mirror-gitlab.yml`](../../.github/workflows/mirror-gitlab.yml)
+spiegelt [`.github/workflows/mirror-gitlab.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/mirror-gitlab.yml)
 dieses Repo vollständig (alle Branches + alle Tags, inkl. der
 `v${version}`-Tags aus [f0030-release-automation.md](f0030-release-automation.md))
 zu einem GitLab-Projekt. Zweck ist reine Redundanz: Fällt GitHub aus oder
@@ -65,7 +65,7 @@ neuen Branches/Tags.
 ## Was das NICHT tut
 
 - **Kein GitOps-Ziel.** ArgoCD trackt weiterhin ausschließlich das
-  GitHub-Repo (siehe [docs/a-betriebssystem/a0010-overview.md](../a-betriebssystem/a0010-overview.md)) — GitLab ist
+  GitHub-Repo (siehe [capulus-ansible/a-betriebssystem/a0010-overview.md](../../capulus-ansible/a-betriebssystem/a0010-overview.md)) — GitLab ist
   nie im Sync-Pfad, sondern nur Kaltstart-Backup im Notfall.
 - **Kein bidirektionaler Sync.** Es wird nur GitHub → GitLab gepusht, nie
   umgekehrt gelesen. Änderungen direkt auf GitLab werden beim nächsten Lauf

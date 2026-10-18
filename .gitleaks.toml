@@ -1,0 +1,11 @@
+title = "pkr-lab-docs"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Dokumentierte Namen von Fingerprint-Variablen sind keine Secrets"
+regexTarget = "line"
+regexes = [
+  '''_key_fingerprint''',
+]

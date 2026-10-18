@@ -93,7 +93,7 @@ Mittel: Strengere Security-Contexts können Container-Starts verhindern, wenn di
 
 - `argocd/apps/tech/{alamos-apager,alamos-relay,carplay-api,cloudflared,github-release-watcher,mediamtx,ntfy-bridge}/values.yaml`, `argocd/apps/prod/{cloudflared,wiki-docs-sync}/values.yaml`
 - `argocd/apps/tech/zammad/values.yaml`, `argocd/apps/tech/pacman/Dockerfile`
-- Doku: `docs/6-hintergruende/60040-helm-charts-tech.md`
+- Doku: `capulus-core/6-hintergruende/60040-helm-charts-tech.md`
 
 **Rollback.** `git revert`. Für einen einzelnen Chart den Eintrag `seccompProfile` aus `values.yaml` entfernen; bei Zammad `privileged: true` wiederherstellen (Chart-Default).
 

@@ -1,7 +1,7 @@
 # Windows-PC am Standort vereinsheim-alarmmonitor: Online-Check & Herunterfahren
 
 Ergänzung zu
-[docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, "Wake-on-LAN für den Windows-PC"](30020-vereinsheim-alarmmonitor.md#wake-on-lan-für-den-windows-pc):
+[capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md, "Wake-on-LAN für den Windows-PC"](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md#wake-on-lan-für-den-windows-pc):
 Aufwecken ist dort beschrieben und umgesetzt. Dieses Dokument deckt die
 beiden fehlenden Richtungen ab — prüfen, ob der PC gerade läuft, und ihn
 wieder herunterfahren.
@@ -80,5 +80,5 @@ passt.
 
 ## Relevante Links
 
-- [docs/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](30020-vereinsheim-alarmmonitor.md) — Basis-Dokument, WoL-Aufwecken, MAC-Adressen-Tabelle
-- [docs/4-planung/40020-vereinsheim-wol-router-vpn.md](../4-planung/40020-vereinsheim-wol-router-vpn.md) — Architektur-Hintergrund WoL + Router-VPN-Fallback
+- [capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md) — Basis-Dokument, WoL-Aufwecken, MAC-Adressen-Tabelle
+- [capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md](../4-planung/40020-vereinsheim-wol-router-vpn.md) — Architektur-Hintergrund WoL + Router-VPN-Fallback

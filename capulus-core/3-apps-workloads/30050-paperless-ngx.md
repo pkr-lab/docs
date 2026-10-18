@@ -1,6 +1,6 @@
 # Paperless-ngx — Dokumentenmanagement mit OCR
 
-> **Cluster:** PROD · Ordner `argocd/apps/prod/paperless-ngx/` · URL `https://paperless.prod.homeserver`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** PROD · Ordner `argocd/apps/prod/paperless-ngx/` · URL `https://paperless.prod.homeserver`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Paperless-ngx digitalisiert Briefe, Rechnungen und Verträge per OCR und macht
 sie volltextdurchsuchbar. Dokumente können per Scanner, Smartphone-Foto oder

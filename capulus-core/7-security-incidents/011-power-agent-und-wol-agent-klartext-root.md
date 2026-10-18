@@ -104,8 +104,8 @@ Mittel: Wake/Shutdown/Helligkeit in der iOS-App fallen aus, wenn die Quellfreiga
 - `capulus-ansible/roles/power_agent/` (`files/power-agent.py`, `defaults/main.yml`, `tasks/main.yml`, `templates/config.env.j2`, `templates/power-agent.service.j2`)
 - `capulus-ansible/roles/banana_pi_kiosk/` (`files/banana-pi-wol-agent.py`, `defaults/main.yml`, `templates/banana-pi-wol-agent.env.j2`, `templates/banana-pi-wol-agent.service.j2`)
 - `capulus-ansible/host_vars/homeserver/vars.yml`, `capulus-ansible/host_vars/vereinsheim-alarmmonitor/vars.yml`
-- `argocd/apps/tech/carplay-api/values.yaml`, `argocd/apps/tech/carplay-api/README.md`
-- Doku: `docs/6-hintergruende/60020-ansible-rollen.md`, `60080-carplay-api-und-ios-app.md`, `docs/3-apps-workloads/300d0-carplay-api.md`
+- `argocd/apps/tech/carplay-api/values.yaml`, `capulus-core/komponenten/carplay-api.md`
+- Doku: `capulus-ansible/6-hintergruende/60020-ansible-rollen.md`, `60080-carplay-api-und-ios-app.md`, `capulus-core/3-apps-workloads/300d0-carplay-api.md`
 
 **Rollback.** power-agent: `power_agent_bind_address: "0.0.0.0"` in `host_vars/homeserver` und Rollenlauf (`make power-agent`), `powerAgent.url` in `carplay-api` zurück auf `http://192.168.178.94:9101`. Härtung entfällt, indem die Optionen aus `power-agent.service.j2` entfernt werden. WoL-Agent: `banana_pi_kiosk_wol_agent_bind_address: "0.0.0.0"` und `make banana-pi-kiosks`. Die Sicherungskopien der Dateien vor der Umstellung (mit Tokens) wurden am 2026-10-17 nach dem Ende-zu-Ende-Test gelöscht, der alte Stand steht im Git-Verlauf.
 

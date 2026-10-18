@@ -1,6 +1,6 @@
 # Tailscale-Runner-PoC — erreicht ein GitHub-Runner ArgoCD und ENTW?
 
-[`.github/workflows/tailscale-poc.yml`](../../.github/workflows/tailscale-poc.yml) ist die Diagnose für die
+[`.github/workflows/tailscale-poc.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/tailscale-poc.yml) ist die Diagnose für die
 [Promotion-Kette](f00b0-promotion-chain.md) (Phase 0, Schritt 0.8 in
 [40080](../4-planung/40080-multi-cluster-entw-prod-tech.md)): Kann ein GitHub-Actions-Cloud-Runner per Tailscale dem
 Tailnet beitreten und die nicht öffentlich erreichbaren ArgoCD-Instanzen ansprechen? Das Gate der Kette

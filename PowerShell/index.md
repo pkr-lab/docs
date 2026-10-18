@@ -8,7 +8,25 @@ Ziel ist eine **klare Dokumentation**, **nachvollziehbare Systemänderungen** un
 > - Skripte mit Systemzugriff (HKLM, Firewall, Policies) **als Administrator** ausführen.
 > - Execution Policy: `powershell.exe -ExecutionPolicy Bypass -File .\Skript.ps1`
 
----
+Repository: [pkr-lab/PowerShell](https://github.com/pkr-lab/PowerShell)
+
+## Überblick
+
+Die Sammlung besteht aus Skripten für Windows-10/11-Clients, die per Watchdog bei jeder Anmeldung aus einer Sync-Quelle (OneDrive/SharePoint) in ein lokales Verzeichnis kopiert und ausgeführt werden. Alle Skripte nutzen das gemeinsame Modul `Logging.psm1`.
+
+| Ordner | Aufgabe | Seite |
+|---|---|---|
+| `Ausführung/` | einmalige Einrichtungs- und Hilfsskripte (Watchdog installieren, Dateien in eine VM kopieren) | [ausfuehrung.md](ausfuehrung.md) |
+| `StartUp/` | Login-Skripte: Erst-Einrichtung, WLAN-Erinnerung, Watchdog | [startup.md](startup.md) |
+| `Richtlinien/` | Windows-Policy-Konfiguration (Firewall, PIN, Personalisierung, Store, Branding) | [richtlinien.md](richtlinien.md) |
+| `Porgamme/` | Verwaltungsskripte (Software-Inventur, Word-Vorlagen); der Ordner heißt im Repo so | [programme.md](programme.md) |
+| `Update/` | Windows-, Treiber- und Winget-Updates | [update.md](update.md) |
+| `InstallSoftware/` | Hersteller-Tools für BIOS-Updates (HP, Lenovo) | [installsoftware.md](installsoftware.md) |
+| Wurzel | `Logging.psm1`, `SSH_toMac.ps1` | [konfiguration.md](konfiguration.md) |
+
+## Namensschema der Skripte
+
+`10020115_<Win|WIN>_<Typ>_<Name>.ps1`. `10020115` ist das feste Präfix aller Skripte der Sammlung. Der Typ ordnet das Skript ein: `A` für Einrichtungs- und Installationsskripte, `R` für Richtlinien, `S` für Skripte im Ordner `StartUp`, `doc` und `Log` für Verwaltungsskripte. Der Watchdog führt alle `.ps1` aus den Ordnern `Richtlinien`, `Porgamme`, `Update` und `InstallSoftware` aus, `StartUp` ist ausgenommen.
 
 ## Ordnerstruktur
 
@@ -45,20 +63,6 @@ PowerShell/
     └── 10020115_Win_UpdateScript.ps1        ← Windows + Treiber + Winget (Hintergrund)
 ```
 
----
-
-## Voraussetzungen
-
-| Anforderung | Details |
-|------------|---------|
-| Windows | Windows 10 oder Windows 11 (Client) |
-| PowerShell | 5.1 oder 7.x |
-| Rechte | Lokale Administratorrechte für Systemeingriffe |
-| Internet | Für Updates und Modul-Installation (PSWindowsUpdate, HPCMSL) |
-| OneDrive/SharePoint | Sync-Quelle für den Watchdog (im Skript konfigurierbar) |
-
----
-
 ## Architektur & Automatisierung
 
 ```
@@ -83,26 +87,6 @@ Bei jedem Benutzer-Login:
 .\Ausführung\WatchDogInstall.ps1
 ```
 
----
-
-## Gemeinsames Logging-Modul (`Logging.psm1`)
-
-Alle Skripte nutzen `Logging.psm1` für konsistentes Logging.
-
-```powershell
-Import-Module "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1"
-
-Initialize-Logger -Level "INFO"               # Level: DEBUG | INFO | WARN | ERROR
-Write-Log -Level INFO  -Message "Alles OK"
-Write-Log -Level ERROR -Message "Etwas lief schief"
-Close-Logger                                   # Optional: sauber schließen
-```
-
-**Log-Dateien:** `C:\Users\Public\10020115_WinScripts\Logs\log_YYYY-MM-DD.log`  
-**Log-Rotation:** Täglich (neuer Dateiname) + nach Größe (Standard: 5 MB → `.bak`)
-
----
-
 ## Sicherheit & Verantwortungsbereich
 
 - Skripte **vor Produktionseinsatz** in Testumgebung prüfen.
@@ -110,40 +94,9 @@ Close-Logger                                   # Optional: sauber schließen
 - Wiederherstellungsoptionen bereitstellen (Systemwiederherstellungspunkt, GPO-Backup).
 - Gestaffelte Rollouts: Pilot → breiter Rollout.
 
----
+## Seiten
 
-## Troubleshooting
-
-| Problem | Lösung |
-|---------|--------|
-| Skript wird blockiert | `-ExecutionPolicy Bypass` verwenden |
-| PSWindowsUpdate nicht gefunden | `Install-Module PSWindowsUpdate -Force` als Admin |
-| Watchdog startet nicht | `WatchDogInstall.ps1` als normaler Benutzer (nicht als Admin) ausführen |
-| Logs leer / nicht vorhanden | Pfad `C:\Users\Public\10020115_WinScripts\Logs\` manuell anlegen |
-| OEM-Branding nicht sichtbar | Windows neu starten |
-| WLAN-Meldebox erscheint nicht | Zähldatei prüfen: `C:\Users\Public\10020115_WinScripts\10020115_Win_R_WLANCounter.txt` |
-
----
-
-## Rollback
-
-| Aktion | Befehl |
-|--------|--------|
-| Watchdog-Task entfernen | `Unregister-ScheduledTask -TaskName "GPO-Watchdog" -Confirm:$false` |
-| Run-Key entfernen | `Remove-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name GPOWatchdogStarter` |
-| Store-Richtlinie entfernen | `Remove-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name RemoveWindowsStore` |
-| PIN-Richtlinie entfernen | `Remove-Item "HKLM:\SOFTWARE\Policies\Microsoft\PassportForWork\PINComplexity" -Recurse -Force` |
-| Software-Richtlinien | `.\Richtlinien\10020115_Win_R_SoftwareInstallUninstall.ps1` |
-| Legal Notice entfernen | Registry: `HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon` → `LegalNoticeCaption` + `LegalNoticeText` löschen |
-| OEM-Branding entfernen | `Remove-Item "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Recurse` |
-
----
-
-## Lizenz
-
-MIT – Nutzung auf eigene Verantwortung.
-
-## Mitwirken
-
-Pull Requests und Issues sind willkommen.  
-Bitte alle Systemänderungen im zugehörigen Unterordner-README dokumentieren.
+- [Installation](installation.md)
+- [Konfiguration](konfiguration.md)
+- [Nutzung](nutzung.md)
+- [Releases](releases.md)

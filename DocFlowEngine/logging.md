@@ -11,7 +11,7 @@ Trace < Debug < Info < Warning < Error
 ```
 
 Konfiguriert über `log.level` in `config/docflow-config.psd1` (siehe
-[Configuration.md](Configuration.md#log-optional-default--level--info-file--docflowlog-)). Nur
+[Configuration.md](konfiguration.md#log-optional-default--level--info-file--docflowlog-)). Nur
 Meldungen **ab** dem konfigurierten Level werden ausgegeben - bei `level = 'Warning'` erscheinen
 also `Warning`- und `Error`-Meldungen, aber keine `Info`- oder `Debug`-Meldungen. Ein unbekannter
 oder fehlender Wert fällt auf `Info` zurück.
@@ -52,7 +52,7 @@ Format (kein JSON/CSV). Für Auswertungen eignet sich `Select-String`/`grep` auf
 |---|---|
 | `Gefundene Dateien in '...': 4` | Anzahl der in einem Quellordner gefundenen (nicht ausgeschlossenen) Dateien vor Dedup-Prüfung. |
 | `Kopiere Datei: ... -> ...` | Erfolgreiche Kopie im Vorwärtslauf. |
-| `Zieldatei existiert bereits, überspringe Kopie: ...` | Ziel-Existenz-Check hat gegriffen (Multi-Machine-Absicherung, siehe [MULTI-MACHINE-SETUP.md](Konzepte/MULTI-MACHINE-SETUP.md)). |
+| `Zieldatei existiert bereits, überspringe Kopie: ...` | Ziel-Existenz-Check hat gegriffen (Multi-Machine-Absicherung, siehe [MULTI-MACHINE-SETUP.md](konzepte/multi-machine-setup.md)). |
 | `Datei '...' entspricht nicht der erwarteten Namenskonvention. Hinweis-Datei erstellt: ...` | Naming-Hint wurde erzeugt (Schema nicht erfüllt oder Präfix/Suffix unbekannt). |
 | `Whitelist geladen: '...' (6 Präfixe, 11 Kombinationen)` | Pfad und Umfang der tatsächlich genutzten Präfix/Suffix-Whitelist. Weichen die Zahlen von der Erwartung ab, wird eine andere Datei gelesen als gedacht, oder Zeilen sind fehlerhaft. Bei `log.level = 'Debug'` folgt die vollständige Liste der Einträge. |
 | `Datei '...': Präfix '...' ist nicht in der Whitelist '...' eingetragen.` / `Datei '...': Suffix '...' ist für Präfix '...' nicht in der Whitelist '...' eingetragen.` | Dateiname passt zum Schema, aber der Präfix fehlt oder die Kombination ist nicht erlaubt. Die Datei wird nicht kopiert, der Schüler bekommt eine Hinweisdatei. |
@@ -76,5 +76,5 @@ Format (kein JSON/CSV). Für Auswertungen eignet sich `Select-String`/`grep` auf
 
 ## Fehlerdiagnose
 
-Siehe README-Abschnitt [Troubleshooting](../README.md#troubleshooting) für die häufigsten
+Siehe README-Abschnitt [Troubleshooting](nutzung.md#troubleshooting) für die häufigsten
 Fehlerbilder und ihre Log-Signaturen.

@@ -7,8 +7,8 @@ beiden KVM-VMs (prod-vm, entw-vm)** und die Raspberry Pis. Sie liegen im
 Grafana-Ordner **Hardware** (`https://grafana-tech.pke-lab.de`) und lösen das
 frühere Dashboard "Home Server Auslastung" ab.
 
-Quellen im Repo: [argocd/apps/tech/monitoring/dashboards/hardware/](../../argocd/apps/tech/monitoring/dashboards/hardware),
-[templates/dashboards-hardware.yaml](../../argocd/apps/tech/monitoring/templates/dashboards-hardware.yaml).
+Quellen im Repo: [argocd/apps/tech/monitoring/dashboards/hardware/](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/monitoring/dashboards/hardware),
+[templates/dashboards-hardware.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/templates/dashboards-hardware.yaml).
 
 ---
 
@@ -115,11 +115,11 @@ mitbekommt — nicht über `instance` (das ist bei den k3s-Nodes weiterhin
 
 | Host | node_exporter | S.M.A.R.T. | Wo definiert |
 |---|---|---|---|
-| homeserver, worker-0, worker-1 | DaemonSet `prometheus-node-exporter` (Relabeling `host` = k8s-Nodename, `kind: server`) | Ansible-Rolle [`smartctl_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/smartctl_exporter) (Port 9633) → `vmstaticscrape-smartctl.yaml` | [values.yaml](../../argocd/apps/tech/monitoring/values.yaml) `prometheus-node-exporter.vmScrape` |
-| ugreen-nas | Docker-Container auf dem NAS (Port 9100) | Docker-Container (Port 9633), siehe [NAS-Storage](20000-nas-storage.md#monitoring-grafana-hardware-dashboards) | `vmstaticscrape-ugreen-nas.yaml` |
+| homeserver, worker-0, worker-1 | DaemonSet `prometheus-node-exporter` (Relabeling `host` = k8s-Nodename, `kind: server`) | Ansible-Rolle [`smartctl_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/smartctl_exporter) (Port 9633) → `vmstaticscrape-smartctl.yaml` | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/values.yaml) `prometheus-node-exporter.vmScrape` |
+| ugreen-nas | Docker-Container auf dem NAS (Port 9100) | Docker-Container (Port 9633), siehe [NAS-Storage](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards) | `vmstaticscrape-ugreen-nas.yaml` |
 | **prod-vm** (192.168.178.99), **entw-vm** (192.168.178.100) | Ansible-Rolle [`node_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/node_exporter) (Port 9100) in `prod.yml`/`entw.yml` | — (virtuelle Platten, kein SMART) | `vmstaticscrape-vms.yaml` |
 | infotafel (Pi) | `node_exporter` (Port 9100) | — | `vmstaticscrape-infotafel.yaml` |
-| vereinsheim-alarmmonitor (Pi, nur Tailscale) | lokaler `vmagent` pusht per remote_write | — | [vmagent-Rolle](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/vmagent) (setzt `host`/`kind` ab dem nächsten Lauf) **und** VMSingle-Relabeling [`configmap-vmsingle-relabel.yaml`](../../argocd/apps/tech/monitoring/templates/configmap-vmsingle-relabel.yaml) (setzt sie beim Empfang, solange sie fehlen) |
+| vereinsheim-alarmmonitor (Pi, nur Tailscale) | lokaler `vmagent` pusht per remote_write | — | [vmagent-Rolle](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/vmagent) (setzt `host`/`kind` ab dem nächsten Lauf) **und** VMSingle-Relabeling [`configmap-vmsingle-relabel.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/templates/configmap-vmsingle-relabel.yaml) (setzt sie beim Empfang, solange sie fehlen) |
 
 ```
 homeserver / worker-1 ──► node-exporter (DaemonSet, :9100) ─┐
@@ -132,7 +132,7 @@ infotafel ──────────────► node_exporter (:9100) �
 ### Die beiden VMs
 
 `prod-vm` und `entw-vm` sind eigenständige k3s-Cluster (siehe
-[Multi-Cluster-Plan](../4-planung/40080-multi-cluster-entw-prod-tech.md)) und
+[Multi-Cluster-Plan](../../capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md)) und
 gehören nicht zum TECH-Cluster. Sie tauchen deshalb wie das NAS als
 **Gast-Betriebssystem** auf: CPU, RAM, Dateisystem und Netzwerk *aus Sicht der
 VM*. Der `steal`-Anteil im CPU-Panel zeigt, wenn der Hypervisor der VM Rechenzeit
@@ -155,13 +155,13 @@ beide aus dem Ubuntu-Repo, Dienste laufen per systemd):
 
 ```bash
 # node_exporter in den beiden VMs
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/prod.yml --tags node-exporter --ask-vault-pass
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/entw.yml --tags node-exporter --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml prod.yml --tags node-exporter --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml entw.yml --tags node-exporter --ask-vault-pass
 
 # S.M.A.R.T.-Exporter auf den physischen Nodes (worker-0 nur, wenn er gerade wach ist)
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml     --tags smartctl-exporter --limit homeserver --ask-vault-pass
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/worker-1.yml --tags smartctl-exporter --ask-vault-pass
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/worker-0.yml --tags smartctl-exporter --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml site.yml     --tags smartctl-exporter --limit homeserver --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml worker-1.yml --tags smartctl-exporter --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml worker-0.yml --tags smartctl-exporter --ask-vault-pass
 ```
 
 Ohne `--tags` installieren die Playbooks die Rollen ohnehin bei jedem
@@ -223,7 +223,7 @@ Regex in der Query "Verschleiß" (`dashboards/hardware/*.json`) ergänzen.
 
 | Symptom | Ursache / Lösung |
 |---|---|
-| **NAS: Laufwerke-Panels leer**, `smartctl_devices` = 5, aber kein `smartctl_device_*` | Stand 2026-09-20 liefert der smartctl-Container auf dem NAS zwar die Geräteanzahl, aber keine Werte je Platte (auch die früheren Panels waren dadurch leer). Auf dem NAS `docker logs smartctl-exporter` prüfen und `docker exec smartctl-exporter smartctl --json -a /dev/sda`; häufige Ursache: fehlender Gerätezugriff (`--privileged`, `-v /dev:/dev:ro` siehe [NAS-Storage](20000-nas-storage.md#monitoring-grafana-hardware-dashboards)) oder ein Gerätetyp, der `-d sat` braucht |
+| **NAS: Laufwerke-Panels leer**, `smartctl_devices` = 5, aber kein `smartctl_device_*` | Stand 2026-09-20 liefert der smartctl-Container auf dem NAS zwar die Geräteanzahl, aber keine Werte je Platte (auch die früheren Panels waren dadurch leer). Auf dem NAS `docker logs smartctl-exporter` prüfen und `docker exec smartctl-exporter smartctl --json -a /dev/sda`; häufige Ursache: fehlender Gerätezugriff (`--privileged`, `-v /dev:/dev:ro` siehe [NAS-Storage](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards)) oder ein Gerätetyp, der `-d sat` braucht |
 | Server fehlt in den Dashboards | Label `host` fehlt: `up{host="…"}` in Grafana Explore abfragen; bei k3s-Nodes prüfen, ob `kubectl -n monitoring get vmservicescrape monitoring-victoria-metrics-k8s-stack-prometheus-node-exporter -o yaml` die `relabelConfigs` enthält |
 | `vereinsheim-alarmmonitor` fehlt in den Hardware-Dashboards | Der Pi pusht ohne `host`/`kind`; VictoriaMetrics ergänzt sie beim Empfang per `-relabelConfig` (ConfigMap `vmsingle-relabel`, Mount `/etc/vm/configs/vmsingle-relabel/`, nur für `instance="vereinsheim-alarmmonitor"`). Prüfen: `up{host="vereinsheim-alarmmonitor"}` in Grafana Explore; sonst ob das VMSingle-Pod mit dem Argument `-relabelConfig` läuft (`kubectl -n monitoring get pod -l app.kubernetes.io/name=vmsingle -o yaml`). Nur neue Datenpunkte bekommen das Label, ältere nicht. Sein eigenes Dashboard "1002011-pis" ist davon unabhängig |
 | Waben-Panel zeigt "Panel plugin not found" | Plugin `grafana-polystat-panel` noch nicht installiert: Grafana-Pod nach dem Sync neu starten (Plugins werden beim Start geladen) |

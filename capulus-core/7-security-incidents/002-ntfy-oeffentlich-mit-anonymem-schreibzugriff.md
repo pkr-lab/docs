@@ -7,7 +7,7 @@
 
 ## Beschreibung
 
-ntfy läuft mit `auth-default-access: "read-write"` und ist über den Wildcard-Tunnel `*.pke-lab.de` im Internet erreichbar (`ntfy-tech.pke-lab.de`, Pfad `/`). Anonyme Clients dürfen damit auf allen Topics lesen und schreiben, für die keine explizite ACL das Gegenteil festlegt. Die Betriebsdoku sagt selbst, dass ein Topic öffentlich ist, solange dieser Wert gesetzt ist, und beschreibt `deny-all` als Zielzustand (`docs/1-benachrichtigungen/10010-ntfy.md`, Zeilen 78 und 138). Im Chart steht der Zielzustand nicht.
+ntfy läuft mit `auth-default-access: "read-write"` und ist über den Wildcard-Tunnel `*.pke-lab.de` im Internet erreichbar (`ntfy-tech.pke-lab.de`, Pfad `/`). Anonyme Clients dürfen damit auf allen Topics lesen und schreiben, für die keine explizite ACL das Gegenteil festlegt. Die Betriebsdoku sagt selbst, dass ein Topic öffentlich ist, solange dieser Wert gesetzt ist, und beschreibt `deny-all` als Zielzustand (`capulus-core/1-benachrichtigungen/10010-ntfy.md`, Zeilen 78 und 138). Im Chart steht der Zielzustand nicht.
 
 Ob für die produktiv genutzten Topics (`Home-Lab`, `Home-Lab-System`, `alerts`) explizite Deny-Regeln in `auth.db` existieren, lässt sich nur auf dem laufenden Pod bzw. per externem Test klären (Phase 2/3). Die Konfiguration im Repo erlaubt es.
 
@@ -21,7 +21,7 @@ $ grep -n 'pke-lab.de' argocd/apps/tech/ntfy/values.yaml
 46:    - host: ntfy-tech.pke-lab.de
 60:  base-url: "https://ntfy-tech.pke-lab.de"
 
-$ sed -n 78p docs/1-benachrichtigungen/10010-ntfy.md
+$ sed -n 78p capulus-core/1-benachrichtigungen/10010-ntfy.md
 > **Hinweis:** Das Topic ist öffentlich zugänglich solange `auth-default-access: read-write` gesetzt ist. [...]
 ```
 
@@ -110,7 +110,7 @@ Ein falscher Token wird auch bei offenem Default mit `401` abgelehnt, sodass erf
 - `argocd/apps/tech/n8n/workflows/` (fünf Workflow-JSONs)
 - `capulus-ansible/roles/ntfy_publisher/` (neu), `capulus-ansible/roles/{thermal_watchdog,resource_watchdog,cluster_power_manager,nightly_worker_wake}/files/*.sh`, sechs Playbooks, `capulus-ansible/group_vars/all.yml` (`ntfy_publisher_token` als Vault-Wert)
 - `scripts/seal-ntfy-tokens.sh` (neu), `ops/token-register.yaml`
-- Doku: `docs/1-benachrichtigungen/10010-ntfy.md`, `docs/3-apps-workloads/30070-n8n.md`, `docs/6-hintergruende/{60020,60040,60080,600a0}`, `docs/f-cicd-automatisierung/f0070-ci-lint.md`
+- Doku: `capulus-core/1-benachrichtigungen/10010-ntfy.md`, `capulus-core/3-apps-workloads/30070-n8n.md`, `docs/6-hintergruende/{60020,60040,60080,600a0}`, `capulus-core/f-cicd-automatisierung/f0070-ci-lint.md`
 
 **Rollback.** In `argocd/apps/tech/ntfy/values.yaml` `auth-default-access` zurück auf `"read-write"`, mergen, ArgoCD synchronisiert in wenigen Minuten. Nutzer und Tokens bleiben in `auth.db` erhalten und stören nicht. Zum Entfernen: `kubectl -n ntfy exec deploy/ntfy -- ntfy user del publisher` und `… user del reader`. Vor der Änderung wurde `auth.db` gesichert (Prüfsumme verglichen). Die Token-Änderungen in den Charts sind rückwärtskompatibel (`secrets.ntfyToken.enabled: false` sendet wieder anonym).
 

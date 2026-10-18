@@ -2,7 +2,7 @@
 
 Weboberfläche zum Ansehen des TECH-Clusters (Pods, Logs, Events). Die Anmeldung läuft mit einem kurzlebigen Token, das nur Leserechte hat.
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/headlamp/` · URL `https://headlamp.tech.homeserver`, nur intern. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/headlamp/` · URL `https://headlamp.tech.homeserver`, nur intern. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 ---
 

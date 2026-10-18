@@ -3,30 +3,30 @@
 ## Hauptbereiche
 
 ### Ausbildungsjahrgänge
-- [Ausbildungsjahr 1](./Ausbildungsjahr_1) - Anfänger
-- [Ausbildungsjahr 2](./Ausbildungsjahr_2) - Fortgeschrittene
-- [Ausbildungsjahr 3](./Ausbildungsjahr_3) - Abschlussjahr
+- `Ausbildungsjahr 1` - Anfänger
+- `Ausbildungsjahr 2` - Fortgeschrittene
+- `Ausbildungsjahr 3` - Abschlussjahr
 
 Pro Jahrgang: ~40 Schüler/innen verteilt auf 5 Fachbereiche
 
 ### Lehrpläne & Richtlinien
-- [Lehrplan](./Lehrplan) - Alle Lehrpläne nach Fachbereich
-- [Richtlinien](./Ressourcen) - Allgemeine Richtlinien und Guidelines
-- [Sicherheit](./Ressourcen/Sicherheitsrichtlinien.docx) - Sicherheitsrichtlinien
+- `Lehrplan` - Alle Lehrpläne nach Fachbereich
+- `Richtlinien` - Allgemeine Richtlinien und Guidelines
+- `Sicherheit` - Sicherheitsrichtlinien
 
 ### Vorlagen
-- [Vorlagen](./Vorlagen) - Projekt- und Berichtsvorlagen für alle Fachbereiche
+- `Vorlagen` - Projekt- und Berichtsvorlagen für alle Fachbereiche
 
 ### Ressourcen
-- [Ressourcen](./Ressourcen) - Code Style Guides, Glossar, etc.
-- [Gemeinschaftliche Ressourcen](./Gemeinschaftliche_Ressourcen) - Codebeispiele, Dokumentation, Links
+- `Ressourcen` - Code Style Guides, Glossar, etc.
+- `Gemeinschaftliche Ressourcen` - Codebeispiele, Dokumentation, Links
 
 ### Verwaltung & Tooling
-- [Verwaltung](./Verwaltung) - Jahrgangsplan, Stundenpläne, Schulferien
-- [Tooling](./Tooling) - Scripts, Templates, Checklisten
+- `Verwaltung` - Jahrgangsplan, Stundenpläne, Schulferien
+- `Tooling` - Scripts, Templates, Checklisten
 
 ### Archiv
-- [Archiv](./Archiv) - Ältere Jahrgänge und abgeschlossene Projekte
+- `Archiv` - Ältere Jahrgänge und abgeschlossene Projekte
 
 ## Benutzergruppen
 

@@ -114,7 +114,7 @@ Variable `tailscale_advertise_routes` (Default `{{ local_subnet }}`, siehe
 `capulus-ansible/roles/tailscale/defaults/main.yml`). Geräte, die nur selbst im
 Tailnet erreichbar sein sollen, ohne fremden LAN-Traffic weiterzuleiten —
 z. B. die xibosignage-Raspberry-Pis, siehe
-[docs/3-apps-workloads/300e0-xibosignage.md](../3-apps-workloads/300e0-xibosignage.md) — setzen sie in ihren
+[capulus-core/3-apps-workloads/300e0-xibosignage.md](../3-apps-workloads/300e0-xibosignage.md) — setzen sie in ihren
 `group_vars` auf `""`, dann lässt die Rolle `--advertise-routes` beim
 `tailscale up`/`tailscale set`-Aufruf komplett weg:
 
@@ -352,7 +352,7 @@ steht nicht im Repo — dort prüfen, bevor man sich auf eine Trennung verlässt
 
 ## Troubleshooting
 
-Detaillierte Schritte in [../a-betriebssystem/a0040-troubleshooting.md](../a-betriebssystem/a0040-troubleshooting.md#tailscale-verbindet-nicht).
+Detaillierte Schritte in [../a-betriebssystem/a0040-troubleshooting.md](../../capulus-ansible/a-betriebssystem/a0040-troubleshooting.md#tailscale-verbindet-nicht).
 
 Schnell-Checks:
 

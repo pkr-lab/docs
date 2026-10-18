@@ -17,7 +17,7 @@ steckt.
 
 Diese Seite beschreibt die URL-Konvention (Namensgebung) und wie sie mit den drei Clustern
 zusammenhängt. Die ArgoCD-Trennung (Projekte, Ordner) ist ein anderes Thema, siehe
-[docs/b-kubernetes-gitops/b0020-argocd-projects.md](../b-kubernetes-gitops/b0020-argocd-projects.md).
+[capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md](../b-kubernetes-gitops/b0020-argocd-projects.md).
 
 > **Tier ist nicht gleich Cluster.** Das Tier ist ein Namensbestandteil (`tech` = Infrastruktur/
 > Admin, `prod` = Apps mit Nutzerkreis, `dev` = Entwicklung). Welcher *Cluster* hinter dem Namen
@@ -104,7 +104,7 @@ Tier, s. u.). Betroffene Stellen pro App:
 
 Die Tier-Labels brauchten in der DNS-Auflösung selbst keine eigene Regel: sowohl dnsmasq
 (`address=/homeserver/<ip>`, siehe
-[docs/c-netzwerk-dns/c0000-dns-architecture.md](c0000-dns-architecture.md)) als auch der
+[capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](c0000-dns-architecture.md)) als auch der
 CoreDNS-Forward im Cluster (`argocd/apps/tech/coredns-custom/`)
 matchen auf die komplette `homeserver`-Zone inklusive aller
 Subdomain-Ebenen. Nur für Hosts, die in einem **anderen** Cluster laufen, gibt es die
@@ -154,7 +154,7 @@ Aktuell tragen diese Apps zusätzlich einen `*-pke-lab.de`-Host:
 | MediaMTX | `stream-prod.pke-lab.de` | prod | TECH |
 | Uptime Kuma (Status-Seite) | `status-prod.pke-lab.de` | prod | TECH |
 | pacman | `pacman-prod.pke-lab.de` (öffentlich, ohne Auth, Schulungsobjekt) | prod | TECH |
-| alamos-relay | `alamos-relay-prod.pke-lab.de` (einziger Zweck ist die externe Erreichbarkeit, siehe [docs/3-apps-workloads/300i0-alamos-relay.md](../3-apps-workloads/300i0-alamos-relay.md)) | prod | TECH |
+| alamos-relay | `alamos-relay-prod.pke-lab.de` (einziger Zweck ist die externe Erreichbarkeit, siehe [capulus-core/3-apps-workloads/300i0-alamos-relay.md](../3-apps-workloads/300i0-alamos-relay.md)) | prod | TECH |
 | Wiki.js | `wiki-prod.pke-lab.de` | prod | PROD |
 | Nextcloud | `nextcloud-prod.pke-lab.de` | prod | PROD |
 | Immich | `immich-prod.pke-lab.de` | prod | PROD |
@@ -166,7 +166,7 @@ fiele, weil ihnen schlicht der zweite Ingress-Host fehlt.
 
 Eine App extern freigeben oder entfernen heißt: den `*-pke-lab.de`-Host in der `ingress.hosts`-Liste
 der **App selbst** ergänzen bzw. löschen, nicht in `cloudflared/values.yaml`. Details/Ablauf:
-[docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Neuen Dienst freigeben](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#neuen-dienst-freigeben).
+[capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Neuen Dienst freigeben](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#neuen-dienst-freigeben).
 
 > **Zu prüfen nach einem Rollout:** Traefiks Host-Header-Routing setzt voraus, dass `cloudflared`
 > den ORIGINAL angefragten Hostnamen (z. B. `grafana-tech.pke-lab.de`) unverändert als HTTP-Host-Header
@@ -191,7 +191,7 @@ Mit Bindestrich (`grafana-tech.pke-lab.de`) bleibt der externe Hostname
 eine einzige Label-Ebene und ist vom bestehenden kostenlosen Zertifikat
 abgedeckt — keine Cloudflare-Plan-Änderung nötig. Intern bleibt der Punkt
 (`grafana.tech.homeserver`), weil dort die eigene, selbst erzeugte CA
-greift (siehe [docs/d-sicherheit/d0040-internal-tls.md](../d-sicherheit/d0040-internal-tls.md)), die nicht an
+greift (siehe [capulus-core/d-sicherheit/d0040-internal-tls.md](../d-sicherheit/d0040-internal-tls.md)), die nicht an
 Cloudflares Zertifikatsgrenzen gebunden ist und beliebig viele
 Label-Ebenen in ihrer SAN-Liste tragen kann.
 
@@ -243,14 +243,14 @@ oder Konfiguration dafür. Sobald `ingress.hosts[].host` in der
 zeigt, zieht ArgoCD automatisch nach dem nächsten Sync nach. Kein
 zusätzlicher Schritt in `argocd/bootstrap/` nötig — die dortige
 ApplicationSet-/AppProject-Struktur (siehe
-[docs/b-kubernetes-gitops/b0020-argocd-projects.md](../b-kubernetes-gitops/b0020-argocd-projects.md)) ist von dieser
+[capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md](../b-kubernetes-gitops/b0020-argocd-projects.md)) ist von dieser
 URL-Konvention unabhängig.
 
 ---
 
 ## Gelöst: internes TLS-Wildcard-Zertifikat (war Hostname-Mismatch)
 
-Der `https://`-Rollout aus [docs/d-sicherheit/d0040-internal-tls.md](../d-sicherheit/d0040-internal-tls.md)
+Der `https://`-Rollout aus [capulus-core/d-sicherheit/d0040-internal-tls.md](../d-sicherheit/d0040-internal-tls.md)
 war bereits vollzogen, bevor diese Migration hier lief — das damals
 committete Zertifikat trug danach aber noch die feste SAN-Liste der
 *alten*, untierten Hostnamen (`<app>.homeserver`), während die Hosts
@@ -261,12 +261,12 @@ Zertifikats-Hostname-Mismatch — und weil der CA-Private-Key bewusst
 außerhalb des Repos lag, ließ sich das nicht per Commit reparieren.
 
 Das war genau der Auslöser für die Umstellung auf cert-manager (siehe
-[docs/d-sicherheit/d0040-internal-tls.md](../d-sicherheit/d0040-internal-tls.md)): Die
+[capulus-core/d-sicherheit/d0040-internal-tls.md](../d-sicherheit/d0040-internal-tls.md)): Die
 `Certificate`-Ressource trägt jetzt die aktuelle, tier-behaftete
 SAN-Liste, cert-manager signiert automatisch aus derselben CA (kein
 Hostname-Mismatch mehr) und erneuert selbstständig vor Ablauf. Ein
 künftiger neuer Host braucht weiterhin einen `dnsNames`-Eintrag + Commit
-(siehe docs/d-sicherheit/d0040-internal-tls.md), aber keinen manuellen CA-Key-abhängigen Signier-Schritt
+(siehe capulus-core/d-sicherheit/d0040-internal-tls.md), aber keinen manuellen CA-Key-abhängigen Signier-Schritt
 mehr.
 
 ---
@@ -278,7 +278,7 @@ mehr.
    Endnutzer → **tech**.
 2. **Cluster wählen** und den zugehörigen Ordner anlegen (`argocd/apps/tech/`, `argocd/apps/prod/`,
    `argocd/apps/entw/`), siehe
-   [docs/b-kubernetes-gitops/b0020-argocd-projects.md](../b-kubernetes-gitops/b0020-argocd-projects.md#eine-neue-app-hinzufügen).
+   [capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md](../b-kubernetes-gitops/b0020-argocd-projects.md#eine-neue-app-hinzufügen).
    Läuft die App im **PROD**-Cluster, den internen Host zusätzlich in `dnsmasq_prod_vm_hosts` eintragen
    ([DNS-Abschnitt](#dns-tier-und-cluster-sind-zwei-verschiedene-dinge)).
 3. Ingress-Host in der `values.yaml` der neuen App direkt im Schema anlegen:

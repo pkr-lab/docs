@@ -2,7 +2,7 @@
 
 Eine Mail mit einer JSON-Datei und Bildern im Anhang wird zu einem Instagram-Beitrag: ein Bild als Einzelpost, mehrere Bilder als Karussell. Der Workflow läuft in n8n und nutzt die offizielle Instagram Graph API. Es gibt kein Passwort-Login und kein Browser-Scraping. Die Bilder liegen dafür kurz im n8n-Pod und werden Meta über einen einzelnen öffentlichen Pfad bereitgestellt.
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/n8n/` · Workflow `workflows/instagram-post-per-mail.json` · Bild-URL `https://instagram-bilder-prod.pke-lab.de/webhook/instagram-bild` (extern, nur dieser Pfad). `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/n8n/` · Workflow `workflows/instagram-post-per-mail.json` · Bild-URL `https://instagram-bilder-prod.pke-lab.de/webhook/instagram-bild` (extern, nur dieser Pfad). `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Allgemeines zu n8n steht in [30070](30070-n8n.md). Der Mail-Eingang ist wie beim [ISC-News-Workflow](300k0-isc-news-bot.md#n8n-workflow-einrichten) aufgebaut, nur mit eigenem Betreff und eigenem Ordner.
 

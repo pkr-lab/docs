@@ -14,7 +14,7 @@ nie wieder eine YAML-Datei an, um eine neue Aktion auszulösen.
   hört auf der LAN-IP **und** auf `tailscale0`, also kommt jeder
   Tailscale-Client an die `*.homeserver`-Namen ran.
   ([Wichtiger Hintergrund zur DNS-Topologie und warum der Home-Server
-  *nicht* der LAN-DNS-Server sein sollte → docs/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md))
+  *nicht* der LAN-DNS-Server sein sollte → capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](../../capulus-core/c-netzwerk-dns/c0000-dns-architecture.md))
 - Ein-Klick-Run von Playbooks aus beliebigen Git-Repos
   (z.B. `home-server`, `worker-0`, später beliebig viele mehr).
 - Geteilter SSH-Key, der von Ansible verwaltet und automatisch auf alle

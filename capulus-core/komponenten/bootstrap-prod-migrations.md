@@ -4,7 +4,7 @@ Runbook und Vorlage fuer den Umzug einer App samt Daten von TECH nach PROD. **St
 Apps paperless-ngx, wikijs, nextcloud, immich und xibosignage sind umgezogen, ihre
 TECH-Ordner sind entfernt. Die Kopier-Jobs bleiben als Vorlage fuer weitere Umzuege erhalten;
 Vaultwarden, Zammad und n8n bleiben bewusst in TECH
-([Planung](../../../docs/4-planung/40080-multi-cluster-entw-prod-tech.md)).
+([Planung](../4-planung/40080-multi-cluster-entw-prod-tech.md)).
 
 Manuell anzuwendende Hilfsmanifeste, **nicht** von ArgoCD gelesen (weder das
 Manifest- noch das Charts-Set schauen in diesen Ordner).

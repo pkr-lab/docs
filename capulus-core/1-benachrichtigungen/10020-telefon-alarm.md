@@ -8,8 +8,8 @@ Bei wenigen, wirklich schweren Ausfällen ruft der Cluster auf dem iPhone an. Di
 
 > **Cluster:** TECH · Ordner `argocd/apps/tech/alert-caller/` (Anrufer), `argocd/apps/tech/monitoring/` (Routen und Regeln) · Namespace `alert-caller` · Service `alert-caller:9310`
 > `kubectl`-Befehle in diesem Doc gelten für diesen Cluster
-> (Zugriff je Cluster: [a0010](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
-> Begründungen zu den Entscheidungen: [60040](../6-hintergruende/60040-helm-charts-tech.md#alert-caller), [60020](../6-hintergruende/60020-ansible-rollen.md#alert_caller), [60060](../6-hintergruende/60060-monitoring-und-alerting.md#telefon-alarm).
+> (Zugriff je Cluster: [a0010](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> Begründungen zu den Entscheidungen: [60040](../6-hintergruende/60040-helm-charts-tech.md#alert-caller), [60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#alert_caller), [60060](../6-hintergruende/60060-monitoring-und-alerting.md#telefon-alarm).
 
 ---
 
@@ -56,7 +56,7 @@ Nur Alarme mit dem Label `page="true"` und der Watchdog-Ausfall. Alles andere l�
 | Watchdog-Ausfall | länger als `WATCHDOG_TIMEOUT` (600 s) kein Watchdog am Caller | „Der Cluster meldet sich seit über 10 Minuten nicht mehr.“ |
 
 `NodeDownPaging` erfasst bewusst nur die immer laufenden Rechner. Die Worker (`worker-0`, `worker-1`), `entw-vm` und `infotafel` stehen im Normalbetrieb auf `up == 0` (sie schlafen oder sind
-Kiosk-Geräte) und würden sonst jede Nacht anrufen. Der Vereinsheim-Alarmmonitor hat seinen eigenen Weg ([30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). Mit dem Caller im Cluster sind
+Kiosk-Geräte) und würden sonst jede Nacht anrufen. Der Vereinsheim-Alarmmonitor hat seinen eigenen Weg ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). Mit dem Caller im Cluster sind
 `NodeDownPaging` für `homeserver` und `KubeApiDownPaging` nur sinnvoll, wenn der Homeserver noch läuft, etwa bei einem Ausfall allein des Exporters oder der API.
 
 ### Wie die Ansage entsteht
@@ -129,7 +129,7 @@ Das Skript lehnt Passwörter mit `;`, `"` oder Leerzeichen ab. Den Wert prüft d
 `helm template alert-caller argocd/apps/tech/alert-caller -n alert-caller --show-only templates/sealedsecret.yaml | kubeseal --validate --controller-namespace sealed-secrets --controller-name sealed-secrets-controller`.
 Ob das **Passwort** stimmt, zeigt erst der erste Registrierungsversuch (Log `403 Forbidden` heißt: falsch).
 
-Der Eintrag `alert-caller-sip-password` in [`ops/token-register.yaml`](../../ops/token-register.yaml) führt Rotationsdatum und Verantwortlichen.
+Der Eintrag `alert-caller-sip-password` in [`ops/token-register.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml) führt Rotationsdatum und Verantwortlichen.
 Rotation: Passwort bei Linphone ändern, dann das Skript erneut ausführen. Der Pod startet durch die Prüfsumme von selbst neu.
 
 ### 4. Ziel eintragen
@@ -138,7 +138,7 @@ In `argocd/apps/tech/alert-caller/values.yaml` unter `config.callTargets` den Pl
 
 ### 5. Mergen, Image bauen, Tag setzen
 
-1. Nach dem Merge nach `main` baut [`build-images.yml`](../../.github/workflows/build-images.yml) das Image (`ghcr.io/pkr-lab/alert-caller:sha-<commit>`, einige Minuten, weil `baresip` kompiliert wird) und öffnet einen PR, der `image.tag` in `values.yaml` setzt. Siehe
+1. Nach dem Merge nach `main` baut [`build-images.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/build-images.yml) das Image (`ghcr.io/pkr-lab/alert-caller:sha-<commit>`, einige Minuten, weil `baresip` kompiliert wird) und öffnet einen PR, der `image.tag` in `values.yaml` setzt. Siehe
    [f0060](../f-cicd-automatisierung/f0060-build-images.md).
 2. Den PR mergen, danach rollt ArgoCD den Pod aus. Neue GHCR-Pakete sind zunächst privat: Entweder das Paket `alert-caller` auf GitHub öffentlich stellen (es enthält nur Open-Source-Software und eine öffentliche Stimme)
    oder im Namespace das Pull-Secret `ghcr-pull` anlegen (`values.yaml`, `imagePullSecrets`).
@@ -246,10 +246,10 @@ Tailscale nimmt den Tailnet-Verkehr vor UFW an).
 ```bash
 scripts/seal-alert-caller-token.sh
 ansible-vault encrypt_string --name vault_alert_caller_token "$(sed -n 's/^alert_caller_token=//p' ~/alert-caller-token-2026-10-17.txt)"
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/alert-caller.yml --limit vereinsheim-alarmmonitor --tags alert-caller --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml alert-caller.yml --limit vereinsheim-alarmmonitor --tags alert-caller --ask-vault-pass
 ```
 
-Das Skript erzeugt aus der Datei `~/alert-caller-token-2026-10-17.txt` (Modus `0600`, außerhalb des Repos) die beiden SealedSecrets und trägt sie ein. Die Ausgabe von `ansible-vault encrypt_string` kommt in `capulus-ansible/group_vars/all.yml`. Vor dem Commit
+Das Skript erzeugt aus der Datei `~/alert-caller-token-2026-10-17.txt` (Modus `0600`, außerhalb des Repos) die beiden SealedSecrets und trägt sie ein. Die Ausgabe von `ansible-vault encrypt_string` kommt in `group_vars/all.yml`. Vor dem Commit
 prüfen, dass dort kein Klartext steht. Der Alertmanager-Pod wartet auf das Secret `alert-caller-token`: Existiert es nicht, bleibt er in `ContainerCreating` und **alle** Alarme fehlen. Das SealedSecret gehört deshalb in denselben PR wie die Mount-Konfiguration.
 
 ### Von `log` auf `enforce`
@@ -299,7 +299,7 @@ Stand 2026-10-11. „Lokal“ heißt: Entwicklungsrechner und Docker-Container (
 | Erreicht Alertmanager den Caller? | **Nach dem Rollout zu prüfen.** Der Service `alert-caller.alert-caller.svc.cluster.local:9310` zeigt auf den Host-Port des Pods, der Weg Pod → Host-IP ist getestet (ein POST aus dem Alertmanager-Pod an `192.168.178.94:9310` kam am 2026-10-11 an, UFW lässt den Pod-CIDR durch). |
 | Erreicht der Caller VictoriaMetrics (`vmUrl`)? | **Ja**: Der Service-Name `vmsingle-monitoring-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8428` antwortet aus dem Alertmanager-Pod. Aus einem Pod im Host-Netzwerk (`dnsPolicy: ClusterFirstWithHostNet`) ist es nicht probiert. Die Abfragen in den Regeln wurden gegen den Live-Cluster geprüft. |
 | Piper-CLI-Flags | **Geprüft** mit `piper-tts` 1.8.0: `python -m piper -m de_DE-thorsten-high --data-dir /opt/piper -f raw.wav -- "<text>"` stimmt. Die Stimme lädt `python -m piper.download_voices`. |
-| Distribution-baresip | **Unbrauchbar**: Das Ubuntu-Paket 1.1.0 (26.04) kann sich bei `sip.linphone.org` nicht anmelden (`Function not implemented`), die Version 1.0.0 aus 22.04/24.04 hat denselben `libre`-Stand von 2021 und wurde nicht getestet. Siehe [60020](../6-hintergruende/60020-ansible-rollen.md#alert_caller). Deshalb ist baresip 4.12.0 im Image selbst gebaut. Mit 4.12 antwortet der Server auf einen erfundenen Benutzer mit `403 Forbidden`, TLS samt Zertifikatsprüfung funktioniert. |
+| Distribution-baresip | **Unbrauchbar**: Das Ubuntu-Paket 1.1.0 (26.04) kann sich bei `sip.linphone.org` nicht anmelden (`Function not implemented`), die Version 1.0.0 aus 22.04/24.04 hat denselben `libre`-Stand von 2021 und wurde nicht getestet. Siehe [60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#alert_caller). Deshalb ist baresip 4.12.0 im Image selbst gebaut. Mit 4.12 antwortet der Server auf einen erfundenen Benutzer mit `403 Forbidden`, TLS samt Zertifikatsprüfung funktioniert. |
 | Image | **Geprüft**: baut lokal (730 MB), startet als Nutzer 1000 mit `--read-only`, `--cap-drop ALL` und tmpfs-Verzeichnissen. Dort liefen Webhook, echte Piper-Ansage, ein vollständiger Anruf zwischen zwei Instanzen und der Registrierungsversuch bei Linphone (Konto aus Umgebungsvariablen). **Nicht geprüft**: der CI-Build selbst, ARM (der Homeserver ist amd64), der Pod im Cluster. |
 | Chart | **Geprüft**: `helm lint`, `helm template`, `yamllint`, Token-Register, `render-bootstrap` ohne Drift. **Nicht geprüft**: Sync in ArgoCD, `hostNetwork` im Cluster. |
 
@@ -356,7 +356,7 @@ Der Text muss zur Watchdog-Ansage in `caller.py` passen (`über {minutes} Minute
 
 **Ausrollen** (von einem Rechner, der den Pi per Tailscale erreicht):
 
-1. Das Passwort von `capulus-core` in den Vault: `ansible-vault encrypt_string --ask-vault-pass --name vault_alert_caller_sip_password '<Passwort>'`, Ausgabe in `capulus-ansible/group_vars/all.yml` einfügen (dieselbe Variable wie für die VM-Variante).
+1. Das Passwort von `capulus-core` in den Vault: `ansible-vault encrypt_string --ask-vault-pass --name vault_alert_caller_sip_password '<Passwort>'`, Ausgabe in `group_vars/all.yml` einfügen (dieselbe Variable wie für die VM-Variante).
 2. `make alert-caller-pi-check`, dann `make alert-caller-pi`. Gruppe `alert_caller_pi`, Variablen in `capulus-ansible/group_vars/alert_caller_pi.yml`. Der erste Lauf **baut baresip auf dem Pi aus den Quellen** (2 parallele Jobs, wegen 2 GB RAM und laufendem Kiosk), das dauert deutlich länger als auf einem x86-Rechner.
 3. Auf dem Pi prüfen: `journalctl -u alert-caller -n 20` zeigt `listening on :9310 … static announcement /opt/alert-caller/cluster-down.wav`.
 
@@ -394,13 +394,13 @@ Fällt der Alertmanager aus, während der Cluster läuft, rufen dann beide Calle
 
 Soll der Anruf auch bei Ausfall des Clusters, des Homeservers, des Stroms oder des Internets im Haus kommen, muss der Anrufer **außerhalb** laufen (Oracle Cloud Always Free, öffentliche IP, per Tailscale im Tailnet).
 Dafür gibt es die Ansible-Rolle `capulus-ansible/roles/alert_caller` (Playbook `capulus-ansible/alert-caller.yml`, Gruppe `alert_callers`, `make alert-caller-check` und `make alert-caller`). Sie benutzt dieselbe `caller.py` wie das Chart
-(`argocd/apps/tech/alert-caller/src/caller.py`), baut `baresip` aus den Quellen und installiert Piper. Begründungen: [60020](../6-hintergruende/60020-ansible-rollen.md#alert_caller). Die Rolle wurde in einem Ubuntu-24.04-Container mit systemd geprüft (läuft durch, idempotent, Dienst
+(`argocd/apps/tech/alert-caller/src/caller.py`), baut `baresip` aus den Quellen und installiert Piper. Begründungen: [60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#alert_caller). Die Rolle wurde in einem Ubuntu-24.04-Container mit systemd geprüft (läuft durch, idempotent, Dienst
 als `DynamicUser`, Watchdog nach 600 s), **nicht** auf ARM und nicht in Oracle.
 
 Schritte, wenn es so weit ist:
 
 1. **VM:** Shape `VM.Standard.A1.Flex`, Ubuntu 24.04, öffentliche IP, Benutzer `ubuntu`. Piper braucht rund 250 MB Arbeitsspeicher und etwa 12 CPU-Sekunden je Ansage. In der Security List `UDP 10000-10100` aus `0.0.0.0/0` (Ingress) öffnen.
-2. **Secrets:** `ansible-vault encrypt_string --ask-vault-pass --name vault_alert_caller_sip_password '<Passwort>'` und `--name vault_alert_caller_hc_uuid '<UUID>'`, die Ausgaben in `capulus-ansible/group_vars/all.yml` einfügen.
+2. **Secrets:** `ansible-vault encrypt_string --ask-vault-pass --name vault_alert_caller_sip_password '<Passwort>'` und `--name vault_alert_caller_hc_uuid '<UUID>'`, die Ausgaben in `group_vars/all.yml` einfügen.
    `capulus-ansible/group_vars/alert_callers.yml`: die SIP-Adresse eintragen (Platzhalter `sip:EINTRAGEN@…` lässt die Rolle abbrechen). `capulus-ansible/inventory/hosts.yml`: `ansible_host` von `alert-caller-vm` setzen.
 3. **Tailscale-ACL:** Der Alertmanager-Pod erreicht das Tailnet über die Maskierung des Homeservers und kommt bei der VM als **`homeserver` (100.74.0.59, Tag `tagged-devices`)** an. Die ACL muss diese Quelle auf `<vm>:9310` zulassen.
    Das Netzwerk dahin ist geprüft: Ein SYN aus dem Alertmanager-Pod verlässt den Homeserver auf `tailscale0` mit der Absenderadresse `100.74.0.59` (mit `tcpdump` gesehen). Ob die ACL die Verbindung zur VM erlaubt, lässt sich erst mit der VM prüfen.

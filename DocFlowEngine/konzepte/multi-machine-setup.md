@@ -12,18 +12,18 @@ Null-Coalescing-Operator `??`, keine Ternary-Operatoren) – passend zur bestehe
 
 **Status: umgesetzt.** Alle Bausteine 1–5 sind implementiert (Code jetzt aufgeteilt
 in `scripts/DocFlowEngine/CopyForward.ps1` und `scripts/DocFlowEngine/Lock.ps1`,
-siehe [ERWEITERUNGSKONZEPT.md](ERWEITERUNGSKONZEPT.md) Abschnitt 3 zur
+siehe [ERWEITERUNGSKONZEPT.md](erweiterungskonzept.md) Abschnitt 3 zur
 Modularisierung) und per Pester-Tests abgesichert
 (`tests/DocFlowEngine.Tests.ps1`). `config/docflow-config.psd1` zeigt
 `stateFile`/`log.file`/`projectRoutesFile`/`lockFile` bereits auf den geteilten
 Ordner. Das anfängliche Kopieren von `config/project-routes.txt` in diesen
 geteilten Ordner (Baustein 2) ist inzwischen kein manueller Schritt mehr, sondern
 läuft bei jedem Start automatisch über `Sync-ProjectRoutesFromSeed` (siehe
-[ERWEITERUNGSKONZEPT.md](ERWEITERUNGSKONZEPT.md) Abschnitt 6). Baustein 4
+[ERWEITERUNGSKONZEPT.md](erweiterungskonzept.md) Abschnitt 6). Baustein 4
 (zeitversetzte Scheduled Tasks) ist eine Betriebs-/Deployment-Maßnahme, die pro
 Rechner in der Aufgabenplanung eingerichtet wird - dafür gibt es inzwischen ein
 konkretes, copy-paste-fertiges Beispiel samt Begründung im
-[README](../README.md#regelmäßige-automatisierung), inklusive `scripts/Invoke-OneDriveSync.ps1`
+[README](../nutzung.md#regelmäßige-automatisierung), inklusive `scripts/Invoke-OneDriveSync.ps1`
 als Sync-Anstoß vor dem eigentlichen Lauf (siehe Abschnitt "Baustein 4" unten).
 
 ## 1. Warum "mehrere Rechner" aktuell nicht funktioniert
@@ -64,7 +64,7 @@ potenziell einen anderen Stand - insbesondere, wenn neue Fächer/Themen von Hand
 nicht auf allen Rechnern gleichermaßen gepusht/gepullt wird.
 
 **Aktueller Stand:** Gelöst über Baustein 2 plus die automatische Seed-Synchronisierung
-(`Sync-ProjectRoutesFromSeed`, siehe [ERWEITERUNGSKONZEPT.md](ERWEITERUNGSKONZEPT.md) Abschnitt 6):
+(`Sync-ProjectRoutesFromSeed`, siehe [ERWEITERUNGSKONZEPT.md](erweiterungskonzept.md) Abschnitt 6):
 `config/project-routes.txt` im Repo bleibt der einzige Ort, an dem von Hand neue Fächer/Themen
 ergänzt werden; die tatsächlich von allen Rechnern genutzte Kopie liegt im geteilten Ordner
 (`projectRoutesFile`) und wird bei jedem Lauf automatisch aus dem Repo-Stand (`projectRoutesSeedFile`)
@@ -118,7 +118,7 @@ zusätzlich pro Rechner versetzt (z. B. Rechner A 08:00/08:10, Rechner B
 08:20/08:30). Vollständiges, copy-paste-fertiges Beispiel inkl.
 `-RunOnlyIfNetworkAvailable` und `-LogonType Interactive` (Begründung: der
 OneDrive-Client läuft nur in einer interaktiven Benutzersitzung) im
-[README](../README.md#regelmäßige-automatisierung).
+[README](../nutzung.md#regelmäßige-automatisierung).
 
 ### Baustein 5 – Defense-in-Depth: Ziel-Existenz-Check
 

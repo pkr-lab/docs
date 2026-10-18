@@ -375,7 +375,7 @@ Erstelle `ansible/ugreen-nas.yml`:
 
 ```bash
 cd /home/ubuntu/git/home-server
-ansible-playbook -i capulus-ansible/inventory/hosts.yml ansible/ugreen-nas.yml \
+ansible-playbook -i inventory/hosts.yml ansible/ugreen-nas.yml \
   --syntax-check 2>&1
 ```
 
@@ -622,8 +622,8 @@ Erwartung: Keine Fehler.
 - [ ] **Schritt 2: Syntax-Check beider Playbooks**
 
 ```bash
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --syntax-check
-ansible-playbook -i capulus-ansible/inventory/hosts.yml ansible/ugreen-nas.yml --syntax-check
+ansible-playbook -i inventory/hosts.yml site.yml --syntax-check
+ansible-playbook -i inventory/hosts.yml ansible/ugreen-nas.yml --syntax-check
 ```
 
 Erwartung: Beide zeigen `playbook: ...` ohne Fehler.

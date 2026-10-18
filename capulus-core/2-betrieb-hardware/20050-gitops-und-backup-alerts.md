@@ -21,11 +21,11 @@ Beide Gruppen gehören zur Hub-Instanz (TECH). Der **Hub-ArgoCD** verwaltet auch
 CronJobs im PROD-Cluster, etwa das Immich-Backup: in der Hub-VictoriaMetrics existieren nur die drei TECH-CronJobs
 (damals `authentik-postgres-backup`, `vaultwarden-backup`, `github-release-watcher`, geprüft am 2026-09-20; Authentik ist inzwischen entfernt).
 
-## ArgoCD ([vmrule-argocd.yaml](../../argocd/apps/tech/monitoring/templates/vmrule-argocd.yaml))
+## ArgoCD ([vmrule-argocd.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/templates/vmrule-argocd.yaml))
 
 Grundlage ist `argocd_app_info` des application-controllers. Der Controller öffnet den Port `metrics` (8082)
 immer, und seine NetworkPolicy erlaubt Zugriff aus jedem Namespace: nötig war nur ein
-[`VMPodScrape`](../../argocd/apps/tech/monitoring/templates/vmscrape-argocd.yaml), keine Änderung an ArgoCD.
+[`VMPodScrape`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/templates/vmscrape-argocd.yaml), keine Änderung an ArgoCD.
 
 | Alert | Bedingung | Schwere |
 |---|---|---|
@@ -38,7 +38,7 @@ immer, und seine NetworkPolicy erlaubt Zugriff aus jedem Namespace: nötig war n
 `ArgoMetricsMissing` ist der Totmannschalter: ohne Metriken schweigen alle anderen. Direkt nach dem Ausrollen
 kann er kurz feuern, bis vmagent den neuen Scrape übernommen hat.
 
-## CronJobs und Backups ([vmrule-cronjobs.yaml](../../argocd/apps/tech/monitoring/templates/vmrule-cronjobs.yaml))
+## CronJobs und Backups ([vmrule-cronjobs.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/templates/vmrule-cronjobs.yaml))
 
 Bewusst auf den **letzten erfolgreichen Lauf** und nicht auf `kube_job_status_failed`: fehlgeschlagene Jobs
 bleiben in der Historie und würden nach der Reparatur weiter feuern.

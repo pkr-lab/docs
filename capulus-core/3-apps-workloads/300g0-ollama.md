@@ -1,6 +1,6 @@
 # Ollama — lokales LLM, nur bei Bedarf hochgefahren
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/ollama/` · Zugang: nur clusterintern, kein Ingress. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/ollama/` · Zugang: nur clusterintern, kein Ingress. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 Ollama stellt ein lokal gehostetes LLM (`llama3.2:3b`) über eine einfache
 HTTP-API bereit. Genutzt wird es aktuell ausschließlich vom n8n-Workflow
@@ -66,7 +66,7 @@ dauerhaft Kapazität für ein LLM reservieren.
 
 **Warum nicht der bestehende `cluster_power_manager`?** Der weckt Worker
 nur reaktiv anhand der CPU/RAM-Last auf `homeserver`
-(siehe [20020-cluster-power-manager.md](../2-betrieb-hardware/20020-cluster-power-manager.md))
+(siehe [20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md))
 — er beobachtet keine Pending-Pods. Ein an `worker-0` gepinnter Pod mit
 `replicas: 1` würde also einfach `Pending` bleiben, bis zufällig genug
 Last auf `homeserver` entsteht. Deshalb weckt der n8n-Workflow `worker-0`

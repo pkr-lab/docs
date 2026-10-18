@@ -7,7 +7,7 @@ groß, weckt der Homeserver worker-0 per Wake-on-LAN (WoL), bei
 anhaltend hoher Last zusätzlich worker-1. Geht die Last wieder zurück,
 schaltet der Homeserver die Worker in umgekehrter Reihenfolge wieder ab.
 
-Ergänzt [thermal_watchdog/resource_watchdog](../b-kubernetes-gitops/b0000-k3s.md), die jeden Node
+Ergänzt [thermal_watchdog/resource_watchdog](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md), die jeden Node
 bei **eigener** Übertemperatur/Überlast selbst herunterfahren — dieses
 Feature steuert stattdessen die **anderen** Nodes basierend auf der Last
 des Homeservers.
@@ -64,7 +64,7 @@ abfließen sollte, kann damit nichts anderes ausgeführt werden.
 | [`wake_on_lan`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/wake_on_lan) | worker-0, worker-1 | Aktiviert WoL (`ethtool wol g`) persistent bei jedem Boot |
 | [`cluster_power_manager`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager) | homeserver | Erzeugt den Shutdown-SSH-Key, deployt den Watchdog (`cluster-power-manager.service`) |
 | [`cluster_power_manager_target`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager_target) | worker-0, worker-1 | Autorisiert den Public Key des Homeservers, beschränkt auf `poweroff` |
-| [`power_agent`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/power_agent) | homeserver | HTTP-Gegenstück für **manuelle** Wake-/Shutdown-Taps aus der iOS-App (siehe [docs/3-apps-workloads/300d0-carplay-api.md](../3-apps-workloads/300d0-carplay-api.md#power-agent)) — nutzt denselben SSH-Key, dieselbe `woke_at`-Buchführung und dieselbe Worker-Liste wie oben weiter, damit sich App-Taps und dieser automatische Last-Watchdog nicht widersprechen. Läuft direkt nach `cluster_power_manager` in `site.yml`. |
+| [`power_agent`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/power_agent) | homeserver | HTTP-Gegenstück für **manuelle** Wake-/Shutdown-Taps aus der iOS-App (siehe [capulus-core/3-apps-workloads/300d0-carplay-api.md](../../capulus-core/3-apps-workloads/300d0-carplay-api.md#power-agent)) — nutzt denselben SSH-Key, dieselbe `woke_at`-Buchführung und dieselbe Worker-Liste wie oben weiter, damit sich App-Taps und dieser automatische Last-Watchdog nicht widersprechen. Läuft direkt nach `cluster_power_manager` in `site.yml`. |
 
 Reihenfolge beim erstmaligen Rollout wichtig: `make install` (site.yml,
 erzeugt den SSH-Key auf homeserver) **vor** `make worker-0` /
@@ -211,10 +211,10 @@ typische Lastspitze kürzer ist als die konfigurierte Sustain-Dauer.
 
 Der Homeserver ist aktuell der einzige durchgehend laufende Node, und
 mehrere Apps skalieren per HPA hoch (siehe
-[b0040-hpa-autoscaling.md](../b-kubernetes-gitops/b0040-hpa-autoscaling.md)) —
+[b0040-hpa-autoscaling.md](../../capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md)) —
 wegen `podAffinity` bei RWO-Storage landen neue Replicas dabei zwingend
 auf demselben Node wie die bereits laufenden (z. B. Immich, siehe
-[300c0-immich.md](../3-apps-workloads/300c0-immich.md)). Skalierung hilft
+[300c0-immich.md](../../capulus-core/3-apps-workloads/300c0-immich.md)). Skalierung hilft
 also gegen viele parallele Anfragen, kann aber im Zweifel selbst den
 RAM-Druck auf dem Homeserver erhöhen, statt ihn zu verteilen. Cluster
 Power Manager weckt zwar zusätzliche Worker bei hoher Homeserver-Last,
@@ -224,7 +224,7 @@ Gegen einen daraus resultierenden RAM-Engpass greifen vier Schichten,
 von früh/sanft bis spät/hart:
 
 1. **VMRule/Alertmanager-Warnung** (RAM ≥ 70% / CPU ≥ 80%, 2 Minuten,
-   [vmrule-resources.yaml](../../argocd/apps/tech/monitoring/templates/vmrule-resources.yaml))
+   [vmrule-resources.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/templates/vmrule-resources.yaml))
    — kein Eingriff (Push nur bei `critical` über ntfy). Läuft **im** Cluster und kann daher
    selbst betroffen sein, wenn genau der Ressourcendruck, vor dem sie
    warnen soll, den Monitoring-Stack mit ausbremst.
@@ -272,7 +272,7 @@ von dieser konkreten Ursache.
 
 **Nachtrag 2026-09-20:** Der EEE-Dienst war auf dem homeserver seit dem
 Bridge-Umbau (`br0`, siehe
-[40080](../4-planung/40080-multi-cluster-entw-prod-tech.md)) wirkungslos:
+[40080](../../capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md)) wirkungslos:
 `disable_eee_interface` nahm das Default-Route-Interface (jetzt `br0`,
 `ethtool --set-eee br0` schlägt fehl, Dienst `failed`), auf der physischen
 NIC (`enp4s0`, früher `eno1`) war EEE weiter "enabled - active". Auf Hosts
@@ -285,7 +285,7 @@ physische NIC zeigen (`libvirt_host_bridge_interface`). Prüfen:
 
 ## Relevante Links
 
-- [k3s-Referenz (Cluster-Topologie, cordon/drain/uncordon)](../b-kubernetes-gitops/b0000-k3s.md)
+- [k3s-Referenz (Cluster-Topologie, cordon/drain/uncordon)](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md)
 - [resource_watchdog / thermal_watchdog](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/resource_watchdog)
-- [HPA-Autoskalierung (podAffinity/RWO-Hintergrund)](../b-kubernetes-gitops/b0040-hpa-autoscaling.md)
-- [NAS-Backup](20010-nas-backup.md)
+- [HPA-Autoskalierung (podAffinity/RWO-Hintergrund)](../../capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md)
+- [NAS-Backup](../../capulus-core/2-betrieb-hardware/20010-nas-backup.md)

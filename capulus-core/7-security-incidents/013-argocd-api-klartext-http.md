@@ -43,7 +43,7 @@ Ein Angreifer im LAN schneidet Admin-Passwort bzw. API-Token von ArgoCD mit (Kla
 
 ## Rollback
 
-`argocd_server_insecure: true` wiederherstellen, `make render-bootstrap`, Rolle `argocd` erneut anwenden. Die Quellen der Promotion-URLs zurücksetzen.
+`argocd_server_insecure: true` wiederherstellen, `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>`, Rolle `argocd` erneut anwenden. Die Quellen der Promotion-URLs zurücksetzen.
 
 ## Verifikation
 
@@ -90,7 +90,7 @@ Die UFW-Regeln für den NodePort `30080` (nur LAN, Tailnet, WireGuard) beschrän
 - `capulus-ansible/roles/argocd/` (`defaults/main.yml`, `tasks/main.yml`, `templates/argocd-values.yaml.j2`), `capulus-ansible/roles/common/tasks/main.yml`, `capulus-ansible/site.yml`
 - `capulus-ansible/host_vars/homeserver/vars.yml`, `capulus-ansible/host_vars/entw-vm/vars.yml` (Ingress, NodePort-Schalter, verschlüsseltes Zertifikat)
 - `ops/token-register.yaml` (Eintrag `entw-argocd-ingress-cert`)
-- Doku: `docs/6-hintergruende/60030-argocd-und-bootstrap.md`, `60020-ansible-rollen.md`, `600a0-ci-workflows-und-skripte.md`, `docs/b-kubernetes-gitops/b0010-argocd.md`, `b0050-entw-argocd.md`, `docs/f-cicd-automatisierung/f00a0-tailscale-runner-poc.md`, `f00b0-promotion-chain.md`, `docs/d-sicherheit/d0040-internal-tls.md`, `docs/c-netzwerk-dns/c0010-tailscale.md`, `c0011-wireguard-backup.md`, `c0030-port-uebersicht.md`, `docs/a-betriebssystem/a0010-overview.md`, `a0030-installation.md`, `README.md`
+- Doku: `capulus-core/6-hintergruende/60030-argocd-und-bootstrap.md`, `60020-ansible-rollen.md`, `600a0-ci-workflows-und-skripte.md`, `capulus-core/b-kubernetes-gitops/b0010-argocd.md`, `b0050-entw-argocd.md`, `capulus-core/f-cicd-automatisierung/f00a0-tailscale-runner-poc.md`, `f00b0-promotion-chain.md`, `capulus-core/d-sicherheit/d0040-internal-tls.md`, `capulus-core/c-netzwerk-dns/c0010-tailscale.md`, `c0011-wireguard-backup.md`, `c0030-port-uebersicht.md`, `capulus-ansible/a-betriebssystem/a0010-overview.md`, `a0030-installation.md`, `README.md`
 
 **Rollback.** `argocd_server_nodeport_enabled: true` in `host_vars/homeserver` und `host_vars/entw-vm`, dann `make argocd` bzw. `ansible-playbook … entw.yml --tags argocd`. Die UFW-Regeln für 30080 kommen nicht zurück (sie hatten nie gewirkt). Für die Kette `HUB_URL` und `ENTW_URL` über die Repo-Variablen `ARGOCD_HUB_URL` und `ARGOCD_ENTW_URL` auf die alten `http://…:30080`-Adressen setzen und die Tailscale-ACL wieder um `tcp:30080` ergänzen. Zertifikat ENTW: Variablen entfernen, der Ingress rendert dann ohne TLS.
 

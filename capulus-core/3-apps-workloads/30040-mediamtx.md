@@ -1,6 +1,6 @@
 # MediaMTX — Live-Streaming (RTMP/RTSP → HLS)
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/mediamtx/` · URL `https://stream.prod.homeserver` und `https://stream-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/mediamtx/` · URL `https://stream.prod.homeserver` und `https://stream-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 [MediaMTX](https://github.com/bluenviron/mediamtx) ist ein selbst-gehosteter
 Streaming-Server: Encoder (Kamera, OBS, ffmpeg) **publishen** ein Live-Signal
@@ -55,7 +55,7 @@ OBS / ffmpeg / Kamera ───────────────────�
 
 - ArgoCD läuft, Root-ApplicationSet aktiv (`argocd/bootstrap/root-applicationset.yaml`).
 - Cloudflare Tunnel ist eingerichtet (`argocd/apps/tech/cloudflared/`, siehe
-  [docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md)) — dieses Dokument
+  [capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md)) — dieses Dokument
   ergänzt dort lediglich einen neuen `hostname`-Eintrag, keine neue
   Tunnel-Einrichtung nötig.
 - `openssl` lokal verfügbar (zum Hashen der Passwörter, Schritt 2).
@@ -72,11 +72,11 @@ Tunnel kann sie zwar grundsätzlich als generischen TCP-Stream tunneln, aber
 ohne den HTTP-Layer greift keine hostnamenbasierte Routing-Regel. Ein offen
 ins Internet getunnelter RTMP-Port wäre nur durch das Stream-Passwort
 geschützt — ein System, das in diesem Repo konsequent vermieden wird (siehe
-[docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md → Sicherheitsprinzipien](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md#sicherheitsprinzipien)).
+[capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md → Sicherheitsprinzipien](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md#sicherheitsprinzipien)).
 
 Stattdessen bleibt Publish wie ArgoCD/Semaphore/Headlamp strikt
 LAN/Tailnet-only (NodePort, siehe
-[README.md#networking--security](../../README.md#networking--security)) —
+[README.md#networking--security](../konfiguration.md#netzwerk-und-sicherheit)) —
 wer streamen will, braucht ohnehin Tailscale oder ist im Heimnetz. Die
 eigentliche Autorisierung *innerhalb* dieses vertrauenswürdigen Netzes
 übernimmt mediamtx' interne Auth (Schritt 2): Netzwerkzugriff allein reicht
@@ -88,7 +88,7 @@ nicht, ohne gültiges Nutzername/Passwort-Paar lehnt mediamtx den Publish ab.
 
 Der Chart liegt bereits unter `argocd/apps/tech/mediamtx/` (Helm-Chart, analog zu
 `ntfy`/`cloudflared`). Relevante Werte in
-[argocd/apps/tech/mediamtx/values.yaml](../../argocd/apps/tech/mediamtx/values.yaml):
+[argocd/apps/tech/mediamtx/values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/mediamtx/values.yaml):
 
 ```yaml
 publishService:
@@ -110,17 +110,17 @@ Playback sind damit standardmäßig für **niemanden** erreichbar, bis in
 Schritt 2 echte Hashes eingetragen werden.
 
 Committen und pushen (wie jede andere App in diesem Repo, siehe
-[docs/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)):
+[capulus-core/b-kubernetes-gitops/b0010-argocd.md](../b-kubernetes-gitops/b0010-argocd.md)):
 
 ```bash
-git add argocd/apps/tech/mediamtx docs/3-apps-workloads/30040-mediamtx.md
+git add argocd/apps/tech/mediamtx capulus-core/3-apps-workloads/30040-mediamtx.md
 git commit -m "feat(mediamtx): add live-streaming server with internal auth"
 git push
 ```
 
 ArgoCD legt die `Application` **mediamtx** im gleichnamigen Namespace an und
 synct automatisch (~3 Minuten, wie in
-[docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Erstdeployment](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#erstdeployment)
+[capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Erstdeployment](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#erstdeployment)
 beschrieben).
 
 ```bash
@@ -157,7 +157,7 @@ echo -n "<streamer-passwort>" | openssl dgst -binary -sha256 | openssl base64
 ```
 
 Beide Ausgaben mit `sha256:`-Präfix in
-[argocd/apps/tech/mediamtx/values.yaml](../../argocd/apps/tech/mediamtx/values.yaml)
+[argocd/apps/tech/mediamtx/values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/mediamtx/values.yaml)
 unter `auth.streamer.user` / `auth.streamer.pass` eintragen.
 
 ### 2.2 — Zuschauer-Zugang (Read/Playback)
@@ -171,7 +171,7 @@ echo -n "<viewer-passwort>" | openssl dgst -binary -sha256 | openssl base64
 
 > Für mehrere Zuschauer mit unterschiedlichen Passwörtern: den `viewer`-
 > Eintrag in `authInternalUsers`
-> ([templates/configmap.yaml](../../argocd/apps/tech/mediamtx/templates/configmap.yaml))
+> ([templates/configmap.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/mediamtx/templates/configmap.yaml))
 > um weitere Einträge mit `action: read` / `action: playback` ergänzen —
 > analog zum bestehenden Muster, ein Eintrag pro Person.
 
@@ -184,7 +184,7 @@ Deployment).
 ## Schritt 3 — Streamen (OBS/ffmpeg)
 
 Server-Adresse: `<server-ip>` = die LAN- oder Tailscale-IP des Home-Servers
-(siehe [docs/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md)).
+(siehe [capulus-core/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md)).
 
 **RTMP (OBS):**
 
@@ -299,7 +299,7 @@ korrekt scheinen:**
 
 Prüfen, ob `argocd/apps/tech/cloudflared/values.yaml` den `stream.pke-lab.de`-
 Eintrag enthält, auf `mediamtx.mediamtx.svc.cluster.local:8888` zeigt und
-der `cloudflared`-Pod die neue Config geladen hat (siehe [docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md →
+der `cloudflared`-Pod die neue Config geladen hat (siehe [capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md →
 ConfigMap-Änderung kommt nicht im Pod
 an](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#configmap-änderung-kommt-nicht-im-pod-an)).
 

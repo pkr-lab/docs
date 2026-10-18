@@ -12,4 +12,4 @@ oder reinen Manifesten anlegen und auf den Branch `entw` bringen, dann deployt E
 innerhalb von ca. 3 Minuten. Keine Liste, kein AppProject, kein Ansible-Lauf.
 
 Details, Rollout und Fehlersuche:
-[docs/b-kubernetes-gitops/b0050-entw-argocd.md](../../../docs/b-kubernetes-gitops/b0050-entw-argocd.md).
+[capulus-core/b-kubernetes-gitops/b0050-entw-argocd.md](../b-kubernetes-gitops/b0050-entw-argocd.md).

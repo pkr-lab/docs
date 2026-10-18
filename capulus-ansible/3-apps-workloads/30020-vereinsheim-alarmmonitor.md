@@ -1,7 +1,7 @@
 # Vereinsheim-Alarmmonitor (Banana Pi M2 Ultra)
 
 Zweiter Alarmmonitor-Standort, aber auf anderer Hardware/OS als die
-Raspberry-Pi-Flotte aus [docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md):
+Raspberry-Pi-Flotte aus [capulus-core/3-apps-workloads/30010-alamos-apager.md](../../capulus-core/3-apps-workloads/30010-alamos-apager.md):
 ein Banana Pi M2 Ultra mit Armbian statt Raspberry Pi OS, **und** — anders
 als alle anderen Pis in diesem Repo — nach der Ersteinrichtung nur noch per
 **Tailscale** am Netz, ohne direkten LAN-Zugriff zum Homeserver-Netz. Dieses
@@ -27,7 +27,7 @@ die es bei den Raspberry Pis bewusst nicht gibt:
    ALAMOS-Statuswerten auch CPU/RAM/Temperatur/Disk dieses Pi im Detail —
    und, da am selben Standort, dieselben Metriken für die xibosignage-
    Infotafel `infotafel` (siehe
-   [docs/3-apps-workloads/300e0-xibosignage.md, "Monitoring (Grafana)"](300e0-xibosignage.md#monitoring-grafana)).
+   [capulus-core/3-apps-workloads/300e0-xibosignage.md, "Monitoring (Grafana)"](../../capulus-core/3-apps-workloads/300e0-xibosignage.md#monitoring-grafana)).
 
 ## Inhaltsverzeichnis
 
@@ -59,7 +59,7 @@ sich sauber per Ansible/apt installieren lässt.
 ## Netzwerk: Tailscale-only
 
 Anders als die xibosignage-Pis (die volles LAN haben und Tailscale nur zur
-bequemen Fernwartung nutzen, siehe [docs/3-apps-workloads/300e0-xibosignage.md](300e0-xibosignage.md))
+bequemen Fernwartung nutzen, siehe [capulus-core/3-apps-workloads/300e0-xibosignage.md](../../capulus-core/3-apps-workloads/300e0-xibosignage.md))
 hat dieser Standort **kein LAN-Zugriff zum Homeserver-Netz**. Das betrifft
 drei unabhängige Dinge, die alle einzeln gelöst werden mussten:
 
@@ -84,8 +84,8 @@ zum Gerät ist. Deshalb zwei Phasen:
 **2. DNS-Auflösung von `*.homeserver` (für den Kiosk selbst).** Gelöst über
 **Tailscale Split-DNS**, ein dokumentiertes, bereits unterstütztes
 Verfahren in diesem Repo (siehe
-[docs/b-kubernetes-gitops/b0030-semaphore.md, "Zugriff über Tailscale"](../b-kubernetes-gitops/b0030-semaphore.md#zugriff-über-tailscale-einmaliger-admin-schritt)
-und [docs/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md)): dnsmasq auf dem
+[capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md, "Zugriff über Tailscale"](../b-kubernetes-gitops/b0030-semaphore.md#zugriff-über-tailscale-einmaliger-admin-schritt)
+und [capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](../../capulus-core/c-netzwerk-dns/c0000-dns-architecture.md)): dnsmasq auf dem
 Homeserver lauscht bereits auf `tailscale0`. Einmaliger Admin-Schritt:
 Tailscale-Adminkonsole → DNS → Nameservers → Custom Nameserver mit der
 Tailscale-IP des Homeservers, **restricted to search domain `homeserver`**
@@ -151,7 +151,7 @@ Vor dem ersten Lauf nötig:
 
 1. **Standort-URL im Cluster hinterlegen** — Key `vereinsheim-alarmmonitor`
    zum SealedSecret `alamos-apager-stations` hinzufügen (siehe
-   [docs/3-apps-workloads/30010-alamos-apager.md, "Neuen Standort hinzufügen"](30010-alamos-apager.md#neuen-standort-hinzufügen)).
+   [capulus-core/3-apps-workloads/30010-alamos-apager.md, "Neuen Standort hinzufügen"](../../capulus-core/3-apps-workloads/30010-alamos-apager.md#neuen-standort-hinzufügen)).
 2. **Dieselbe URL lokal verschlüsseln** (Fallback, siehe unten):
    ```bash
    ansible-vault encrypt_string 'https://amweb.alamos.cloud/...echte-url...' \
@@ -160,20 +160,20 @@ Vor dem ersten Lauf nötig:
    Ausgabe in `capulus-ansible/host_vars/vereinsheim-alarmmonitor/vault.yml`
    anstelle des `CHANGE-ME`-Platzhalters einfügen.
 3. **Eigener Tailscale-Auth-Key** in `capulus-ansible/group_vars/banana_pis.yml`
-   (Ansible-Vault-verschlüsselt, Ablauf in [60010](../6-hintergruende/60010-ansible-hosts-und-playbooks.md#worker-0-dns-und-tailscale) — nicht den
+   (Ansible-Vault-verschlüsselt, Ablauf in [60010](../../capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md#worker-0-dns-und-tailscale) — nicht den
    Homeserver-Key wiederverwenden).
 4. **Tailscale-Adminkonsole:** Split-DNS + Subnetz-Route-Genehmigung, siehe
    [Netzwerk: Tailscale-only](#netzwerk-tailscale-only).
 5. **Einmaliger manueller AMweb-Login direkt am Gerät** (Passwort +
    Verschlüsselungspasswort) — identisches Vorgehen wie bei den Raspberry
-   Pis, siehe [docs/3-apps-workloads/30010-alamos-apager.md, Pi-Provisionierung](30010-alamos-apager.md#pi-provisionierung-ansible).
+   Pis, siehe [capulus-core/3-apps-workloads/30010-alamos-apager.md, Pi-Provisionierung](../../capulus-core/3-apps-workloads/30010-alamos-apager.md#pi-provisionierung-ansible).
    Da Normal- und Fallback-Pfad dieselbe AMweb-Domain im selben
    Chromium-Profil verwenden, deckt dieser eine Login beide Pfade ab.
 
 ## Server-Fallback
 
 Bewusster Bruch mit der sonst geltenden Regel "die echte AMweb-URL
-verlässt nie den Cluster" ([docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md))
+verlässt nie den Cluster" ([capulus-core/3-apps-workloads/30010-alamos-apager.md](../../capulus-core/3-apps-workloads/30010-alamos-apager.md))
 — nur für dieses Gerät, auf ausdrücklichen Wunsch.
 
 `capulus-ansible/roles/banana_pi_kiosk/templates/banana-pi-kiosk-supervisor.sh.j2`
@@ -203,11 +203,11 @@ selbst, ist also von derselben Split-DNS/Route-Voraussetzung abhängig.
 Monitor nicht angezeigt. Die Nachanalyse (~4 Tage später) konnte den
 Vorfall mangels Retention nicht mehr rekonstruieren (lokales `journalctl`
 nur ~3,5 Tage, ntfy-Topic-Cache nur ~12h — Anlass für
-[docs/3-apps-workloads/300j0-logging.md](300j0-logging.md)). Geprüft und
+[capulus-core/3-apps-workloads/300j0-logging.md](../../capulus-core/3-apps-workloads/300j0-logging.md)). Geprüft und
 **ausgeschlossen** wurde dabei, dass sich die Standort-URL pro Alarm
 ändert: `/start?station=...` löst serverseitig immer zur selben, fest im
 SealedSecret hinterlegten AMweb-URL auf (siehe
-[docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md)) —
+[capulus-core/3-apps-workloads/30010-alamos-apager.md](../../capulus-core/3-apps-workloads/30010-alamos-apager.md)) —
 neue Alarme sollen live innerhalb derselben, dauerhaft offenen
 Chromium-Session erscheinen, nicht über einen neuen Redirect.
 
@@ -243,7 +243,7 @@ Default) in `capulus-ansible/host_vars/vereinsheim-alarmmonitor/`.
 
 Loggt bei jedem periodischen Neustart eine Zeile über
 `logger -t banana-pi-kiosk` (siehe
-[docs/3-apps-workloads/300j0-logging.md](300j0-logging.md) für die
+[capulus-core/3-apps-workloads/300j0-logging.md](../../capulus-core/3-apps-workloads/300j0-logging.md) für die
 zentrale Abfrage über VictoriaLogs statt des kurz laufenden lokalen
 Journals).
 
@@ -285,7 +285,7 @@ Cluster meldete `RemoteWriteDroppingData`. Zwei zusammenwirkende Ursachen:
    `https` direkt ~1 s. Die `vmagent`-Blöcke sind ~20 KB groß. Warum Port 80
    hängt, ist nicht abschließend geklärt (Vermutung: Traefik antwortet mit 308,
    ohne den Body zu lesen). Gleiches Muster wie beim Journal-Upload
-   ([300j0-logging.md](300j0-logging.md)).
+   ([300j0-logging.md](../../capulus-core/3-apps-workloads/300j0-logging.md)).
 2. **Zu viele parallele Queues.** `vmagent` nutzt standardmäßig `2 × CPU-Kerne`
    Queues (Pi: 8). VictoriaMetrics hält pro Insert-Request einen Slot, solange
    der Client noch sendet, und erlaubt bei 1000m CPU nur 2 gleichzeitige
@@ -310,13 +310,13 @@ Detail-Panels im Standort-Dashboard **"1002011-pis"**
 (`argocd/apps/tech/monitoring/templates/dashboard-1002011-pis.yaml`,
 ehemals "Vereinsheim-Alarmmonitor" — umbenannt, als die xibosignage-
 Infotafel `infotafel` als zweites Gerät am selben Standort dazukam, siehe
-[docs/3-apps-workloads/300e0-xibosignage.md, "Monitoring (Grafana)"](300e0-xibosignage.md#monitoring-grafana)).
+[capulus-core/3-apps-workloads/300e0-xibosignage.md, "Monitoring (Grafana)"](../../capulus-core/3-apps-workloads/300e0-xibosignage.md#monitoring-grafana)).
 
 ## Zammad-Ticket via n8n
 
 **Nur für diesen Standort** — die Raspberry-Pi-Alarmmonitore erzeugen
 weiterhin bewusst **kein** Ticket pro Ausfall (nur ntfy, siehe
-[docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md)); das bleibt unverändert.
+[capulus-core/3-apps-workloads/30010-alamos-apager.md](../../capulus-core/3-apps-workloads/30010-alamos-apager.md)); das bleibt unverändert.
 
 **Wichtig, wegen Push statt Pull:** Die VMRule nutzt `absent_over_time`
 statt `up == 0` — ein `up`-Sample mit Wert 0 setzt eine laufende
@@ -343,7 +343,7 @@ absent_over_time(up{...}[10m]) für vereinsheim-alarmmonitor
       2. Zeitstempel der letzten erfolgreichen /start-Anfrage holen (=
          wann hat der Kiosk zuletzt die echte AMweb-URL angefragt) —
          kommt NICHT vom Pi, sondern von alamos-apager selbst
-         (`/metrics`, siehe docs/3-apps-workloads/30010-alamos-apager.md), das immer im
+         (`/metrics`, siehe capulus-core/3-apps-workloads/30010-alamos-apager.md), das immer im
          Cluster läuft und daher unabhängig vom Tailscale-Status des Pi
          abfragbar ist
       3. Zammad-Ticket erstellen (POST /api/v1/tickets, gleiches Muster
@@ -354,7 +354,7 @@ absent_over_time(up{...}[10m]) für vereinsheim-alarmmonitor
 
 Die bestehende ntfy-Route bleibt für diesen Alert (und alle
 anderen) unverändert bestehen — die n8n-Route kommt rein additiv dazu
-(`continue: true`, siehe [60060](../6-hintergruende/60060-monitoring-und-alerting.md#alertmanager-routing)).
+(`continue: true`, siehe [60060](../../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md#alertmanager-routing)).
 
 **Achtung, Bedeutung des Werts:** Der Zeitstempel der letzten `/start`-Anfrage
 ist ein *Browser-Start*-Marker, kein Lebenszeichen. `/start` wird nur
@@ -369,7 +369,7 @@ der Bezeichnung "Letzte AMweb-Anfrage" — gemeint ist dort der letzte
 Browser-Start.
 
 **Woher "letzte AMweb-Anfrage" kommt:** `alamos-apager` (die geteilte
-Cluster-Komponente aus [docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md))
+Cluster-Komponente aus [capulus-core/3-apps-workloads/30010-alamos-apager.md](../../capulus-core/3-apps-workloads/30010-alamos-apager.md))
 merkt sich jetzt zusätzlich zum Heartbeat auch den Zeitstempel jeder
 erfolgreichen `/start`-Anfrage (also wann der Kiosk-Browser zuletzt
 tatsächlich die echte AMweb-URL angefragt hat) und exportiert das über
@@ -386,16 +386,16 @@ gleichermaßen, nicht nur diesen.
    nicht vorhanden), Mitglied der Ticket-Gruppe (Default im Workflow:
    `Support::Administration` — angenommen als Untergruppe "Administration"
    von "Support", `::` ist der von der Zammad-API erwartete Trenner für
-   Untergruppen, siehe docs/f-cicd-automatisierung/f0040-github-release-watcher.md; falls es
+   Untergruppen, siehe capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md; falls es
    stattdessen eine einzelne Gruppe mit dem wörtlichen Namen
    "Support / Administration" ist, im Code-Node "Ticket-Payload bauen"
    entsprechend anpassen) machen und unter **Profil → Benachrichtigungen**
    die Mail-Benachrichtigung
    für "Neues Ticket" aktivieren (Zammad-Standard: aktiviert). Gleiches
-   Prinzip wie [docs/f-cicd-automatisierung/f0040-github-release-watcher.md, Schritt 4](../f-cicd-automatisierung/f0040-github-release-watcher.md#schritt-4--agenten-benachrichtigung-in-zammad-prüfen).
+   Prinzip wie [capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md, Schritt 4](../../capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md#schritt-4--agenten-benachrichtigung-in-zammad-prüfen).
 2. **Zammad-API-Token erzeugen:** Profil → Token Access → Neuer Token,
    Berechtigung `ticket.agent` (siehe
-   [docs/f-cicd-automatisierung/f0040-github-release-watcher.md, Schritt 1](../f-cicd-automatisierung/f0040-github-release-watcher.md#schritt-1--zammad-api-token-erzeugen)
+   [capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md, Schritt 1](../../capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md#schritt-1--zammad-api-token-erzeugen)
    für die genauen Klicks).
 3. **n8n:** Workflow `banana-pi-down-to-zammad.json` importieren, dann im
    Node "Zammad-Ticket erstellen" eine Header-Auth-Credential anlegen/
@@ -407,7 +407,7 @@ gleichermaßen, nicht nur diesen.
    (Header Auth) zuweisen. Alertmanager sendet das Token als
    `Authorization: Bearer` aus dem Secret `n8n-webhook-token`
    (Namespace `monitoring`), siehe
-   [30070](30070-n8n.md#webhook-authentifizierung).
+   [30070](../../capulus-core/3-apps-workloads/30070-n8n.md#webhook-authentifizierung).
 4. Workflow in n8n aktivieren (`active: true` in der UI).
 
 ## Sichtprüfung ohne physischen Zugriff
@@ -459,7 +459,7 @@ MAC-Adressen-Tabelle: `capulus-ansible/host_vars/vereinsheim-alarmmonitor/vars.y
 
 Architektur-Hintergrund und der geplante Router-VPN-Fallback (für den
 Fall, dass der Pi selbst nicht erreichbar ist) stehen in
-[docs/4-planung/40020-vereinsheim-wol-router-vpn.md](../4-planung/40020-vereinsheim-wol-router-vpn.md).
+[capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md](../../capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md).
 
 ### iOS-App
 
@@ -476,8 +476,8 @@ Homeserver-Root-CA, das die IP als Subject Alternative Name trägt, und lauscht
 ausschließlich auf der Tailscale-Adresse des Pi
 (`banana_pi_kiosk_wol_agent_bind_address`). Die App vertraut ihm über dieselbe
 Root-CA wie `carplay-api`. Ausstellung, Hinterlegung und Erneuerung des
-Zertifikats: [d0040](../d-sicherheit/d0040-internal-tls.md#zertifikat-für-den-wol-agent-auf-dem-vereinsheim-pi),
-Hintergründe: [60080](../6-hintergruende/60080-carplay-api-und-ios-app.md#transport-und-schlüssel).
+Zertifikats: [d0040](../../capulus-core/d-sicherheit/d0040-internal-tls.md#zertifikat-für-den-wol-agent-auf-dem-vereinsheim-pi),
+Hintergründe: [60080](../../capulus-core/6-hintergruende/60080-carplay-api-und-ios-app.md#transport-und-schlüssel).
 
 Token für die App-Einstellungen auslesen:
 
@@ -490,12 +490,12 @@ In der App: Zahnrad-Symbol → "Vereinsheim-WoL-Agent-Token" → einfügen →
 
 Bewusster Kompromiss mit dem sonst geltenden Prinzip "kein dauerhaft
 offener Port" auf diesem Pi — Details und Begründung in
-[docs/4-planung/40020-vereinsheim-wol-router-vpn.md](../4-planung/40020-vereinsheim-wol-router-vpn.md).
+[capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md](../../capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md).
 Kill-switch: `banana_pi_kiosk_wol_agent_enabled: false` (behält nur den
 SSH-Weg).
 
 Online-Status prüfen und den PC wieder herunterfahren: siehe
-[docs/3-apps-workloads/30021-vereinsheim-windows-pc-steuerung.md](30021-vereinsheim-windows-pc-steuerung.md).
+[capulus-core/3-apps-workloads/30021-vereinsheim-windows-pc-steuerung.md](../../capulus-core/3-apps-workloads/30021-vereinsheim-windows-pc-steuerung.md).
 
 ## Fehlerbehebung
 
@@ -518,21 +518,21 @@ Online-Status prüfen und den PC wieder herunterfahren: siehe
 | iOS-App: "Aufwecken" bei Windows-PC schlägt fehl (401) | Token in der App aktuell? Neu auslesen: `ssh pela@vereinsheim-alarmmonitor sudo cat /etc/banana-pi-wol-agent/token` |
 | iOS-App: "Aufwecken" bei Windows-PC meldet einen TLS-/Verbindungsfehler, obwohl `curl --cacert pki/homeserver-root-ca.pem -X POST https://100.123.214.4:9102/wol` eine HTTP-Antwort liefert | Root-CA auf dem iPhone installiert **und** aktiviert? Zertifikat abgelaufen (`openssl s_client -connect 100.123.214.4:9102` und `openssl x509 -noout -enddate`, Eintrag `vereinsheim-wol-agent-cert` im Token-Register)? App-Build noch mit `http://` (der Agent spricht nur HTTPS)? |
 | iOS-App: "Aufwecken" bei Windows-PC ohne Antwort/Timeout | Tailscale auf dem Handy aktiv? `systemctl status banana-pi-wol-agent` auf dem Pi — läuft der Dienst? `curl --cacert pki/homeserver-root-ca.pem -X POST https://100.123.214.4:9102/wol -H "Authorization: Bearer <token>" -d '{"target":"windows-pc"}'` von einer Tailnet-Maschine zum Gegenchecken |
-| Nachträgliche Analyse eines Vorfalls (z. B. "Alarm wurde nicht angezeigt") — lokales `journalctl` reicht nicht mehr zurück | Journal auf dem Pi ist auf ~3,5 Tage begrenzt (täglicher Reboot + 20-MB-Limit) — stattdessen Grafana/VictoriaLogs abfragen (Retention 14 Tage), siehe [docs/3-apps-workloads/300j0-logging.md](300j0-logging.md) |
+| Nachträgliche Analyse eines Vorfalls (z. B. "Alarm wurde nicht angezeigt") — lokales `journalctl` reicht nicht mehr zurück | Journal auf dem Pi ist auf ~3,5 Tage begrenzt (täglicher Reboot + 20-MB-Limit) — stattdessen Grafana/VictoriaLogs abfragen (Retention 14 Tage), siehe [capulus-core/3-apps-workloads/300j0-logging.md](../../capulus-core/3-apps-workloads/300j0-logging.md) |
 | Prüfen, ob der periodische Chromium-Neustart läuft (nur relevant, falls wieder aktiviert) | `journalctl -t banana-pi-kiosk` auf dem Pi bzw. in VictoriaLogs nach `periodischer Neustart` filtern (siehe [Periodischer Seiten-Neustart](#periodischer-seiten-neustart)) |
 
 ## Relevante Links
 
-- [docs/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md) — Basis-Architektur (Raspberry-Pi-Flotte)
-- [docs/3-apps-workloads/30021-vereinsheim-windows-pc-steuerung.md](30021-vereinsheim-windows-pc-steuerung.md) — Windows-PC: Online-Check & Herunterfahren
-- [docs/b-kubernetes-gitops/b0030-semaphore.md](../b-kubernetes-gitops/b0030-semaphore.md) — Tailscale Split-DNS-Setup
-- [docs/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md) — `*.homeserver`-Auflösung
-- [docs/c-netzwerk-dns/c0010-tailscale.md](../c-netzwerk-dns/c0010-tailscale.md) — Tailscale-Grundlagen
-- [docs/3-apps-workloads/30000-zammad.md](30000-zammad.md) — Zammad-Setup
-- [docs/f-cicd-automatisierung/f0040-github-release-watcher.md](../f-cicd-automatisierung/f0040-github-release-watcher.md) — Zammad-API-Ticket-Muster
-- [docs/3-apps-workloads/30070-n8n.md](30070-n8n.md) — n8n-Setup
-- [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) — VMStaticScrape-Muster (ugreen-nas, Pull-Vergleichsfall)
-- [docs/4-planung/40020-vereinsheim-wol-router-vpn.md](../4-planung/40020-vereinsheim-wol-router-vpn.md) — Architektur-Plan Wake-on-LAN + Router-VPN-Fallback
-- [docs/3-apps-workloads/300j0-logging.md](300j0-logging.md) — zentrales Logging (VictoriaLogs), löst die kurze lokale Journal-Retention dieses Pi ab
+- [capulus-core/3-apps-workloads/30010-alamos-apager.md](../../capulus-core/3-apps-workloads/30010-alamos-apager.md) — Basis-Architektur (Raspberry-Pi-Flotte)
+- [capulus-core/3-apps-workloads/30021-vereinsheim-windows-pc-steuerung.md](../../capulus-core/3-apps-workloads/30021-vereinsheim-windows-pc-steuerung.md) — Windows-PC: Online-Check & Herunterfahren
+- [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../b-kubernetes-gitops/b0030-semaphore.md) — Tailscale Split-DNS-Setup
+- [capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](../../capulus-core/c-netzwerk-dns/c0000-dns-architecture.md) — `*.homeserver`-Auflösung
+- [capulus-core/c-netzwerk-dns/c0010-tailscale.md](../../capulus-core/c-netzwerk-dns/c0010-tailscale.md) — Tailscale-Grundlagen
+- [capulus-core/3-apps-workloads/30000-zammad.md](../../capulus-core/3-apps-workloads/30000-zammad.md) — Zammad-Setup
+- [capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md](../../capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md) — Zammad-API-Ticket-Muster
+- [capulus-core/3-apps-workloads/30070-n8n.md](../../capulus-core/3-apps-workloads/30070-n8n.md) — n8n-Setup
+- [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md) — VMStaticScrape-Muster (ugreen-nas, Pull-Vergleichsfall)
+- [capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md](../../capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md) — Architektur-Plan Wake-on-LAN + Router-VPN-Fallback
+- [capulus-core/3-apps-workloads/300j0-logging.md](../../capulus-core/3-apps-workloads/300j0-logging.md) — zentrales Logging (VictoriaLogs), löst die kurze lokale Journal-Retention dieses Pi ab
 - [Armbian — Banana Pi M2 Ultra](https://armbian.com/boards/bananapim2ultra)
 - [VictoriaMetrics vmagent](https://docs.victoriametrics.com/victoriametrics/vmagent/)

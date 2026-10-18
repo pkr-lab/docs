@@ -2,7 +2,7 @@
 
 HTTP-API, die News inkl. Bildern im DLRG ISC (`https://dlrg.net`, App „News“) anlegt. Steuert headless Chromium mit Playwright. n8n ruft den Dienst auf, im n8n-Pod läuft kein Browser.
 
-Vollständige Doku (Ablauf, API, Secrets, Deployment, n8n-Workflow, Troubleshooting, Risiken): [docs/3-apps-workloads/300k0-isc-news-bot.md](../../../../docs/3-apps-workloads/300k0-isc-news-bot.md).
+Vollständige Doku (Ablauf, API, Secrets, Deployment, n8n-Workflow, Troubleshooting, Risiken): [capulus-core/3-apps-workloads/300k0-isc-news-bot.md](../3-apps-workloads/300k0-isc-news-bot.md).
 
 ## Aufbau
 

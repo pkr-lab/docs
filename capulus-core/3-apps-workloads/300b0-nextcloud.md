@@ -1,6 +1,6 @@
 # Nextcloud
 
-> **Cluster:** PROD · Ordner `argocd/apps/prod/nextcloud/` · URL `https://nextcloud.prod.homeserver` und `https://nextcloud-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** PROD · Ordner `argocd/apps/prod/nextcloud/` · URL `https://nextcloud.prod.homeserver` und `https://nextcloud-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den PROD-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 [Nextcloud](https://nextcloud.com) ist eine selbst gehostete
 Datei-Sync-, Kalender- und Kontakte-Plattform (Google-Drive-/-Workspace-
@@ -20,14 +20,14 @@ Ersatz). Die Deployment-Konfiguration liegt unter `argocd/apps/prod/nextcloud/`.
 | Persistenz  | StorageClass `nas` (UGREEN NAS, NFS)   | —           |
 
 Nutzdaten (`html`- und `data`-Verzeichnis) liegen auf der
-`nas`-StorageClass (siehe [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) —
+`nas`-StorageClass (siehe [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) —
 keine NodeAffinity nötig. `data` ist bewusst als eigenes, separat
 dimensioniertes PVC von `html` getrennt (Standard-Startgröße 100Gi,
 `html`/App-Code nur 5Gi), damit die eigentlichen Nutzerdateien unabhängig
 von der App-Installation wachsen können.
 
 > **Warum kein Bitnami-Subchart?** Analog zu Wiki.js/Zammad — siehe
-> [docs/3-apps-workloads/30030-wikijs.md](30030-wikijs.md) für die Begründung (Bitnami-Charts seit
+> [capulus-core/3-apps-workloads/30030-wikijs.md](30030-wikijs.md) für die Begründung (Bitnami-Charts seit
 > August 2025 eingeschränkt/kostenpflichtig).
 
 ---
@@ -39,13 +39,13 @@ von der App-Installation wachsen können.
 - **`nas-storage`-App ist deployt** (`argocd/apps/tech/nas-storage/`) und die
   StorageClass `nas` existiert: `kubectl get storageclass nas`
 - **NAS ist online und der NFS-Export erreichbar** (siehe
-  [docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — sonst bleiben die PVCs
+  [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — sonst bleiben die PVCs
   auf `Pending`
 - `kubeseal` CLI ist lokal installiert
 - `kubectl` ist mit dem Cluster verbunden
 - (Optional, für externen Zugriff) `argocd/apps/tech/cloudflared/` ist bereits
   deployt — die Ingress-Regel für `nextcloud.pke-lab.de` ist schon
-  eingetragen (siehe [docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md))
+  eingetragen (siehe [capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md))
 
 ---
 
@@ -105,8 +105,8 @@ gegen `/status.php`).
 
 **DNS:** Nextcloud läuft im **PROD**-Cluster; `nextcloud.prod.homeserver` steht dafür in
 `dnsmasq_prod_vm_hosts` (`capulus-ansible/group_vars/all.yml`) und zeigt auf die PROD-VM (`.99`), siehe
-[docs/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge)
-und [docs/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md).
+[capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md#dns-tier-und-cluster-sind-zwei-verschiedene-dinge)
+und [capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md).
 
 ---
 
@@ -136,7 +136,7 @@ Mobile-/Desktop-Sync-Clients außerhalb von LAN/Tailscale:
 Eintrag weist Nextcloud Requests mit "Access through untrusted domain" ab.
 **Achtung:** Das greift nur bei der Erstinstallation (siehe
 Troubleshooting-Abschnitt unten) — ändert sich der Hostname später (z. B.
-bei einer Domain-Tier-Migration wie in docs/c-netzwerk-dns/c0040-domain-tiers.md beschrieben), muss
+bei einer Domain-Tier-Migration wie in capulus-core/c-netzwerk-dns/c0040-domain-tiers.md beschrieben), muss
 `trusted_domains` in der bereits bestehenden `config.php` separat
 nachgezogen werden.
 
@@ -185,7 +185,7 @@ anzufassen. Kein zweiter PVC, keine ArgoCD-Klimmzüge nötig, und ein
 Rollback ist nur ein Revert der beiden geänderten Zeilen.
 
 1. **Zusätzlicher Konsistenz-Dump** (ergänzend zum nächtlichen
-   dateisystem-Backup aus [docs/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md) —
+   dateisystem-Backup aus [capulus-core/2-betrieb-hardware/20010-nas-backup.md](../2-betrieb-hardware/20010-nas-backup.md) —
    das ist nur crash-consistent, kein `pg_dump`):
    ```bash
    kubectl -n nextcloud exec deploy/nextcloud-postgresql -- \
@@ -253,7 +253,7 @@ Zwei unterschiedliche Ursachen möglich:
    crasht trotzdem:** `NEXTCLOUD_TRUSTED_DOMAINS`/`trustedDomains` wirkt
    nur bei der Erstinstallation — bei einem bereits vorhandenen
    `config.php` (z. B. nach einer Domain-Umbenennung wie der
-   Tier-Migration in docs/c-netzwerk-dns/c0040-domain-tiers.md) bleibt der alte Eintrag stehen, jeder
+   Tier-Migration in capulus-core/c-netzwerk-dns/c0040-domain-tiers.md) bleibt der alte Eintrag stehen, jeder
    Health-Check schlägt dann dauerhaft mit `{"error": "Trusted domain
    error.", "code": 15}` fehl → `CrashLoopBackOff`. Prüfen:
    ```bash
@@ -369,7 +369,7 @@ kubectl describe pvc -n nextcloud nextcloud-data
 kubectl -n nas-storage get pods
 ```
 
-Details: [docs/2-betrieb-hardware/20000-nas-storage.md → Fehlerbehebung](../2-betrieb-hardware/20000-nas-storage.md#fehlerbehebung).
+Details: [capulus-core/2-betrieb-hardware/20000-nas-storage.md → Fehlerbehebung](../2-betrieb-hardware/20000-nas-storage.md#fehlerbehebung).
 
 ---
 
@@ -384,7 +384,7 @@ Details: [docs/2-betrieb-hardware/20000-nas-storage.md → Fehlerbehebung](../2-
 
 `persistence.data.size` in `values.yaml` bei Bedarf erhöhen — `nas` erlaubt
 zwar kein Online-Volume-Expansion (siehe
-[docs/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)), ein größerer Wert wirkt sich
+[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)), ein größerer Wert wirkt sich
 aber nur auf die Kubernetes-Quota aus, nicht auf den tatsächlich auf dem
 NAS belegten Speicher (nfs-subdir-external-provisioner erzwingt keine
 Quotas auf Dateisystem-Ebene).

@@ -1,6 +1,6 @@
 # ENTW → main — automatischer PR nach grüner CI
 
-[`.github/workflows/promote-entw.yml`](../../.github/workflows/promote-entw.yml)
+[`.github/workflows/promote-entw.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/promote-entw.yml)
 übergibt Änderungen, die auf dem Branch `entw` gelandet sind, als **Pull
 Request an `main`** — aber erst, wenn die CI auf `entw` grün ist. `entw` ist
 die Git-Quelle des ENTW-Clusters (`argocd_repo_revision: entw` in
@@ -38,9 +38,9 @@ flowchart TD
 | Job | Was |
 |---|---|
 | `detect` | Vergleicht `origin/entw` mit dem Tag `entw-promoted`; gibt es neue Commits, die `main` noch nicht hat? Überspringt Stände, für die schon ein offenes Issue existiert. |
-| `ci` | Ruft [`ci.yml`](../../.github/workflows/ci.yml) als wiederverwendbaren Workflow mit `ref: entw` auf — exakt dieselben vier Jobs wie auf einem PR. |
+| `ci` | Ruft [`ci.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/ci.yml) als wiederverwendbaren Workflow mit `ref: entw` auf — exakt dieselben vier Jobs wie auf einem PR. |
 | `ci-failed` | Bei rotem CI: Issue mit Link zum Lauf. Der Cron prüft diesen Stand danach nicht mehr alle 15 Minuten neu. |
-| `promote` | Cherry-Pick, PR, Tag umlegen (Logik in [`scripts/promote-entw.sh`](../../scripts/promote-entw.sh)). |
+| `promote` | Cherry-Pick, PR, Tag umlegen (Logik in [`scripts/promote-entw.sh`](https://github.com/pkr-lab/capulus-core/blob/main/scripts/promote-entw.sh)). |
 
 ## Der Tag `entw-promoted`
 
@@ -88,7 +88,7 @@ keine weiteren Workflows auslösen** — die CI auf dem PR bliebe aus, und der
 Pflicht-Check würde ewig auf „pending“ stehen. Der Workflow nimmt das Repo-Secret
 `PROMOTE_TOKEN`, ersatzweise `RENOVATE_TOKEN` (fine-grained PAT nur für dieses
 Repo, `Contents`, `Pull requests`, `Issues`, `Workflows` = Read and write —
-das ist die Rechteliste, die [`renovate.yml`](../../.github/workflows/renovate.yml)
+das ist die Rechteliste, die [`renovate.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/renovate.yml)
 ohnehin nutzt). Ein eigenes Secret ist sauberer, weil sich die Rechte dann
 getrennt widerrufen lassen.
 
@@ -103,7 +103,7 @@ getrennt widerrufen lassen.
 
 ## Gegenrichtung: main -> entw
 
-[`sync-entw.yml`](../../.github/workflows/sync-entw.yml) (Logik: `scripts/sync-entw.sh`) merged `main` nach jedem
+[`sync-entw.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/sync-entw.yml) (Logik: `scripts/sync-entw.sh`) merged `main` nach jedem
 Push (Cron stündlich als Fallback) in `entw`, damit `entw` nicht hinter `main` zurückfällt.
 Hat `entw` **eigene Commits** (Nicht-Merge-Commits, die `main` nach Patch-Id nicht hat und die noch nicht
 per Tag `entw-promoted` übergeben sind), passiert nichts: dort wird gerade getestet. Ein Merge-Konflikt lässt
@@ -130,7 +130,7 @@ den Lauf rot enden, ohne zu pushen.
 Ein `push`-Workflow läuft mit der Workflow-Datei **des gepushten Branches**, die Arbeit selbst
 soll aber immer mit den aktuellen Workflows von `main` laufen. Deshalb gibt es zwei Auslöser:
 
-- [`entw-trigger.yml`](../../.github/workflows/entw-trigger.yml): kleiner `push`-Workflow auf `entw`, der nur
+- [`entw-trigger.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/entw-trigger.yml): kleiner `push`-Workflow auf `entw`, der nur
   `promote-entw.yml` auf `main` per `workflow_dispatch` startet (ein Dispatch mit dem Standard-Token ist erlaubt).
   Die Datei muss dafür **auf `entw` liegen**, sie kommt mit dem nächsten Merge `main` → `entw`.
 - Cron **stündlich** als Fallback. Der frühere 15-Minuten-Cron lief im Test nur alle 2–5 Stunden, GitHub drosselt

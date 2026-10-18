@@ -38,7 +38,7 @@ Entscheidung dokumentieren (Status `Akzeptiertes Risiko`) oder die Dateien aus d
 
 ## Bearbeitung (2026-10-18)
 
-**Geändert (Mindestmaß aus der Empfehlung).** Die private Gmail-Adresse des Betreibers stand als Beispiel in `docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md` (Cloudflare-Access-Policy). Sie ist durch eine Beschreibung ersetzt („die Adresse, mit der du dich bei Cloudflare anmeldest“).
+**Geändert (Mindestmaß aus der Empfehlung).** Die private Gmail-Adresse des Betreibers stand als Beispiel in `capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md` (Cloudflare-Access-Policy). Sie ist durch eine Beschreibung ersetzt („die Adresse, mit der du dich bei Cloudflare anmeldest“).
 
 **Geprüft, nicht geändert.** Die übrigen Kontaktangaben sind betrieblich gebunden: `info@edv-kretzer.de` (Funktions-Postfach, SMTP-Absender, Zammad-Agent), die erlaubte Absenderadresse des Instagram-Workflows in `300l0` (Dienstadresse), Platzhalter `sip:EINTRAGEN@sip.linphone.org` (das echte SIP-Ziel steht nicht im Repo, nur im Vault bzw. in der Rollenvariable). Sie zu entfernen würde die Doku unbrauchbar machen.
 
@@ -46,7 +46,7 @@ Entscheidung dokumentieren (Status `Akzeptiertes Risiko`) oder die Dateien aus d
 
 **Weiter vorhanden:** `argocd/apps/tech/n8n/workflows/PaperlessWorkflow.json` enthält im Code-Knoten die Liste `ADRESSEN` mit fünf privaten Gmail-Adressen (darunter dieselbe) und zwei Postfächern von `edv-kretzer.de`. Die Liste entscheidet, welche eingehenden Mails als „meine Adresse“ gelten; sie zu ändern ändert das Verhalten des Workflows. Besser wäre ein Parameter aus einem n8n-Credential oder einer Variable statt der Liste im Quelltext. Das ändere ich nicht ohne dich, weil der Workflow Dokumente nach Paperless übergibt. Auch die Git-Historie enthält die Adresse (vier Commits).
 
-**Geänderte Dateien.** `docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md`
+**Geänderte Dateien.** `capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md`
 
 **Rollback.** Nicht erforderlich.
 

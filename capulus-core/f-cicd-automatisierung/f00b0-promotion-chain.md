@@ -1,6 +1,6 @@
 # Promotion-Kette ENTW → TECH → PROD
 
-[`promote-chain.yml`](../../.github/workflows/promote-chain.yml) bringt eine neue
+[`promote-chain.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/promote-chain.yml) bringt eine neue
 **Version** (Image-Tag, Chart-Abhängigkeit) Schritt für Schritt in die produktiven
 Cluster: zuerst läuft sie auf ENTW, und erst wenn sie dort **24 Stunden gesund** war,
 entsteht ein PR nach TECH. Ist sie danach **2 Stunden gesund** auf TECH, entsteht der
@@ -79,7 +79,7 @@ sobald ArgoCD wieder antwortet.
 ### Smoke-Checks
 
 Ein Pod, der `Running` ist, beweist nicht, dass die App antwortet. Pro App und Umgebung lassen sich in
-[`argocd/promotion.yaml`](../../argocd/promotion.yaml) HTTP-Prüfungen hinterlegen:
+[`argocd/promotion.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/promotion.yaml) HTTP-Prüfungen hinterlegen:
 
 ```yaml
 smoke:
@@ -180,7 +180,7 @@ Reihenfolge (nach dem Merge der Änderungen, die diese Pipeline einführen):
 2. **ArgoCD-Konto `ci` ausrollen** (Nur-Lese-Rolle, nur API-Token): Ansible-Rolle `argocd`, Schalter
    `argocd_ci_account_enabled` (Standard `true`).
    - Hub: `make argocd`
-   - ENTW: `ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/entw.yml --tags argocd --vault-password-file ~/.vault_pass`
+   - ENTW: `ansible-playbook -i inventory/hosts.yml entw.yml --tags argocd --vault-password-file ~/.vault_pass`
 3. **Tokens erzeugen und als Secret hinterlegen** (nichts wird ausgegeben):
    `scripts/create-argocd-ci-token.sh hub` und `scripts/create-argocd-ci-token.sh entw`
    → Secrets `ARGOCD_HUB_TOKEN`, `ARGOCD_ENTW_TOKEN` (365 Tage gültig).
@@ -192,7 +192,7 @@ Reihenfolge (nach dem Merge der Änderungen, die diese Pipeline einführen):
 6. **Trockenlauf:** *Promote chain → Run workflow*, `plan_only` aktivieren, Summary prüfen.
 7. **Beobachten:** einige echte Zyklen begleiten. Danach optional Repo-Variable `PROMOTE_AUTOMERGE_TECH=true`.
 8. **Renovate für die Pilot-Apps in TECH/PROD abschalten**, damit es genau einen Update-Weg gibt
-   (`argocd/apps/entw/` → Kette). Diese Regel bewusst erst jetzt in [`renovate.json`](../../renovate.json) ergänzen,
+   (`argocd/apps/entw/` → Kette). Diese Regel bewusst erst jetzt in [`renovate.json`](https://github.com/pkr-lab/capulus-core/blob/main/renovate.json) ergänzen,
    sonst fehlte solange die Kette nicht läuft die Update-Quelle:
 
 ```json

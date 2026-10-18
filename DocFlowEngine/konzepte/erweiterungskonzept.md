@@ -130,7 +130,7 @@ Zielordner (Ausbilder prüft, benennt um)
        kuerzelRoutesFile    = '<geteilter Ordner>/kuerzel-routes.txt'
    }
    ```
-   Formatbeispiel/Vorlage der Registry-Datei: ursprünglich `config/kuerzel-routes.example.txt`, inzwischen entfernt und durch die Formatbeschreibung in [Configuration.md](../Configuration.md) ersetzt, da reine Kommentar-/Beispieldateien nicht mehr im Code-/Config-Baum gepflegt werden (die tatsächlich genutzte Datei liegt ohnehin im geteilten Ordner, nicht im Git-Repo — siehe Abschnitt 1).
+   Formatbeispiel/Vorlage der Registry-Datei: ursprünglich `config/kuerzel-routes.example.txt`, inzwischen entfernt und durch die Formatbeschreibung in [Configuration.md](../konfiguration.md) ersetzt, da reine Kommentar-/Beispieldateien nicht mehr im Code-/Config-Baum gepflegt werden (die tatsächlich genutzte Datei liegt ohnehin im geteilten Ordner, nicht im Git-Repo — siehe Abschnitt 1).
 
 5. **Neue Funktion** `Copy-ReviewedFiles` (analog zu `Copy-NewFiles`, in `scripts/DocFlowEngine/CopyBack.ps1`): durchsucht `aufgabenRoot` rekursiv nach Dateien, deren Name (ohne Extension) auf `reviewMarker.pattern` matcht — bewusst `aufgabenRoot`, nicht die generischen `targets[]`, da nur dort Dateien mit `initials`/`praefix`/`suffix`-Namensschema landen, für die ein Kürzel-Marker überhaupt Sinn ergibt. Extrahiert `kuerzel`, schlägt über `Get-KuerzelRoutes` den Schülerordner nach und kopiert nach `<Schülerordner>/Korrigiert/<Zieldateiname>`. Die Datei wird **kopiert**, nicht verschoben — das Original bleibt für den Ausbilder erhalten.
 
@@ -258,7 +258,7 @@ nicht dem Namensschema folgende Aufgaben-Dateien nachträglich ins Schema bringe
   bekommen `-RunOnlyIfNetworkAvailable` sowie `-LogonType Interactive` (Begründung: der
   OneDrive-Client läuft nur innerhalb einer interaktiven Benutzersitzung; ein Task "unabhängig von
   der Anmeldung" liefe in einer Sitzung ohne aktives OneDrive). Vollständiges Beispiel inkl.
-  Multi-Machine-Zeitstaffelung: [README.md](../../README.md#regelmäßige-automatisierung).
+  Multi-Machine-Zeitstaffelung: [README.md](../nutzung.md#regelmäßige-automatisierung).
 - **State-Pruning:** Neue Funktion `Remove-DocFlowExpiredState -State <hashtable> -RetentionYears
   <int>` (`State.ps1`), aufgerufen in `Invoke-DocFlowEngine` vor `Save-State`. Entfernt aus
   `processed` und `reviewedFiles` alle Einträge mit `processedAt` älter als `RetentionYears` Jahre;
@@ -313,7 +313,7 @@ optionalen Felder) keinen Default, obwohl `Get-TargetFileName` intern bereits ei
 `Copy-NewFiles` den Wert als Pflichtparameter entgegennimmt und die leere Zeichenkette schon vorher
 vom Parameter-Binding abgelehnt wird. Fix: `Load-Config` setzt jetzt denselben Fallback-Wert als
 Default, bevor die Config an `Copy-NewFiles` weitergereicht wird - siehe `defaultNameFormat` in
-[Configuration.md](../Configuration.md).
+[Configuration.md](../konfiguration.md).
 
 **Korrektur beim Implementieren:** Die naheliegendste Umsetzung für die Kürzel-Ermittlung wäre
 gewesen, `Get-FileInitials` direkt mit den bestehenden `namingConventions`-Regeln auf den

@@ -34,10 +34,10 @@ bekannte Lücke hat.
 
 | Baustein | Findet | Ergebnis | Dateien |
 |---|---|---|---|
-| CodeQL | Schwachstellen im eigenen Code: Go, JavaScript, Python, Swift, GitHub-Actions-Workflows | Alerts im Security-Tab, Check und Annotationen im PR | [`.github/workflows/codeql.yml`](../../.github/workflows/codeql.yml) |
-| Dependabot alerts + security updates | bekannte Lücken in Go-Modulen und GitHub Actions (GitHub Advisory Database) | Alerts im Security-Tab und **automatischer Fix-PR** | [`.github/dependabot.yml`](../../.github/dependabot.yml) + Repo-Einstellungen |
-| Security-Issues | spiegelt beide Quellen | **ein Issue je Regel bzw. je Manifest**, schließt sich selbst | [`.github/workflows/security-issues.yml`](../../.github/workflows/security-issues.yml), [`scripts/security-issues.py`](../../scripts/security-issues.py) |
-| Renovate (bestehend) | neue Versionen | Versions-PRs, unverändert | [`renovate.json`](../../renovate.json), [f0020](../f-cicd-automatisierung/f0020-renovate.md) |
+| CodeQL | Schwachstellen im eigenen Code: Go, JavaScript, Python, Swift, GitHub-Actions-Workflows | Alerts im Security-Tab, Check und Annotationen im PR | [`.github/workflows/codeql.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/codeql.yml) |
+| Dependabot alerts + security updates | bekannte Lücken in Go-Modulen und GitHub Actions (GitHub Advisory Database) | Alerts im Security-Tab und **automatischer Fix-PR** | [`.github/dependabot.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/dependabot.yml) + Repo-Einstellungen |
+| Security-Issues | spiegelt beide Quellen | **ein Issue je Regel bzw. je Manifest**, schließt sich selbst | [`.github/workflows/security-issues.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/security-issues.yml), [`scripts/security-issues.py`](https://github.com/pkr-lab/capulus-core/blob/main/scripts/security-issues.py) |
+| Renovate (bestehend) | neue Versionen | Versions-PRs, unverändert | [`renovate.json`](https://github.com/pkr-lab/capulus-core/blob/main/renovate.json), [f0020](../f-cicd-automatisierung/f0020-renovate.md) |
 
 ---
 
@@ -83,7 +83,7 @@ privates Repo wäre CodeQL kostenpflichtig (GitHub Code Security), dann wäre Op
 
 ## 1. CodeQL
 
-[`.github/workflows/codeql.yml`](../../.github/workflows/codeql.yml), erweiterte Einrichtung („advanced
+[`.github/workflows/codeql.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/codeql.yml), erweiterte Einrichtung („advanced
 setup“): Konfiguration und Sprachen sind im Repo versioniert statt in den Repo-Einstellungen.
 
 | Trigger | Wirkung |
@@ -123,7 +123,7 @@ Der Check „Code scanning results“ wird bei neuen Funden ab `high` trotzdem r
 
 ## 2. Dependabot
 
-[`.github/dependabot.yml`](../../.github/dependabot.yml) plus zwei Schalter in den Repo-Einstellungen
+[`.github/dependabot.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/dependabot.yml) plus zwei Schalter in den Repo-Einstellungen
 (siehe [Einrichtung](#einmalige-einrichtung-github-einstellungen)).
 
 - **Dependabot alerts** vergleichen den Dependency Graph mit der GitHub Advisory Database und legen Alerts im
@@ -145,8 +145,8 @@ Der Check „Code scanning results“ wird bei neuen Funden ab `high` trotzdem r
 
 ## 3. Security-Issues
 
-[`.github/workflows/security-issues.yml`](../../.github/workflows/security-issues.yml) läuft täglich um
-06:35 UTC (und manuell) und gleicht mit [`scripts/security-issues.py`](../../scripts/security-issues.py) die
+[`.github/workflows/security-issues.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/security-issues.yml) läuft täglich um
+06:35 UTC (und manuell) und gleicht mit [`scripts/security-issues.py`](https://github.com/pkr-lab/capulus-core/blob/main/scripts/security-issues.py) die
 offenen Alerts auf `main` mit den Issues ab. Ein Issue fasst zusammen, was gemeinsam behoben wird:
 
 - **Code-Scanning:** ein Issue je Werkzeug und Regel (z. B. alle `py/path-injection`-Funde), Tabelle mit Link je Fundstelle.
@@ -220,7 +220,7 @@ Abhängigkeitslücken entstehen, bevor die Fix-PRs eingespielt sind. Wieder eins
 |---|---|
 | **Container-Images** (Drittanbieter-Images aus den `values.yaml`, eigene Images pacman, carplay-api, n8n-custom samt der im Dockerfile installierten npm-Pakete wie `whatsapp-web.js`) | Dependabot und CodeQL sehen keine Images. Option: Image-Scan mit Grype oder (per SHA gepinntem) Trivy nach dem Build in [`build-images.yml`](../f-cicd-automatisierung/f0060-build-images.md). |
 | **Fehlkonfigurationen in Helm-Charts, Manifesten, Ansible** | kubeconform prüft nur das Schema ([f0070](../f-cicd-automatisierung/f0070-ci-lint.md)). Option: Checkov, KICS oder kube-linter. |
-| **Vendorte Bibliotheken**: [`jquery-1.10.2.min.js`](../../argocd/apps/tech/pacman/src/js/jquery-1.10.2.min.js) im pacman-Frontend | jQuery 1.10.2 hat bekannte XSS-Lücken (CVE-2015-9251, CVE-2019-11358, CVE-2020-11022, CVE-2020-11023). Kein Scanner sieht vendorte Dateien, CodeQL überspringt `*.min.js`. Von Hand aktualisieren oder ersetzen. |
+| **Vendorte Bibliotheken**: [`jquery-1.10.2.min.js`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/pacman/src/js/jquery-1.10.2.min.js) im pacman-Frontend | jQuery 1.10.2 hat bekannte XSS-Lücken (CVE-2015-9251, CVE-2019-11358, CVE-2020-11022, CVE-2020-11023). Kein Scanner sieht vendorte Dateien, CodeQL überspringt `*.min.js`. Von Hand aktualisieren oder ersetzen. |
 | **Gepinnte Actions** (Incident 015) | Seit 2026-10-17 zeigen alle `uses:` auf Commit-SHAs, Renovate hält sie mit `helpers:pinGitHubActionDigests` aktuell ([600a0](../6-hintergruende/600a0-ci-workflows-und-skripte.md#dependabot-und-renovate)). Nicht gepinnt bleiben `npx`- und `pip install`-Aufrufe in den Workflows (Incident 031). |
 | **n8n-Workflows** (JavaScript in JSON-Dateien) | werden nicht analysiert |
 | **Secret-Scanning-Alerts** | landen nicht als Issue (der `GITHUB_TOKEN` darf sie nicht lesen); GitHub benachrichtigt selbst, gitleaks prüft jeden PR. Abfrage: `gh api 'repos/pkr-lab/capulus-core/secret-scanning/alerts?state=open'` (enthält die Klartextwerte, nicht in Logs oder Chats ausgeben) |

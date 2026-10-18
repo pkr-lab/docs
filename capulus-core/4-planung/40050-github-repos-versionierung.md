@@ -38,7 +38,7 @@ Prüfung:
 | Kriterium | Versionierung sinnvoll? |
 |---|---|
 | **A. Hat das Repo "Konsumenten"** — wird irgendwo auf einen bestimmten Commit/Tag referenziert (Deployment zieht `targetRevision`, ein anderes Repo pinnt eine Version, ein Ansible-Playbook zieht eine Release-Version)? | Ja — genau dafür sind Tags da (Nachvollziehbarkeit: "welcher Stand läuft gerade produktiv") |
-| **B. Reines IaC-/GitOps-Repo wie `capulus-core` selbst**, wo ArgoCD ohnehin `targetRevision: main` direkt trackt (siehe [a0010-overview.md](../a-betriebssystem/a0010-overview.md)) | Ja, aber als **reine Versionshistorie/Nachvollziehbarkeit**, nicht als Deployment-Gate — deckt sich 1:1 mit der bestehenden Begründung in [f0030-release-automation.md](../f-cicd-automatisierung/f0030-release-automation.md) |
+| **B. Reines IaC-/GitOps-Repo wie `capulus-core` selbst**, wo ArgoCD ohnehin `targetRevision: main` direkt trackt (siehe [a0010-overview.md](../../capulus-ansible/a-betriebssystem/a0010-overview.md)) | Ja, aber als **reine Versionshistorie/Nachvollziehbarkeit**, nicht als Deployment-Gate — deckt sich 1:1 mit der bestehenden Begründung in [f0030-release-automation.md](../f-cicd-automatisierung/f0030-release-automation.md) |
 | **C. Archiviert / seit > 12 Monaten kein Commit / reines Experiment** | Nein — Aufwand für rückwirkende Versionierung lohnt sich nicht, es sei denn es wird reaktiviert |
 | **D. Reine Config-/Dotfiles-/Notiz-Repos ohne Release-Zyklus** | Nein — kein sinnvoller "Versionssprung"-Begriff, `git log` reicht als Historie |
 | **E. Node/npm-Pakete, die auf npm veröffentlicht werden** | Ja, plus zusätzlich `@semantic-release/npm` in die Plugin-Liste aufnehmen (im Unterschied zu `capulus-core`, das bewusst **kein** npm-Paket ist, siehe f0030) |
@@ -133,8 +133,8 @@ Ein-Personen-Repos (wie hier) reicht oft schon die Selbstdisziplin, die
 
 - [f0030-release-automation.md](../f-cicd-automatisierung/f0030-release-automation.md) — die hier
   als Vorlage genutzte, bereits produktive Implementierung
-- [.releaserc.json](../../.releaserc.json) — zu kopierende Konfiguration
-- [.github/workflows/release.yml](../../.github/workflows/release.yml) —
+- [.releaserc.json](https://github.com/pkr-lab/capulus-core/blob/main/.releaserc.json) — zu kopierende Konfiguration
+- [.github/workflows/release.yml](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/release.yml) —
   zu kopierender Workflow
 - [Conventional Commits](https://www.conventionalcommits.org/)
 - [semantic-release-Dokumentation](https://semantic-release.gitbook.io/)

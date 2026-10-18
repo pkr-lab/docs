@@ -3,8 +3,8 @@
 Der Code selbst enthält bewusst keine Kommentare. Diese Seite sammelt die Begründungen für
 Implementierungsentscheidungen, die nicht allein aus dem Code ersichtlich sind - sortiert nach
 Teilmodul unter `scripts/DocFlowEngine/`. Konzeptionelle Entscheidungen (das "Was" und "Warum" ganzer
-Features) stehen in [Konzepte/ERWEITERUNGSKONZEPT.md](Konzepte/ERWEITERUNGSKONZEPT.md) und
-[Konzepte/MULTI-MACHINE-SETUP.md](Konzepte/MULTI-MACHINE-SETUP.md); hier geht es um einzelne,
+Features) stehen in [Konzepte/ERWEITERUNGSKONZEPT.md](konzepte/erweiterungskonzept.md) und
+[Konzepte/MULTI-MACHINE-SETUP.md](konzepte/multi-machine-setup.md); hier geht es um einzelne,
 nicht-offensichtliche Code-Entscheidungen innerhalb dieser Features.
 
 ## `Naming.ps1`
@@ -57,7 +57,7 @@ Ergebnis an.
 prozessmodellabhängig funktionieren; eine einfache Datei im ohnehin schon geteilten
 OneDrive/SharePoint-Ordner ist mit reinen PowerShell-5.1-Bordmitteln umsetzbar und passt zum
 "eventual consistency"-Modell des restlichen Multi-Machine-Betriebs (siehe
-[Konzepte/MULTI-MACHINE-SETUP.md](Konzepte/MULTI-MACHINE-SETUP.md)).
+[Konzepte/MULTI-MACHINE-SETUP.md](konzepte/multi-machine-setup.md)).
 
 **`Test-DocFlowLockFresh` liest die Lock-Datei über `Get-Item -Force`.** Dateien mit führendem Punkt
 (wie `.docflow-lock`) gelten auf macOS/Linux im PowerShell-Dateisystemprovider standardmäßig als
@@ -74,14 +74,14 @@ Anlegen/Entfernen einer Lock-Datei wäre einer.
 **`Copy-NewFiles` überspringt Dateien innerhalb des `Korrigiert`-Unterordners der Quelle
 (`Test-DocFlowInsideNamedFolder`).** Der `Korrigiert`-Ordner liegt innerhalb desselben
 Schülerordners, der auch als `sources[]`-Eintrag gescannt wird (siehe
-[Konzepte/ERWEITERUNGSKONZEPT.md](Konzepte/ERWEITERUNGSKONZEPT.md), Abschnitt 2b). Ohne diesen
+[Konzepte/ERWEITERUNGSKONZEPT.md](konzepte/erweiterungskonzept.md), Abschnitt 2b). Ohne diesen
 Check würde eine von `Copy-ReviewedFiles` dorthin zurückkopierte Datei beim nächsten Lauf
 fälschlich erneut als "neue" Quelldatei erkannt und in einer Endlosschleife weiterverarbeitet.
 
 **Bereits vorhandene Zieldateien werden übersprungen statt mit `-Force` überschrieben.** Das ist
 eine Defense-in-Depth-Absicherung für den Multi-Machine-Betrieb (verhindert Datenverlust, falls die
 State-Datei zwischen zwei Rechnern noch nicht synchronisiert ist) - Details siehe
-[Konzepte/MULTI-MACHINE-SETUP.md](Konzepte/MULTI-MACHINE-SETUP.md).
+[Konzepte/MULTI-MACHINE-SETUP.md](konzepte/multi-machine-setup.md).
 
 ## Zustand und Abgabe-Erkennung (`CopyForward.ps1`)
 

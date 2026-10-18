@@ -31,7 +31,7 @@ Die Deployment-Konfiguration liegt unter `argocd/apps/tech/github-release-watche
 | Secrets        | SealedSecrets                        | `github-release-watcher`  |
 
 **Warum Polling statt Webhook:** Der Cluster hat keinen öffentlichen Ingress
-(siehe [docs/f-cicd-automatisierung/f0000-argo-workflows.md](f0000-argo-workflows.md) — Git-Webhooks sind
+(siehe [capulus-core/f-cicd-automatisierung/f0000-argo-workflows.md](f0000-argo-workflows.md) — Git-Webhooks sind
 bewusst außerhalb des Scopes). GitHub kann daher nicht direkt in den Cluster
 pushen; stattdessen fragt ein `CronJob` standardmäßig alle 2 Stunden die
 öffentliche GitHub-API ab (ausgehende Verbindung, wie beim GHCR-Push aus Argo
@@ -43,7 +43,7 @@ zugeordnet sind — steuerbar über die persönlichen Profil-Einstellungen
 (**Profil → Benachrichtigungen**), nicht über einen zusätzlichen Trigger.
 Voraussetzung ist ein funktionierender ausgehender E-Mail-Kanal in Zammad
 (Admin → Channels → Email), der ohnehin für den Helpdesk-Betrieb benötigt
-wird — siehe [docs/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md).
+wird — siehe [capulus-core/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md).
 
 ---
 
@@ -52,7 +52,7 @@ wird — siehe [docs/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000
 - ArgoCD läuft, Root-ApplicationSet ist aktiv
   (`argocd/bootstrap/root-applicationset.yaml`)
 - Sealed-Secrets Controller ist installiert
-- Zammad ist deployt und erreichbar ([docs/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md)),
+- Zammad ist deployt und erreichbar ([capulus-core/3-apps-workloads/30000-zammad.md](../3-apps-workloads/30000-zammad.md)),
   inkl. konfiguriertem ausgehendem E-Mail-Kanal
 - `kubeseal` CLI ist lokal installiert
 

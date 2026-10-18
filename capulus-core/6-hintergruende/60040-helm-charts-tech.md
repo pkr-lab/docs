@@ -113,7 +113,7 @@ fehlenden Wildcard-Fähigkeit, nicht spezifisch für cert-manager.
 | cert-manager-Values | CRDs sind Teil des Helm-Release (ArgoCD wendet alles in einem Sync an, kein manueller Vorab-Schritt). Sie bleiben erhalten, falls die App aus ArgoCD entfernt wird: Ein versehentliches Prune soll nicht alle Zertifikatsdefinitionen mitreißen. Die `startupapicheck` ist **deaktiviert**: Ihr Job hängt bei jedem Sync ein zusätzliches Job-Objekt an, das manuell aufgeräumt werden müsste (ArgoCD prunt abgeschlossene Jobs nicht), die echte Verifikation läuft über den Status des `Certificate`. |
 | `TLSStore` `default` | Der Name `default` ist keine freie Wahl, sondern die von Traefik reservierte Sonder-Ressource, die für jeden Router ohne explizites `TLSStore` gilt. Ohne sie fiele jeder Router auf Traefiks selbstsigniertes Zertifikat zurück (Browser-Warnung trotz Verschlüsselung). Bewusst **ein** `TLSStore` statt `spec.tls.secretName` an jedem der ~36 Ingress-Objekte. |
 | Globaler HTTP→HTTPS-Redirect (`ports.web.http.redirections`) | Ohne ihn beantwortet Traefik Port 80 für jeden Host weiterhin unverschlüsselt, das Zertifikat greift nur auf `:443`. Sichtbar wurde das über Authentik: Dessen ForwardAuth-Middleware berechnet die Rückkehr-URL dynamisch aus dem tatsächlichen Request-Schema (`trustForwardHeader: true`), kam der Request über Port 80, blieb der gesamte Login-Flow samt Auth-Cookie auf Klartext-HTTP. cloudflared zeigt für externe Hosts ohnehin auf den HTTPS-Entrypoint und ist vom Redirect nicht betroffen. |
-| Folge des Redirects | Der Redirect ist ein **308**, und viele Clients folgen ihm bei `POST` nicht (`urllib`, `systemd-journal-upload`, `ansible.builtin.uri`). Deshalb sind `https://` und der Port Pflicht bei `journal_upload`, `semaphore_api_base`, vmagent und der Zammad-URL des github-release-watcher ([60020](60020-ansible-rollen.md)). |
+| Folge des Redirects | Der Redirect ist ein **308**, und viele Clients folgen ihm bei `POST` nicht (`urllib`, `systemd-journal-upload`, `ansible.builtin.uri`). Deshalb sind `https://` und der Port Pflicht bei `journal_upload`, `semaphore_api_base`, vmagent und der Zammad-URL des github-release-watcher ([60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md)). |
 
 ### Traefik-Metriken und `HelmChartConfig`
 
@@ -169,7 +169,7 @@ leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
   Pi-Timers liegen (`alamos_kiosk_heartbeat_interval`), damit ein einzelner verpasster Ping keinen Fehlalarm auslöst.
 - **`/metrics`** exportiert je Standort den Zeitstempel der letzten erfolgreichen `/start`-Anfrage (= der Kiosk-Browser hat die echte
   AMweb-URL tatsächlich angefragt) und des letzten Heartbeats. Genutzt vom n8n-Workflow „Banana-Pi-Down → Zammad-Ticket“, um im Ticket zu
-  zeigen, wann der Standort zuletzt erfolgreich war ([30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). Es wird
+  zeigen, wann der Standort zuletzt erfolgreich war ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). Es wird
   **cluster-intern per `VMServiceScrape`** gescrapt und funktioniert unabhängig davon, ob ein Standort per LAN oder Tailscale angebunden ist,
   weil alamos-apager selbst immer im Cluster läuft. Das SealedSecret mit den Standort→URL-Paaren (ein Key pro Standort) erzeugt der Chart
   **nicht**, der `kubeseal`-Befehl steht in 30010.
@@ -256,7 +256,7 @@ leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
 
 ### alert-caller
 
-Telefon-Alarm im Cluster, Bedienung in [10020](../1-benachrichtigungen/10020-telefon-alarm.md). Der Anrufer wurde zuerst für eine externe VM gebaut ([60020](60020-ansible-rollen.md#alert_caller)), läuft aber vorerst als Pod,
+Telefon-Alarm im Cluster, Bedienung in [10020](../1-benachrichtigungen/10020-telefon-alarm.md). Der Anrufer wurde zuerst für eine externe VM gebaut ([60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#alert_caller)), läuft aber vorerst als Pod,
 weil ein Ausfall des Clusters (und damit kein Anruf) bewusst in Kauf genommen wird.
 
 - **`hostNetwork: true`, `dnsPolicy: ClusterFirstWithHostNet`, `strategy: Recreate`, `nodeSelector` auf `homeserver`.** baresip handelt mit ICE und STUN eine Adresse für den Medienstrom aus. Im Pod-Netzwerk maskiert Flannel jeden neuen Fluss mit
@@ -277,7 +277,7 @@ weil ein Ausfall des Clusters (und damit kein Anruf) bewusst in Kauf genommen wi
 - **Probes sind `tcpSocket`.** Der Webhook-Server hat keinen eigenen Health-Pfad.
 - **`HC_PING_URL` ist ein optionaler Schlüssel** (`secretKeyRef.optional: true`): Ohne ihn läuft der Caller ohne healthchecks.io.
 - Der Pod findet VictoriaMetrics über den Service-Namen (`config.vmUrl`), die Kontext-Abfragen der Paging-Regeln laufen also nur, solange VictoriaMetrics läuft.
-- Registrierung: `alert-caller` steht in `argocd_platform_apps` und `argocd_network_policy_refined_namespaces` (`capulus-ansible/roles/argocd/defaults/main.yml`), `argocd/bootstrap/projects.yaml` wird mit `make render-bootstrap` erzeugt. Die Tier-Policy aus `make argocd` greift nicht auf den Pod, weil er im Host-Netzwerk läuft.
+- Registrierung: `alert-caller` steht in `argocd_platform_apps` und `argocd_network_policy_refined_namespaces` (`capulus-ansible/roles/argocd/defaults/main.yml`), `argocd/bootstrap/projects.yaml` wird mit `make render-bootstrap CORE_DIR=<Pfad zu capulus-core>` erzeugt. Die Tier-Policy aus `make argocd` greift nicht auf den Pod, weil er im Host-Netzwerk läuft.
 - **`caller.py` kommt über die ConfigMap, nicht über das Image** (`.Files.Get "src/caller.py"` mit `checksum/script` am Deployment). Eine Code-Änderung braucht deshalb nur einen Merge, keinen Image-Build.
 - **Zugriffsschutz:** `ALERT_CALLER_TOKEN` kommt aus dem SealedSecret `alert-caller-secrets` (`optional: true`, der Pod startet auch ohne Schlüssel), `ALERT_CALLER_AUTH_MODE` aus `config.auth.mode` (`log` oder `enforce`). Ablauf und Gründe:
   [10020](../1-benachrichtigungen/10020-telefon-alarm.md#zugriffsschutz-token). `hostNetwork` bleibt: SIP/ICE und der RTP-Bereich `10000`–`10100` laufen direkt auf dem Host, und eine NetworkPolicy greift dort nicht.

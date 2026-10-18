@@ -6,7 +6,7 @@ Stand bei Erstellung dieses Dokuments: 26 Tests, alle grün.
 ## Voraussetzungen
 
 Pester ist **kein** Bestandteil der eigentlichen DocFlowEngine-Laufzeit (siehe
-[Voraussetzungen im Haupt-README](../README.md#voraussetzungen) - "keine externen Module nötig"
+[Voraussetzungen im Haupt-README](installation.md#voraussetzungen) - "keine externen Module nötig"
 bezieht sich auf `Invoke-DocFlowEngine` selbst). Für die Tests wird Pester 5 oder neuer benötigt,
 installierbar ohne Admin-Rechte:
 
@@ -15,7 +15,7 @@ Install-Module -Name Pester -MinimumVersion 5.5.0 -Scope CurrentUser -Force -Ski
 ```
 
 `-Scope CurrentUser` installiert nur für den aktuellen Benutzer - kein Admin-/Root-Kontext nötig
-(siehe [Compatibility-und-Admin-Rechte.md](Compatibility-und-Admin-Rechte.md)). `-SkipPublisherCheck`
+(siehe [Compatibility-und-Admin-Rechte.md](compatibility-und-admin-rechte.md)). `-SkipPublisherCheck`
 ist nur relevant, falls bereits eine ältere, aus einer anderen Quelle signierte Pester-Version
 vorhanden ist (z. B. die mit Windows ausgelieferte Pester 3.4.0).
 

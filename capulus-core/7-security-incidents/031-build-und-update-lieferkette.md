@@ -59,7 +59,7 @@ Niedrig.
 - **Karenzzeit (Punkte 2 und 3):** `renovate.json` `minimumReleaseAge: "3 days"`, `.github/dependabot.yml` `cooldown: default-days: 3` für beide Ökosysteme.
 - **Basis-Images per Digest:** über die Regel `pinDigests` aus Incident 023 (Renovate trägt die Digests nach, auch für `ubuntu:24.04` im Dockerfile).
 
-**Bewusst nicht umgesetzt:** `vulnerabilityAlerts.enabled: true` in Renovate. Die Datenbasis (GitHub-Advisories) kennt Go-Module und Actions, das deckt Dependabot ab; Docker-Images und Helm-Charts kennt sie nicht. Renovate würde nur doppelte PRs öffnen. Begründung in `docs/f-cicd-automatisierung/f0020-renovate.md`.
+**Bewusst nicht umgesetzt:** `vulnerabilityAlerts.enabled: true` in Renovate. Die Datenbasis (GitHub-Advisories) kennt Go-Module und Actions, das deckt Dependabot ab; Docker-Images und Helm-Charts kennt sie nicht. Renovate würde nur doppelte PRs öffnen. Begründung in `capulus-core/f-cicd-automatisierung/f0020-renovate.md`.
 
 **Nachweis.**
 
@@ -75,7 +75,7 @@ Niedrig.
 
 - `argocd/apps/tech/alert-caller/Dockerfile`, `.dockerignore`, `requirements.in` (neu), `requirements.txt` (neu)
 - `.github/workflows/build-images.yml` (Pfadfilter), `.github/dependabot.yml`, `renovate.json`
-- Doku: `docs/6-hintergruende/60040-helm-charts-tech.md`, `docs/f-cicd-automatisierung/f0020-renovate.md`, `docs/d-sicherheit/d0080-codeql-dependabot.md`
+- Doku: `capulus-core/6-hintergruende/60040-helm-charts-tech.md`, `capulus-core/f-cicd-automatisierung/f0020-renovate.md`, `capulus-core/d-sicherheit/d0080-codeql-dependabot.md`
 
 **Rollback.** `git revert`; im Dockerfile wieder `git clone --branch v${BARESIP_VERSION}` und `pip install "piper-tts==1.8.0"`.
 

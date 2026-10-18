@@ -103,14 +103,14 @@ Im Router: UDP `<wireguard_backup_port>` → LAN-IP des Homeservers
 Für den `Endpoint` in der Client-Config wird entweder eine statische
 öffentliche IP oder ein DDNS-Hostname gebraucht (unabhängig vom
 Cloudflare-Tunnel, der outbound-only ist und dafür nicht genutzt werden
-kann — siehe [docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md)).
+kann — siehe [capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md)).
 Die meisten Router bieten einen eingebauten DDNS-Client (z. B. an
 DuckDNS/No-IP); falls noch keiner eingerichtet ist, vorher einrichten.
 
 ### 5. Ansible-Rollout
 
 ```bash
-ansible-playbook capulus-ansible/site.yml --tags wireguard --ask-vault-pass
+ansible-playbook site.yml --tags wireguard --ask-vault-pass
 ```
 
 Die Rolle installiert `wireguard`, generiert (einmalig) das

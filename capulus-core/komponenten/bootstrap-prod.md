@@ -4,11 +4,11 @@ Der PROD-Cluster (`prod-vm`, 192.168.178.99) hat **keine eigene ArgoCD-Instanz**
 TECH (`homeserver`) verwaltet ihn als registrierten Cluster `prod`. Die Dateien in diesem Ordner sind
 handgeschrieben, **nicht** vom `argocd`-Ansible-Role generiert (anders als `argocd/bootstrap/`), und
 beruehren das ApplicationSet `home-server-apps-tech` nicht. Ueberblick ueber Projekte und
-ApplicationSets: [docs/b-kubernetes-gitops/b0020-argocd-projects.md](../../docs/b-kubernetes-gitops/b0020-argocd-projects.md).
+ApplicationSets: [capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md](../b-kubernetes-gitops/b0020-argocd-projects.md).
 
 Inhalt: `appproject.yaml` (Projekt `prod`), `applicationset.yaml` (zwei ApplicationSets) und
 `migrations/` (manuelle Hilfsmanifeste fuer den Umzug von Apps samt Daten von TECH nach PROD,
-siehe [migrations/README.md](migrations/README.md)).
+siehe [migrations/README.md](bootstrap-prod-migrations.md)).
 
 ## 1. Cluster "prod" im Hub registrieren
 
@@ -99,7 +99,7 @@ sudo k3s kubectl get pods -A                            # auf prod-vm
    (`capulus-ansible/group_vars/all.yml`) eintragen und `make dnsmasq` ausfuehren, sonst antwortet der
    TECH-Traefik. Ein oeffentlicher Host braucht zusaetzlich einen DNS-Eintrag auf den PROD-Tunnel:
    `cloudflared tunnel route dns homeserver-prod <host>`, siehe
-   [docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](../../docs/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md).
+   [capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md).
 5. SealedSecrets muessen mit dem Zertifikat des **PROD**-sealed-secrets-Controllers versiegelt werden
    (`scripts/reseal-for-prod.sh`, Kopf des Skripts), die TECH-Versiegelung ist in PROD nicht entschluesselbar.
 

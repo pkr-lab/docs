@@ -1,9 +1,9 @@
 # Build Workload Images — automatisierte Custom-Image-Builds
 
-[`.github/workflows/build-images.yml`](../../.github/workflows/build-images.yml)
+[`.github/workflows/build-images.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/build-images.yml)
 baut und pusht die drei selbst gebauten Workload-Images —
-[`pacman`](../../argocd/apps/tech/pacman/), [`carplay-api`](../../argocd/apps/tech/carplay-api/), [`isc-news-bot`](../../argocd/apps/tech/isc-news-bot/),
-[`alert-caller`](../../argocd/apps/tech/alert-caller/) (nur `Dockerfile`, das Skript kommt per ConfigMap) und [`n8n`](../../argocd/apps/tech/n8n/) (dessen `image/Dockerfile`) —
+[`pacman`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/pacman), [`carplay-api`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/carplay-api), [`isc-news-bot`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/isc-news-bot),
+[`alert-caller`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/alert-caller) (nur `Dockerfile`, das Skript kommt per ConfigMap) und [`n8n`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/n8n) (dessen `image/Dockerfile`) —
 automatisch nach GHCR, sobald der jeweilige Build-Kontext auf `main`
 geändert wird. Vorher musste dafür manuell ein Kaniko-Build in Argo Workflows
 angestoßen werden, das bei jeder Code-Änderung leicht vergessen wurde; dieser
@@ -37,7 +37,7 @@ Ein Matrix-Job pro App:
 4. **Job-Summary** listet den gepushten `repository:tag`-String.
 5. **Bump-PR:** bei Push auf `main` und `workflow_dispatch` öffnet der Lauf einen PR, der `image.tag` in der
    `values.yaml` der App (`argocd/apps/tech/<app>/values.yaml`) auf den neuen Tag setzt (Branch
-   `bump/<app>-image`, Label `image-bump`, Werkzeug [`scripts/bump-image-tag.py`](../../scripts/bump-image-tag.py):
+   `bump/<app>-image`, Label `image-bump`, Werkzeug [`scripts/bump-image-tag.py`](https://github.com/pkr-lab/capulus-core/blob/main/scripts/bump-image-tag.py):
    ändert nur die eine Zeile, Kommentare bleiben). Es ist ein PR, kein Commit: er läuft durch die Pflicht-Checks
    ([f0090](f0090-branch-schutz-main.md)), der Merge ist der Rollout. Er braucht ein PAT (`PROMOTE_TOKEN`,
    ersatzweise `RENOVATE_TOKEN`), weil PRs mit dem Standard-Token keine CI auslösen; ohne PAT bleibt es beim
@@ -85,7 +85,7 @@ Layout-Umzug (`workloads/` → `tech/`) die Pfade im Workflow überholt hatte
 Frisch gepushte GHCR-Packages sind standardmäßig **privat** — ohne
 `imagePullSecrets` scheitert der Pod dann mit `ImagePullBackOff`. Gleiche
 Falle/Lösung wie früher beim Kaniko-Weg, siehe
-[pacman/README.md](../../argocd/apps/tech/pacman/README.md#image-bauen).
+[pacman/README.md](../komponenten/pacman.md#image-bauen).
 
 ## Verhältnis zu Kaniko
 

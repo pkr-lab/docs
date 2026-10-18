@@ -73,12 +73,12 @@ eigenem Schema. Sie zählen nicht zu den Kategorien oben.
 
 Innerhalb von `docs/` immer **relativ** verlinken, nicht mit `docs/`-Präfix:
 
-- Gleiche Kategorie: `[Text](b0010-argocd.md)`
-- Andere Kategorie: `[Text](../c-netzwerk-dns/c0000-dns-architecture.md)`
+- Gleiche Kategorie: ``Text``
+- Andere Kategorie: ``Text``
 
 Außerhalb von `docs/` (README, Skripte, ArgoCD-`values.yaml`, …)
 immer den vollen, repo-root-relativen Pfad inkl. Kategorie-Ordner:
-`docs/c-netzwerk-dns/c0000-dns-architecture.md`.
+`capulus-core/c-netzwerk-dns/c0000-dns-architecture.md`.
 
 ---
 
@@ -100,7 +100,7 @@ Für App- und Komponenten-Dokus mit einem konkreten Einrichtungsablauf
 
 > **Cluster:** <TECH | PROD | ENTW> · Ordner `argocd/apps/<cluster>/<app>/` · URL `https://<app>.<tier>.homeserver`
 > `kubectl`-Befehle in diesem Doc gelten für diesen Cluster
-> (Zugriff je Cluster: [a0010](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> (Zugriff je Cluster: `a0010`).
 
 ---
 

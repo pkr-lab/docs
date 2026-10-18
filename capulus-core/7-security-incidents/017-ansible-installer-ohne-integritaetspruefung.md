@@ -41,7 +41,7 @@ Vorherige Task-Fassung wiederherstellen (Git).
 
 ```
 grep -rn -A6 'ansible.builtin.get_url' capulus-ansible/roles | grep -c 'checksum:'
-ansible-playbook --check --diff capulus-ansible/site.yml
+ansible-playbook --check --diff site.yml
 ```
 Jeder `get_url` mit externer Quelle trägt `checksum:`; der Check-Lauf läuft ohne Fehler.
 
@@ -95,7 +95,7 @@ Nicht getestet: ein echter Lauf (kein `--check`) der drei Rollen, die Tests des 
 - `capulus-ansible/roles/crowdsec/` (`tasks/main.yml`, `defaults/main.yml`), `capulus-ansible/roles/tailscale/` (`tasks/main.yml`, `defaults/main.yml`)
 - `capulus-ansible/roles/vmagent/` (`tasks/main.yml`, `defaults/main.yml`), `capulus-ansible/roles/libvirt_host/` (`tasks/main.yml`, `defaults/main.yml`)
 - `renovate.json` (Regex-Manager für `k3s_helm_release` und Regel `v3.*`)
-- Doku: `docs/6-hintergruende/60020-ansible-rollen.md` (Abschnitt „Installer und Prüfsummen“), `docs/a-betriebssystem/a0030-installation.md`, `docs/d-sicherheit/d0020-crowdsec.md`, `docs/f-cicd-automatisierung/f0020-renovate.md`
+- Doku: `capulus-ansible/6-hintergruende/60020-ansible-rollen.md` (Abschnitt „Installer und Prüfsummen“), `capulus-ansible/a-betriebssystem/a0030-installation.md`, `capulus-ansible/d-sicherheit/d0020-crowdsec.md`, `capulus-core/f-cicd-automatisierung/f0020-renovate.md`
 
 **Rollback.** PR revertieren. Die Rollen laden danach wieder die Skripte ohne Prüfsumme. Auf bereits laufenden Hosts ändert sich durch den Revert nichts.
 
@@ -103,7 +103,7 @@ Nicht getestet: ein echter Lauf (kein `--check`) der drei Rollen, die Tests des 
 
 - **Echter Lauf der Rollen** steht aus. Er würde wegen `auto_upgrade: true` (nicht Teil von 017) auch Tailscale-Pakete auf mehreren Hosts anheben (die Check-Läufe zeigen `Install (or upgrade) tailscale package` als geändert) und k3s dem Kanal `stable` folgen lassen. Der Betreiber entscheidet, wann.
 - **`libvirt_host` auf worker-1** zeigt im Check-Lauf offenen Drift (Netplan-Datei `99-libvirt-bridge.yaml` mit `ra-overrides`, Entfernen von `90-dns-fallback.yaml`, `Netplan anwenden`). Nicht 017. Vor einem Lauf mit dem Tag `libvirt-host` die Diffs prüfen, denn `Netplan anwenden` kann die Verbindung kurz trennen.
-- **Check-Lauf gegen die Hosts** (erledigt, siehe oben; ursprünglicher Befehl): `ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --check --diff --vault-password-file ~/.vault_pass --tags k3s,crowdsec,tailscale` und entsprechend für `worker-0.yml`/`worker-1.yml` (k3s_agent, libvirt_host) und `banana-pi-kiosks.yml` (vmagent), bevor der nächste reguläre Lauf kommt. Erwartet: keine Änderung außer dem Helm-Update auf `v3.22.1` von prod-vm und entw-vm (derzeit `v3.22.0`).
+- **Check-Lauf gegen die Hosts** (erledigt, siehe oben; ursprünglicher Befehl): `ansible-playbook -i inventory/hosts.yml site.yml --check --diff --vault-password-file ~/.vault_pass --tags k3s,crowdsec,tailscale` und entsprechend für `worker-0.yml`/`worker-1.yml` (k3s_agent, libvirt_host) und `banana-pi-kiosks.yml` (vmagent), bevor der nächste reguläre Lauf kommt. Erwartet: keine Änderung außer dem Helm-Update auf `v3.22.1` von prod-vm und entw-vm (derzeit `v3.22.0`).
 - **`helm_version` in `capulus-ansible/group_vars/all.yml`** hat jetzt keine Wirkung mehr; die Zeile kann entfallen (Vault-Datei, nicht von mir angefasst).
 - **Helm 3 hat ein Ende:** Renovate bleibt auf `v3.*`. Eine Umstellung auf Helm 4 ist ein eigener Schritt.
 - `ansible.builtin.apt_repository` ist veraltet (in ansible-core 2.25 entfernt), Umstellung auf `deb822_repository` ist ein eigener Schritt.

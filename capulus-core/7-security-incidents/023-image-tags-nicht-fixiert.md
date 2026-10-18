@@ -71,7 +71,7 @@ Niedrig: Image wird einmalig auf eine konkrete Version fixiert.
 **Geänderte Dateien.**
 
 - `argocd/apps/tech/lldap/values.yaml`, `argocd/apps/prod/xibosignage/values.yaml`, `renovate.json`
-- Doku: `docs/6-hintergruende/60040-helm-charts-tech.md`, `docs/f-cicd-automatisierung/f0020-renovate.md`
+- Doku: `capulus-core/6-hintergruende/60040-helm-charts-tech.md`, `capulus-core/f-cicd-automatisierung/f0020-renovate.md`
 
 **Rollback.** `git revert`; für ein einzelnes Image das alte Tag zurückschreiben.
 

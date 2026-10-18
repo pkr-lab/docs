@@ -1,9 +1,9 @@
 # pacman — Besucher-Tracking (IP/GeoIP) für die Schulung
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/pacman/` · URL `https://pacman.prod.homeserver` und `https://pacman-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Cluster:** TECH · Ordner `argocd/apps/tech/pacman/` · URL `https://pacman.prod.homeserver` und `https://pacman-prod.pke-lab.de`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 `argocd/apps/tech/pacman/` liefert neben dem eigentlichen Spiel
-(siehe [dessen README](../../argocd/apps/tech/pacman/README.md)) auch
+(siehe [dessen README](../komponenten/pacman.md)) auch
 eine bewusst sichtbare Demonstration dessen, was ein gewöhnlicher
 Webserver über einen Besucher herausfindet — Client-IP (v4 **und** v6),
 User-Agent und (optional) der aus der IP abgeleitete GeoIP-Standort. Zweck
@@ -68,7 +68,7 @@ liest beide unverändert.
 
 Standardmäßig aktiv (`geoip.enabled: true`), da das der eigentliche Zweck
 dieser App ist — bei Bedarf abschaltbar, siehe
-[Chart-README](../../argocd/apps/tech/pacman/README.md#geoip-anreicherung).
+[Chart-README](../komponenten/pacman.md#geoip-anreicherung).
 
 Ein `initContainer` (`curlimages/curl`) lädt bei **jedem Pod-Start** die
 aktuelle DB-IP-City-Lite-DB neu in ein gemeinsames `emptyDir` — kein
@@ -111,7 +111,7 @@ Zusätzlich zu `fingerprint.js`'s eigenem Ecken-Widget (oben beschrieben,
 läuft unconditional) gibt es einen zweiten, expliziten Schalter
 `trainingMode.enabled` (Chart-Value, Env `TRAINING_MODE`) — koppelt das
 Namensfeld der Bestenliste (`src/nickname.js`, siehe
-[Chart-README](../../argocd/apps/tech/pacman/README.md#bestenliste-nickname--leaderboard))
+[Chart-README](../komponenten/pacman.md#bestenliste-nickname--leaderboard))
 an dieselbe versteckte E-Mail/Tel/Adresse/PLZ-Ernte. Anders als das
 Ecken-Widget ist dieser Weg **standardmäßig aus** und muss bewusst über
 ein Chart-Release aktiviert werden.

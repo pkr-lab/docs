@@ -2,12 +2,12 @@
 
 - Severity: Medium
 - Bereich: Repo
-- Betroffen: Repository-Einstellungen `pkr-lab/capulus-core`, Doku `docs/d-sicherheit/d0080-codeql-dependabot.md`
+- Betroffen: Repository-Einstellungen `pkr-lab/capulus-core`, Doku `capulus-core/d-sicherheit/d0080-codeql-dependabot.md`
 - Status: Behoben am 2026-10-17 (Non-Provider-Patterns nicht aktivierbar, Push-Protection-Test mit Dummy-Token steht aus, Workflow `security-issues.yml` bewusst deaktiviert)
 
 ## Beschreibung
 
-Die Repository-Einstellungen melden alle Funktionen als `disabled`, obwohl `docs/d-sicherheit/d0080-codeql-dependabot.md` sie als aktiv beschreibt (Dependabot-Alerts und Fix-PRs, Secret Scanning). Für öffentliche Repositories sind Secret Scanning und Push Protection kostenlos. Das fehlende Push-Blocking ist die direkte Lücke, durch die der Schlüssel aus Incident 001 ins Repo gelangt ist. `renovate.json` hat `vulnerabilityAlerts.enabled: false` (Incident 031), sodass auch dort keine Fix-PRs für Sicherheitslücken entstehen; Folge: Incident 016.
+Die Repository-Einstellungen melden alle Funktionen als `disabled`, obwohl `capulus-core/d-sicherheit/d0080-codeql-dependabot.md` sie als aktiv beschreibt (Dependabot-Alerts und Fix-PRs, Secret Scanning). Für öffentliche Repositories sind Secret Scanning und Push Protection kostenlos. Das fehlende Push-Blocking ist die direkte Lücke, durch die der Schlüssel aus Incident 001 ins Repo gelangt ist. `renovate.json` hat `vulnerabilityAlerts.enabled: false` (Incident 031), sodass auch dort keine Fix-PRs für Sicherheitslücken entstehen; Folge: Incident 016.
 
 Der Ruleset „main: PR + CI“ verlangt keine Reviews (`required_approving_review_count: 0`) und lässt die Admin-Rolle im `pull_request`-Modus umgehen. Bei einer Person als Betreiber ist das pragmatisch, die Pflicht-CI bleibt die einzige Schranke.
 
@@ -78,7 +78,7 @@ Keins: reine Einstellung.
 | Secret-Scanning-Alerts nach dem ersten Scan der Historie | 0 offen |
 | CodeQL | liefert Ergebnisse (6 offene Alerts auf `main`: `py/path-injection` in `power-agent.py`, `actions/cache-poisoning/poisonable-step` in `ci.yml`) |
 
-**Geänderte Dateien.** Nur die Doku: `docs/d-sicherheit/d0080-codeql-dependabot.md` (Stand der Einstellungen, Hinweis zum deaktivierten Workflow, Non-Provider-Patterns, Validity Checks).
+**Geänderte Dateien.** Nur die Doku: `capulus-core/d-sicherheit/d0080-codeql-dependabot.md` (Stand der Einstellungen, Hinweis zum deaktivierten Workflow, Non-Provider-Patterns, Validity Checks).
 
 **Rollback.** `gh api -X PATCH repos/pkr-lab/capulus-core -f 'security_and_analysis[secret_scanning][status]=disabled' -f 'security_and_analysis[secret_scanning_push_protection][status]=disabled'`, `gh api -X DELETE repos/pkr-lab/capulus-core/automated-security-fixes`, `gh api -X DELETE repos/pkr-lab/capulus-core/vulnerability-alerts`. Der Ausgangszustand (alles `disabled`, Workflow aktiv) liegt als JSON im Scratchpad der Sitzung.
 

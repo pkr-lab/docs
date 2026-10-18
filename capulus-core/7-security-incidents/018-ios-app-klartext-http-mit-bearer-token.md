@@ -30,7 +30,7 @@ Ein Angreifer im selben WLAN schneidet das Bearer-Token mit und kann damit Dashb
 
 ## Empfohlene Behebung
 
-1. `carplay-api.prod.homeserver` in die SAN-Liste des internen Zertifikats aufnehmen (cert-manager, siehe `docs/d-sicherheit/d0040-internal-tls.md`), Ingress mit TLS-Eintrag versehen.
+1. `carplay-api.prod.homeserver` in die SAN-Liste des internen Zertifikats aufnehmen (cert-manager, siehe `capulus-core/d-sicherheit/d0040-internal-tls.md`), Ingress mit TLS-Eintrag versehen.
 2. `Constants.swift` auf `https://…` umstellen, den WoL-Agent ebenfalls hinter HTTPS legen.
 3. Die ATS-Ausnahme aus `project.yml` entfernen, Root-CA als Konfigurationsprofil auf dem iPhone installieren.
 4. Optional Pinning auf die Root-CA im `URLSessionDelegate` (`SecTrustSetAnchorCertificates`).
@@ -84,7 +84,7 @@ Bei der Umstellung des power-agent kam von der App keine einzige Anfrage bei `ca
 
 - `capulus-ios/HomeserverDashboard/Utilities/Constants.swift`, `capulus-ios/HomeserverDashboard/Models/SelfHostedService.swift`, `capulus-ios/project.yml`
 - Stufe 2: `capulus-ansible/roles/banana_pi_kiosk/` (`files/banana-pi-wol-agent.py`, `defaults/main.yml`, `tasks/main.yml`, `templates/banana-pi-wol-agent.env.j2`), `capulus-ansible/host_vars/vereinsheim-alarmmonitor/vars.yml` und `vault.yml` (zwei Vault-Variablen), `ops/token-register.yaml`, `capulus-ios/HomeserverDashboard/Utilities/Constants.swift`
-- Doku: `capulus-ios/README.md`, `docs/6-hintergruende/60080-carplay-api-und-ios-app.md`, `60020-ansible-rollen.md`, `docs/3-apps-workloads/300d0-carplay-api.md`, `30020-vereinsheim-alarmmonitor.md`, `docs/d-sicherheit/d0040-internal-tls.md`
+- Doku: `capulus-ios/README.md`, `capulus-core/6-hintergruende/60080-carplay-api-und-ios-app.md`, `60020-ansible-rollen.md`, `capulus-core/3-apps-workloads/300d0-carplay-api.md`, `30020-vereinsheim-alarmmonitor.md`, `capulus-core/d-sicherheit/d0040-internal-tls.md`
 
 **Rollback.** WoL-Agent: `banana_pi_kiosk_wol_agent_tls_enabled: false` und Rollenlauf, oder von Hand in `/etc/banana-pi-wol-agent/config.env` die Zeilen `TLS_CERT` und `TLS_KEY` entfernen und `systemctl restart banana-pi-wol-agent` (der Agent spricht dann wieder HTTP; die Sicherungskopien vom 2026-10-18 sind nach der Prüfung gelöscht). App: Die zwei Swift-Dateien auf `http://` zurücksetzen, den ATS-Block aus dem Abschnitt „Nachweis“ oben in `project.yml` wiederherstellen, `cd ios && xcodegen generate`, App neu bauen. Auf dem Server gibt es nichts zurückzunehmen. Die Rückkehr zu `http://` hilft nicht gegen einen Zertifikatsfehler, denn Traefik leitet auf HTTPS um.
 

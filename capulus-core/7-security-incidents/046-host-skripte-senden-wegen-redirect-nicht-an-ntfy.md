@@ -9,7 +9,7 @@
 
 Die vier Skripte senden ihre ntfy-Meldungen per `curl --fail … "http://${NTFY_HOST}/${NTFY_TOPIC}" || true`. Der TECH-Traefik leitet HTTP seit 2026-09-13 global per `308` auf HTTPS um. `curl` folgt der Weiterleitung nicht (kein `-L`), `--fail` greift erst ab Status 400, und `|| true` verschluckt jeden Fehler. Die Meldungen erreichen ntfy deshalb nicht, ohne dass ein Skript oder eine Unit einen Fehler zeigt. Betroffen sind die Warnung und die Abschaltankündigung des Hitze- und Lastschutzes sowie die Meldungen von Stromverwaltung und nächtlichem Wake.
 
-Die gleiche Ursache wurde für vmagent, `systemd-journal-upload` und die Semaphore-API bereits behoben (siehe `docs/6-hintergruende/60020-ansible-rollen.md`). Die ntfy-Skripte blieben liegen, weil ihr Fehler stumm ist. Aufgefallen ist es beim Test der Host-Skripte für Incident 002.
+Die gleiche Ursache wurde für vmagent, `systemd-journal-upload` und die Semaphore-API bereits behoben (siehe `capulus-ansible/6-hintergruende/60020-ansible-rollen.md`). Die ntfy-Skripte blieben liegen, weil ihr Fehler stumm ist. Aufgefallen ist es beim Test der Host-Skripte für Incident 002.
 
 ## Nachweis
 
@@ -71,7 +71,7 @@ Niedrig: Eine fehlende CA lässt die Meldung wie heute stumm scheitern, ohne den
 
 - `capulus-ansible/roles/thermal_watchdog/files/thermal-watchdog.sh`, `capulus-ansible/roles/resource_watchdog/files/resource-watchdog.sh`, `capulus-ansible/roles/cluster_power_manager/files/cluster-power-manager.sh`, `capulus-ansible/roles/nightly_worker_wake/files/nightly-worker-wake.sh`
 - `capulus-ansible/roles/ntfy_publisher/tasks/main.yml`, `capulus-ansible/roles/ntfy_publisher/defaults/main.yml`
-- Doku: `docs/6-hintergruende/60020-ansible-rollen.md`
+- Doku: `capulus-ansible/6-hintergruende/60020-ansible-rollen.md`
 
 **Live-Stand.** Nur auf dem homeserver liegt `/etc/ntfy-publisher/ca.pem` bereits (von Hand, gleicher Inhalt wie die Rolle). Die laufenden Skripte verwenden noch die alte Fassung, bis die Rollen laufen.
 
@@ -80,11 +80,11 @@ Niedrig: Eine fehlende CA lässt die Meldung wie heute stumm scheitern, ohne den
 **Offen (du, Vault-Passwort nötig).** Ausrollen der geänderten Skripte und der CA auf allen Hosts, ohne Kiosk-Neustart (nur diese Tags):
 
 ```
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/site.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog,cluster-power-manager,nightly-worker-wake --limit homeserver --ask-vault-pass
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/worker-0.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/worker-1.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/banana-pi-kiosks.yml --limit vereinsheim-alarmmonitor --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
-ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/xibo-kiosks.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml site.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog,cluster-power-manager,nightly-worker-wake --limit homeserver --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml worker-0.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml worker-1.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml banana-pi-kiosks.yml --limit vereinsheim-alarmmonitor --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml xibo-kiosks.yml --tags ntfy-publisher,thermal-watchdog,resource-watchdog --ask-vault-pass
 ```
 
 Prüfen je Host: `sudo systemctl edit --runtime thermal-watchdog` mit `[Service]`/`Environment=DRY_RUN=1`, Dienst neu starten, in `Home-Lab-System` muss die Testmeldung `[DRY RUN]` des Hosts erscheinen. worker-1 und worker-0 sind oft ausgeschaltet, dann nach dem Einschalten.

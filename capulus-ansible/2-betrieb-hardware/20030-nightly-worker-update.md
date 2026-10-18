@@ -61,7 +61,7 @@ siehe [Cluster Power Manager](20020-cluster-power-manager.md). Nur der
 **Warum triggert n8n statt eines systemd-Timers?** Der 01:00-Uhr-Zeitpunkt
 lag früher als `OnCalendar`-Ausdruck direkt im systemd-Timer der Rolle.
 Jetzt gibt der n8n-Workflow
-[`nightly-worker-wake-trigger.json`](../../argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json)
+[`nightly-worker-wake-trigger.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json)
 den Zeitpunkt vor und startet den Zyklus per SSH. `nightly-worker-wake.sh`
 selbst, das Zeitbudget, der Shutdown-Pfad und der Bericht bleiben dabei
 komplett unverändert — nur der Auslöser wandert von einem lokalen
@@ -150,11 +150,11 @@ manuellen `make worker-0`/`make worker-1` oder `make worker-apt-update`.
 Dazu kommen zwei n8n-Workflows (kein Ansible, müssen einmalig manuell in
 n8n importiert werden):
 
-- [`nightly-worker-wake-trigger.json`](../../argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json)
+- [`nightly-worker-wake-trigger.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json)
   — Schedule-Trigger 01:00 Uhr, löst den Zyklus per SSH aus (siehe
   [Architektur](#architektur) oben und [Bericht (Zammad-Ticket via n8n)](#bericht-zammad-ticket-via-n8n)
   unten, Abschnitt "Einmalige Einrichtung — Trigger").
-- [`nightly-worker-update-to-zammad.json`](../../argocd/apps/tech/n8n/workflows/nightly-worker-update-to-zammad.json)
+- [`nightly-worker-update-to-zammad.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/nightly-worker-update-to-zammad.json)
   — Webhook, baut aus dem Bericht das Zammad-Ticket, siehe
   [Bericht (Zammad-Ticket via n8n)](#bericht-zammad-ticket-via-n8n).
 
@@ -164,7 +164,7 @@ n8n importiert werden):
 
 | Variable | Default | Bedeutung |
 |---|---|---|
-| — | `01:00 Uhr, Europe/Berlin` | Zeitpunkt kommt jetzt aus dem Schedule-Trigger von [`nightly-worker-wake-trigger.json`](../../argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json), nicht mehr aus einer Ansible-Variable — dort anpassen |
+| — | `01:00 Uhr, Europe/Berlin` | Zeitpunkt kommt jetzt aus dem Schedule-Trigger von [`nightly-worker-wake-trigger.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json), nicht mehr aus einer Ansible-Variable — dort anpassen |
 | `nightly_worker_wake_max_runtime_seconds` | 1500 (25 Min.) | Hartes Limit ab dem ersten Wake — danach Task-Stop + Shutdown, egal ob das Update (inkl. eines eventuellen Reboots) fertig ist. Passt unter das 01:00–01:30-Uhr-Fenster |
 | `nightly_worker_wake_ready_timeout_seconds` | 180 | Wie lange nach dem Magic Packet auf `kubectl get node ... Ready` gewartet wird |
 | `nightly_worker_wake_stop_grace_seconds` | 30 | Gnadenfrist nach einem Semaphore-Task-Stop-Request, bevor trotzdem heruntergefahren wird |
@@ -189,7 +189,7 @@ bei [`cluster_power_manager`](20020-cluster-power-manager.md)).
 egal ob alles glatt lief, ein Worker nicht aufgewacht ist, ein Update
 fehlschlug, das Zeitbudget erreicht wurde, oder das Skript selbst
 unerwartet abbrach. Der n8n-Workflow
-[`nightly-worker-update-to-zammad.json`](../../argocd/apps/tech/n8n/workflows/nightly-worker-update-to-zammad.json)
+[`nightly-worker-update-to-zammad.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/nightly-worker-update-to-zammad.json)
 baut daraus **ein Zammad-Ticket pro Nacht** in der Gruppe
 `Support::Administration`.
 
@@ -265,7 +265,7 @@ im Node würde ignoriert bzw. durch den forced command überschrieben.
    `argocd/apps/tech/n8n/workflows/nightly-worker-update-to-zammad.json`
 2. Node „Zammad-Ticket erstellen“ → Credential zuweisen (bestehende
    „Zammad Token Auth (Rotation-Reminder)“ wiederverwenden, siehe
-   [../d-sicherheit/d0060-secrets-rotation.md](../d-sicherheit/d0060-secrets-rotation.md), oder neu anlegen:
+   [../d-sicherheit/d0060-secrets-rotation.md](../../capulus-core/d-sicherheit/d0060-secrets-rotation.md), oder neu anlegen:
    Base URL `https://zammad.tech.homeserver`, Access Token mit Berechtigung
    `ticket.agent`)
 3. Im Node „Nightly Worker Update Webhook“ das Credential
@@ -277,7 +277,7 @@ im Node würde ignoriert bzw. durch den forced command überschrieben.
 4. Workflow **aktivieren** (Import allein reicht nicht)
 5. `nightly_worker_wake_n8n_webhook_url` gegen die tatsächliche n8n-Ingress-
    Adresse prüfen (Default passt zu `n8n.prod.homeserver`, siehe
-   [../3-apps-workloads/30070-n8n.md](../3-apps-workloads/30070-n8n.md))
+   [../3-apps-workloads/30070-n8n.md](../../capulus-core/3-apps-workloads/30070-n8n.md))
 
 Ist der Webhook nicht erreichbar, bricht der nächtliche Zyklus **nicht**
 ab — nur eine Journal-Warnung (`n8n-Webhook ... nicht erreichbar`), Worker
@@ -327,7 +327,7 @@ Mit `DRY_RUN=1` protokolliert das Skript jeden Schritt, sendet aber kein
 verschwindet beim nächsten Boot automatisch wieder.
 
 Den n8n-Trigger selbst testen, ohne auf 01:00 Uhr zu warten: im
-importierten Workflow [`nightly-worker-wake-trigger.json`](../../argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json)
+importierten Workflow [`nightly-worker-wake-trigger.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/nightly-worker-wake-trigger.json)
 den SSH-Node manuell ausführen ("Execute step") — das löst denselben
 forced command aus wie der nächtliche Schedule-Trigger.
 
@@ -494,4 +494,4 @@ im Node „Zammad-Ticket erstellen“ prüfen (siehe
 
 - [Cluster Power Manager (lastbasiertes WoL-Zu-/Abschalten)](20020-cluster-power-manager.md)
 - [Semaphore-UI](../b-kubernetes-gitops/b0030-semaphore.md)
-- [k3s-Referenz](../b-kubernetes-gitops/b0000-k3s.md)
+- [k3s-Referenz](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md)

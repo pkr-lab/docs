@@ -64,7 +64,7 @@ Niedrig: Die Whitelist-Einschränkung muss die tatsächlich benötigten Cluster-
 **Geänderte Dateien.**
 
 - `argocd/bootstrap-prod/appproject.yaml`, `.github/CODEOWNERS` (neu)
-- Doku: `docs/b-kubernetes-gitops/b0020-argocd-projects.md`, `docs/6-hintergruende/60030-argocd-und-bootstrap.md`
+- Doku: `capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md`, `capulus-core/6-hintergruende/60030-argocd-und-bootstrap.md`
 
 **Rollback.** `clusterResourceWhitelist` wieder auf `group: "*"` / `kind: "*"` setzen und neu anwenden; `.github/CODEOWNERS` löschen.
 

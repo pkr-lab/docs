@@ -80,7 +80,7 @@ Niedrig: Die Weboberfläche verliert Schreibrechte, falls der Token-Mechanismus 
 
 - `argocd/apps/tech/headlamp/templates/login-viewer.yaml` (neu), `templates/token-secret.yaml` und `templates/clusterrolebinding.yaml` (entfernt), `values.yaml`
 - `scripts/show-headlamp-token.sh`
-- Doku: `docs/3-apps-workloads/300n0-headlamp.md` (neu), `docs/6-hintergruende/60040-helm-charts-tech.md`, `README.md`
+- Doku: `capulus-core/3-apps-workloads/300n0-headlamp.md` (neu), `capulus-core/6-hintergruende/60040-helm-charts-tech.md`, `README.md`
 
 **Rollback.** Commit zurücknehmen (`git revert`), ArgoCD legt Secret und beide ClusterRoleBindings wieder an, der Controller füllt das Token neu. Das alte Token geht dabei verloren und wird neu erzeugt; Notfall-Zugang bleibt `kubectl`.
 

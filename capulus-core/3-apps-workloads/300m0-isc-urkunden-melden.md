@@ -4,7 +4,7 @@ Donnerstags zwischen 17:30 und 20:00 Uhr prüft n8n alle 10 Minuten, ob in der U
 
 Das Auslesen übernimmt der bestehende [ISC-News-Bot](300k0-isc-news-bot.md) über den Endpunkt `GET /urkunden`. n8n steuert den Zeitplan, merkt sich die bereits gesehenen Urkunden und verschickt die Mail.
 
-> **Cluster:** TECH · Bot: `argocd/apps/tech/isc-news-bot/` · Workflow: [`argocd/apps/tech/n8n/workflows/isc-urkunden-melden.json`](../../argocd/apps/tech/n8n/workflows/isc-urkunden-melden.json)
+> **Cluster:** TECH · Bot: `argocd/apps/tech/isc-news-bot/` · Workflow: [`argocd/apps/tech/n8n/workflows/isc-urkunden-melden.json`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/n8n/workflows/isc-urkunden-melden.json)
 
 ---
 
@@ -111,12 +111,12 @@ Antwort bei Erfolg (`200`):
 
 ### So liest der Bot die Liste
 
-Die Übersichtsseite der Urkunden-App lädt ihre Tabelle nicht im HTML, sondern per JavaScript: `ladeUrkunden()` ruft `dlrg_DoPost('/apps/urkunden?page=service', 'ladeUrkundenListe', { jahr, ausbildungId, inaktiveAnzeigen, mitVerlaengerungen }, callback)`. Der Bot ([`src/isc/urkunden.ts`](../../argocd/apps/tech/isc-news-bot/src/isc/urkunden.ts)):
+Die Übersichtsseite der Urkunden-App lädt ihre Tabelle nicht im HTML, sondern per JavaScript: `ladeUrkunden()` ruft `dlrg_DoPost('/apps/urkunden?page=service', 'ladeUrkundenListe', { jahr, ausbildungId, inaktiveAnzeigen, mitVerlaengerungen }, callback)`. Der Bot ([`src/isc/urkunden.ts`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/isc-news-bot/src/isc/urkunden.ts)):
 
 1. meldet sich an und wechselt in die Gliederung `GLIEDERUNG_EDV` (wie beim News-Anlegen),
 2. öffnet `/apps/urkunden?page=uebersicht` und wartet, bis `dlrg_DoPost` existiert,
 3. ruft im Browser dieselbe Funktion mit `ausbildungId: ""`, `inaktiveAnzeigen: false`, `mitVerlaengerungen: false` auf. So gelten Sitzung, CSRF und Anfrageformat genau wie in der Oberfläche,
-4. normalisiert die Einträge und filtert sie ([`src/urkunden.ts`](../../argocd/apps/tech/isc-news-bot/src/urkunden.ts)),
+4. normalisiert die Einträge und filtert sie ([`src/urkunden.ts`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/isc-news-bot/src/urkunden.ts)),
 5. meldet sich ab.
 
 Gibt es `dlrg_DoPost` nicht (keine Rechte für die Urkunden-App, Seite umgebaut) oder antwortet die Aktion nicht mit einer Liste, endet der Lauf mit `FORM_CHANGED` im Schritt `urkunden`.

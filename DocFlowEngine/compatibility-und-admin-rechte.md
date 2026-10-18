@@ -3,7 +3,7 @@
 Dieses Dokument hält fest, wie geprüft wurde, dass DocFlowEngine (a) ausschließlich mit
 PowerShell-5.1-kompatibler Syntax/Cmdlets auskommt und (b) an keiner Stelle Admin-/Root-Rechte
 voraussetzt. Zielplattform ist Windows PowerShell 5.1 auf Schulrechnern (siehe
-[MULTI-MACHINE-SETUP.md](Konzepte/MULTI-MACHINE-SETUP.md)); PowerShell 7+ auf Windows/macOS/Linux wird
+[MULTI-MACHINE-SETUP.md](konzepte/multi-machine-setup.md)); PowerShell 7+ auf Windows/macOS/Linux wird
 zusätzlich unterstützt.
 
 ## 1. PowerShell-5.1-Kompatibilität
@@ -26,7 +26,7 @@ dessen Versionsvorgabe.
    - `using namespace`
    - `ConvertFrom-Json -AsHashtable` (erst ab PowerShell 6) - im Code bewusst **nicht** verwendet;
      stattdessen implementiert `ConvertTo-DocFlowHashtable` (`Common.ps1`) dieselbe Umwandlung von
-     Hand, siehe [Implementation-Notes.md](Implementation-Notes.md).
+     Hand, siehe [Implementation-Notes.md](implementation-notes.md).
    - `ForEach-Object -Parallel`, `Join-String`, `$PSStyle`, `Get-Error`, `$IsWindows`/`$IsLinux`/`$IsMacOS`/`$IsCoreCLR` (alles PS-6+/7+-only)
 
    Ergebnis: **keine Treffer.**
@@ -85,7 +85,7 @@ dessen Versionsvorgabe.
 Kein Befund. Der gesamte Code (`scripts/`, `tests/`) ist mit reinem Windows PowerShell 5.1 lauffähig -
 zuletzt erneut geprüft nach Hinzunahme von `Invoke-OneDriveSync.ps1`, `Rename-ExistingAufgaben.ps1`
 und `Remove-DocFlowExpiredState`/`Get-DocFlowMigratedFileName` (siehe
-[Konzepte/ERWEITERUNGSKONZEPT.md](Konzepte/ERWEITERUNGSKONZEPT.md) Abschnitt 7).
+[Konzepte/ERWEITERUNGSKONZEPT.md](konzepte/erweiterungskonzept.md) Abschnitt 7).
 
 ## 2. Keine Admin-/Root-Rechte nötig
 
@@ -94,7 +94,7 @@ und `Remove-DocFlowExpiredState`/`Get-DocFlowMigratedFileName` (siehe
 | DocFlowEngine ausführen (`DocFlowEngine.ps1`) | Nein | Nur Datei-Lese-/Schreibzugriffe auf vom Benutzer bereits beschreibbare Ordner (OneDrive-Quell-/Zielordner im eigenen Benutzerprofil). Keine Registry-Änderungen, kein Dienst, keine Systemdateien. |
 | `-ExecutionPolicy Bypass` beim Aufruf | Nein | Gilt nur für den startenden Prozess (`-File`-Aufruf), nicht systemweit; verändert keine dauerhafte Einstellung. |
 | Lock-Datei (`scripts/DocFlowEngine/Lock.ps1`) | Nein | Reine Dateioperationen (`Test-Path`/`Get-Item`/`Set-Content`/`Remove-Item`) im selben, bereits beschreibbaren geteilten Ordner. |
-| Geplante Ausführung unter Windows | Nein | `Register-ScheduledTask` mit `-Principal ... -LogonType Interactive` (ohne `-RunLevel Highest`) legt eine Aufgabe im Kontext des aktuellen, angemeldeten Benutzers an ("User Task") - siehe [README](../README.md#regelmäßige-automatisierung). Keine Registrierung als Dienst oder unter SYSTEM nötig. |
+| Geplante Ausführung unter Windows | Nein | `Register-ScheduledTask` mit `-Principal ... -LogonType Interactive` (ohne `-RunLevel Highest`) legt eine Aufgabe im Kontext des aktuellen, angemeldeten Benutzers an ("User Task") - siehe [README](nutzung.md#regelmäßige-automatisierung). Keine Registrierung als Dienst oder unter SYSTEM nötig. |
 | Geplante Ausführung unter macOS/Linux | Nein | `crontab -e` bearbeitet die Crontab des aktuellen Benutzers, kein `sudo` nötig. |
 | `scripts/Invoke-OneDriveSync.ps1` ausführen | Nein | `Stop-Process`/`Start-Process` auf den bereits im eigenen Benutzerkontext laufenden OneDrive-Prozess - keine anderen Benutzerprozesse, kein Dienst, keine Registry. |
 | `scripts/Rename-ExistingAufgaben.ps1` ausführen | Nein | Reine Datei-Lese-/Rename-/Schreibzugriffe (`Rename-Item`, `Get-ChildItem`, State-Datei) auf bereits vom Benutzer beschreibbare Ordner - identisches Rechteprofil wie `DocFlowEngine.ps1`. |

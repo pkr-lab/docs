@@ -5,7 +5,7 @@ Diese Seite listet für jede laufende App: den internen Kubernetes-Service
 sie zusätzlich extern über den Cloudflare Tunnel erreichbar ist. Die Werte
 stammen aus den `values.yaml`-Dateien unter `argocd/apps/`; bei Abweichungen
 zählt der Live-Stand (`kubectl get svc -A` / `kubectl get ingress -A`, je
-Cluster, siehe [a0010](../a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+Cluster, siehe [a0010](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
 ## Die zwei Wege rein
 
@@ -24,20 +24,20 @@ Internet: Client → xyz-tier.pke-lab.de → Cloudflare Edge
 `tier` ist `tech` (Infrastruktur/Admin), `prod` (echter Nutzerkreis) oder `dev` (ENTW). Das Tier
 sagt nichts über den Cluster: welche IP ein Name bekommt, entscheidet das DNS
 (`*.homeserver` → TECH, `*.dev.homeserver` → ENTW, Einzelhosts aus `dnsmasq_prod_vm_hosts` → PROD).
-Details und die vollständige Zuordnung: [docs/c-netzwerk-dns/c0040-domain-tiers.md](c0040-domain-tiers.md).
+Details und die vollständige Zuordnung: [capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](c0040-domain-tiers.md).
 Intern per Punkt (`xyz.tier.homeserver`), extern per Bindestrich
 (`xyz-tier.pke-lab.de`) — Grund: Cloudflares kostenloses Zertifikat deckt
 nur eine Label-Ebene ab, siehe
-[docs/c-netzwerk-dns/c0040-domain-tiers.md → Warum Punkt intern, Bindestrich extern](c0040-domain-tiers.md#warum-punkt-intern-bindestrich-extern).
+[capulus-core/c-netzwerk-dns/c0040-domain-tiers.md → Warum Punkt intern, Bindestrich extern](c0040-domain-tiers.md#warum-punkt-intern-bindestrich-extern).
 
 Wichtig: **cloudflared braucht keinen Port-Forward am Router.** Der Tunnel
 baut die Verbindung von innen nach außen auf (siehe
-[docs/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md)). TECH und PROD haben je
+[capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md)). TECH und PROD haben je
 ein eigenes `cloudflared` mit eigenem Tunnel; jedes kennt nur **eine** Wildcard-Regel (`*.pke-lab.de`)
 und leitet alles an den Traefik seines Clusters weiter. Welche Hostnamen tatsächlich extern
 erreichbar sind, entscheidet ausschließlich, welche Apps zusätzlich zu
 ihrem `*.homeserver`-Host auch einen `*-pke-lab.de`-Host in der eigenen
-`ingress.hosts`-Liste tragen (siehe [docs/c-netzwerk-dns/c0040-domain-tiers.md](c0040-domain-tiers.md)).
+`ingress.hosts`-Liste tragen (siehe [capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](c0040-domain-tiers.md)).
 Nicht jede App mit LAN-Ingress ist automatisch auch extern erreichbar.
 
 ---
@@ -79,7 +79,7 @@ Nicht jede App mit LAN-Ingress ist automatisch auch extern erreichbar.
 Die Spalte *Cluster* zeigt, wo die App läuft. Externe Hosts tragen tatsächlich nur die Apps mit einem
 Eintrag in der letzten Spalte — alle anderen (auch alle mit „—") sind ausschließlich über LAN/Tailscale
 erreichbar, egal was die Wildcard-Regel von `cloudflared` theoretisch matchen würde (siehe
-[docs/c-netzwerk-dns/c0040-domain-tiers.md](c0040-domain-tiers.md)).
+[capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](c0040-domain-tiers.md)).
 
 Alle `*.homeserver`- **und** alle `*.pke-lab.de`-Hosts laufen über den Traefik des jeweiligen Clusters
 (auf `:80`/`:443` der Cluster-IP) — kein individueller Port pro App nötig,
@@ -94,15 +94,15 @@ alles an Traefik weiter (`argocd/apps/tech/cloudflared/values.yaml` bzw.
 
 | Was | Port(s) | Erreichbar über | Bemerkung |
 |---|---|---|---|
-| Pi-hole DNS | 53/UDP+TCP | NodePort `homeserver:30053` | Nur LAN/Tailnet, siehe [docs/c-netzwerk-dns/c0000-dns-architecture.md](c0000-dns-architecture.md) |
-| MediaMTX Publish (RTMP) | 1935 | NodePort `homeserver:31935` | Für OBS/ffmpeg-Encoder, bewusst NICHT über Cloudflare (siehe [docs/3-apps-workloads/30040-mediamtx.md](../3-apps-workloads/30040-mediamtx.md)) |
+| Pi-hole DNS | 53/UDP+TCP | NodePort `homeserver:30053` | Nur LAN/Tailnet, siehe [capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](c0000-dns-architecture.md) |
+| MediaMTX Publish (RTMP) | 1935 | NodePort `homeserver:31935` | Für OBS/ffmpeg-Encoder, bewusst NICHT über Cloudflare (siehe [capulus-core/3-apps-workloads/30040-mediamtx.md](../3-apps-workloads/30040-mediamtx.md)) |
 | MediaMTX Publish (RTSP) | 8554 | NodePort `homeserver:31554` | s.o., nur LAN/Tailnet |
 | MediaMTX WebRTC | 8889 | Nur ClusterIP intern | Kein eigener Ingress-Host, wird intern vom HLS-Player-Frontend genutzt |
 | MediaMTX API | 9997 | Nur ClusterIP intern | Kein externer Zugriff |
 | ArgoCD-Hub (UI, CLI, CI) | 443 | Traefik-Ingress `argocd.tech.homeserver` | HTTPS mit internem Zertifikat. Der Service ist `ClusterIP`, es gibt keinen NodePort mehr (Incident 013). CLI mit `--grpc-web`. |
 | ArgoCD ENTW (UI, CLI, CI) | 443 | Traefik-Ingress `argocd.dev.homeserver` auf `entw-vm` | HTTPS, Zertifikat aus der Homeserver-Root-CA (jährlich neu ausgestellt), Service `ClusterIP`, siehe [b0050](../b-kubernetes-gitops/b0050-entw-argocd.md#argocd-oberfläche) |
-| Tailscale (SSH/Admin) | — | Tailnet-IP des Nodes | Siehe [docs/c-netzwerk-dns/c0010-tailscale.md](c0010-tailscale.md) |
-| WireGuard Backup-VPN | UDP, `wireguard_backup_port` (Default 51888) | Router-Portforward → Homeserver-LAN-IP | Notfall-Fallback falls Tailscale ausfällt, genau 1 Peer, kein LAN-Routing. Siehe [docs/c-netzwerk-dns/c0011-wireguard-backup.md](c0011-wireguard-backup.md) |
+| Tailscale (SSH/Admin) | — | Tailnet-IP des Nodes | Siehe [capulus-core/c-netzwerk-dns/c0010-tailscale.md](c0010-tailscale.md) |
+| WireGuard Backup-VPN | UDP, `wireguard_backup_port` (Default 51888) | Router-Portforward → Homeserver-LAN-IP | Notfall-Fallback falls Tailscale ausfällt, genau 1 Peer, kein LAN-Routing. Siehe [capulus-core/c-netzwerk-dns/c0011-wireguard-backup.md](c0011-wireguard-backup.md) |
 
 **NodePorts und LoadBalancer laufen an UFW vorbei.** Der Verkehr wird in `PREROUTING` auf den Pod umgeschrieben und läuft dann durch die
 `FORWARD`-Kette, wo `KUBE-ROUTER-FORWARD` und `KUBE-FORWARD` ihn vor UFW annehmen. Die UFW-Regeln für `80`, `443` und den früheren ArgoCD-NodePort `30080` hatten über Wochen 0 Treffer

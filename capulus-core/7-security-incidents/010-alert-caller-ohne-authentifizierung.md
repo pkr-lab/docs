@@ -101,12 +101,12 @@ Während des Rollouts wurde der Alertmanager-Pod neu gestartet (wegen `spec.secr
 - `argocd/apps/tech/monitoring/` (`values.yaml`, neu `templates/sealedsecret-alert-caller-token.yaml`)
 - `capulus-ansible/roles/alert_caller/` (`defaults/main.yml`, `tasks/main.yml`, `templates/alert-caller.env.j2`)
 - `scripts/seal-alert-caller-token.sh` (neu), `ops/token-register.yaml`
-- Doku: `docs/1-benachrichtigungen/10020-telefon-alarm.md` (Abschnitt „Zugriffsschutz (Token)“), `docs/6-hintergruende/60020`, `60040`, `60060`, `600a0`
+- Doku: `capulus-core/1-benachrichtigungen/10020-telefon-alarm.md` (Abschnitt „Zugriffsschutz (Token)“), `docs/6-hintergruende/60020`, `60040`, `60060`, `600a0`
 
 **Rollback.** Im Modus `log` geht keine Meldung verloren, es genügt ein Revert-PR. Im Modus `enforce` zusätzlich `config.auth.mode: log`. Der Alertmanager-Mount lässt sich entfernen, indem man `spec.secrets` und die `http_config`-Blöcke zurücknimmt; dabei das Secret nicht vor dem Alertmanager löschen.
 
 **Offen.**
 
-- **Pi-Rollenlauf** (braucht das Vault-Passwort): `ansible-playbook -i capulus-ansible/inventory/hosts.yml capulus-ansible/alert-caller.yml --limit vereinsheim-alarmmonitor --tags alert-caller --ask-vault-pass`. Danach darf das Pi-Log keine `unauthenticated`-Zeile vom Alertmanager mehr zeigen.
+- **Pi-Rollenlauf** (braucht das Vault-Passwort): `ansible-playbook -i inventory/hosts.yml alert-caller.yml --limit vereinsheim-alarmmonitor --tags alert-caller --ask-vault-pass`. Danach darf das Pi-Log keine `unauthenticated`-Zeile vom Alertmanager mehr zeigen.
 - **Stufe 2:** `config.auth.mode: enforce` im Chart und `alert_caller_auth_mode: enforce` in `capulus-ansible/group_vars/alert_caller_pi.yml`, danach `401` ohne Token, `200` mit Token und ein echter Testanruf (Testplan 3). Voraussetzung ist ein längerer Zeitraum ohne unauthentifizierte Zeilen.
 - `UFW`-Beschränkung von Port `9310` auf die Alertmanager-Quellen ist wegen `hostNetwork` und der Pod-Regel nicht sinnvoll, der Token ersetzt sie.
