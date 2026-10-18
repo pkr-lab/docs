@@ -1,5 +1,6 @@
-max_concurrency = 8
-max_retries = 2
+max_concurrency = 3
+max_retries = 5
+retry_wait_time = 10
 timeout = 20
 accept = [200, 206, 403, 429]
 exclude_all_private = true
