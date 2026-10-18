@@ -28,7 +28,7 @@ Dienst), zwei kontrollierte Neustarts, `rotate-keys` bis
 
 ## Ziel
 
-Sealed Secrets ([docs/…](https://github.com/pkr-lab/capulus-core/tree/main/docs/d-sicherheit)) verschlüsselt nur den Git-Zustand — der
+Sealed Secrets ([d-sicherheit/](../../capulus-core/d-sicherheit/)) verschlüsselt nur den Git-Zustand — der
 private Schlüssel, mit dem der `sealed-secrets-controller` sie beim
 Cluster-Sync entschlüsselt, landet als **Klartext-Secret** im
 k3s-Datastore (`/var/lib/rancher/k3s/server/db/state.db`, SQLite). Jeder,
