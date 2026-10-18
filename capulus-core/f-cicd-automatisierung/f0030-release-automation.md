@@ -1,26 +1,21 @@
-# Release-Automatisierung — GitHub Release bei jedem Merge auf `main`
+# Release-Automatisierung — Release bei jedem Merge auf `main`
 
-Jeder Push auf `main` (also jeder gemergte Pull Request) löst automatisch
-einen [semantic-release](https://semantic-release.gitbook.io/)-Lauf aus, der
-— falls die Commits seit dem letzten Tag das rechtfertigen — eine neue
-Versionsnummer vergibt, einen Git-Tag setzt und ein GitHub-Release mit
-automatisch generiertem Changelog veröffentlicht.
+Jeder Push auf `main` (also jeder gemergte Pull Request) löst automatisch einen [semantic-release](https://semantic-release.gitbook.io/)-Lauf aus, der — falls die Commits seit dem letzten Tag das rechtfertigen — eine neue Versionsnummer vergibt, `CHANGELOG.md` fortschreibt, einen Git-Tag `vX.Y.Z` setzt und ein GitHub-Release mit Release Notes veröffentlicht. Der Ablauf ist für alle Repos von pkr-lab derselbe und liegt zentral im Repo `pkr-lab/.github` ([github-workflows](../../github-workflows/index.md)); capulus-core ruft ihn nur auf.
 
 ---
 
 ## Warum das funktioniert, ohne extra Konfiguration pro Commit
 
-Die Commit-Historie dieses Repos folgt bereits durchgängig
-[Conventional Commits](https://www.conventionalcommits.org/)
-(`feat: ...`, `fix: ...`, siehe `git log`). semantic-release liest genau
-dieses Präfix, um die nächste Version zu bestimmen:
+Die Commit-Historie folgt [Conventional Commits](https://www.conventionalcommits.org/) (`feat(app): …`, `fix(app): …`). semantic-release liest das Präfix, um die nächste Version zu bestimmen:
 
 | Commit-Präfix | Versions-Bump |
 |---|---|
 | `fix: ...` | Patch (`1.2.3` → `1.2.4`) |
 | `feat: ...` | Minor (`1.2.3` → `1.3.0`) |
-| `feat: ...` mit `BREAKING CHANGE:` im Body | Major (`1.2.3` → `2.0.0`) |
-| alles andere (`docs:`, `chore:`, `refactor:` ohne `fix`/`feat`, …) | kein Release |
+| `feat!: ...` oder `BREAKING CHANGE:` im Footer | Major (`1.2.3` → `2.0.0`) |
+| alles andere (`docs:`, `chore:`, `refactor:`, `test:`, `ci:`, …) | kein Release |
+
+Ein Check (commitlint) prüft auf Pull Requests, dass alle Commits dieses Format haben. Lokal macht `make hooks` den `commit-msg`-Hook aktiv.
 
 ---
 
@@ -30,34 +25,27 @@ dieses Präfix, um die nächste Version zu bestimmen:
 git push origin main (per Merge)
         │
         ▼
-.github/workflows/release.yml   (GitHub Actions, Trigger: push → main)
-        │
+.github/workflows/release.yml           (Aufrufer in capulus-core)
+        │  uses: pkr-lab/.github/.github/workflows/release.yml@<sha>
         ▼
-npx semantic-release            (.releaserc.json)
+semantic-release                        (Konfiguration wird zentral erzeugt)
         │
-        ├── @semantic-release/commit-analyzer      → nächste Version bestimmen
-        ├── @semantic-release/release-notes-generator → Changelog-Text erzeugen
-        └── @semantic-release/github                → Git-Tag + GitHub-Release erstellen
+        ├── commit-analyzer, release-notes-generator → Version und Notes
+        ├── changelog                                → CHANGELOG.md
+        ├── git                                      → Commit "chore(release): X.Y.Z [skip ci]"
+        └── github                                   → Tag vX.Y.Z + GitHub-Release
 ```
 
-Konfiguration: [`.releaserc.json`](https://github.com/pkr-lab/capulus-core/blob/main/.releaserc.json),
-Workflow: [`.github/workflows/release.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/release.yml).
+Aufrufer: [`.github/workflows/release.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/release.yml). Eine eigene `.releaserc.json` gibt es in capulus-core nicht mehr.
 
 ---
 
 ## Was das NICHT tut
 
-- **Kein Einfluss auf ArgoCD/Deployment.** ArgoCD trackt weiterhin
-  `targetRevision: main` direkt (siehe
-  [capulus-ansible/a-betriebssystem/a0010-overview.md](../../capulus-ansible/a-betriebssystem/a0010-overview.md)) — Releases sind reine
-  Versionshistorie/Nachvollziehbarkeit, kein Deployment-Gate.
-- **Kein `npm publish`.** Die `@semantic-release/npm`-Plugin ist bewusst
-  nicht in der Plugin-Liste — dieses Repo ist kein npm-Paket, es gibt kein
-  `package.json`.
-- **Kein CHANGELOG.md-Commit.** `@semantic-release/changelog` +
-  `@semantic-release/git` sind bewusst nicht eingebunden, damit die
-  Pipeline selbst keine zusätzlichen Commits auf `main` erzeugt — das
-  generierte Changelog landet ausschließlich im GitHub-Release-Text.
+- **Kein Einfluss auf ArgoCD/Deployment.** ArgoCD trackt weiterhin `targetRevision: main` direkt (siehe [capulus-ansible/a-betriebssystem/a0010-overview.md](../../capulus-ansible/a-betriebssystem/a0010-overview.md)). Releases sind Versionshistorie, kein Deployment-Gate.
+- **Kein `npm publish`.** Dieses Repo ist kein npm-Paket.
+- **Keine Release-Dateien und keine Images.** Die Workload-Images baut `build-images.yml` getrennt (`sha-<commit>`).
+- **Der CHANGELOG-Commit braucht Schreibrecht auf `main`.** Ist ein Ruleset aktiv, das Pushes ohne Pull Request verbietet, muss GitHub Actions dort eine Ausnahme bekommen.
 
 ---
 
@@ -65,7 +53,8 @@ Workflow: [`.github/workflows/release.yml`](https://github.com/pkr-lab/capulus-c
 
 | Symptom | Hinweis |
 |---|---|
-| Kein Release trotz `feat:`-Commit | Prüfen, ob der Commit-Präfix exakt Conventional-Commits-Syntax folgt (`feat: ...`, nicht `Feat:` oder `feature:`) |
-| Workflow schlägt mit 403/permission-Fehler fehl | `permissions: contents: write` im Workflow prüfen — ohne das kann `@semantic-release/github` keinen Tag/Release erstellen |
-| Mehrere Commits, aber nur ein Release | Erwartetes Verhalten — semantic-release fasst alle Commits seit dem letzten Tag in einem Release zusammen, auch bei mehreren gemergten PRs zwischen zwei Pushes |
+| Kein Release trotz `feat:`-Commit | Präfix exakt Conventional-Commits-Syntax (`feat: ...`, nicht `Feat:` oder `feature:`); der Commit muss nach dem letzten Tag liegen |
+| Workflow schlägt mit 403/permission-Fehler fehl | Der Aufrufer braucht `contents: write`, `issues: write`, `pull-requests: write`, `packages: write`; zusätzlich darf `main` den CHANGELOG-Commit annehmen |
+| Mehrere Commits, aber nur ein Release | Erwartetes Verhalten: semantic-release fasst alle Commits seit dem letzten Tag zusammen |
+| Fehler bei den Preset-Paketen | siehe [Fehlersuche in github-workflows](../../github-workflows/nutzung.md#fehlersuche) |
 | Workflow-Lauf ansehen | GitHub-Repo → **Actions** → **Release** |

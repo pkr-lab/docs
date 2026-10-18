@@ -17,6 +17,7 @@ Die Profilseite ist die Einstiegsseite zu den Projekten:
 | PowerShell | [PowerShell](../PowerShell/index.md) |
 | ps-data-fixtures | [ps-data-fixtures](../ps-data-fixtures/index.md) |
 | EDV-Kretzer | [EDV-Kretzer](../EDV-Kretzer/index.md) |
+| .github | [github-workflows](../github-workflows/index.md) |
 
 Die README bleibt im Profil-Repo, weil GitHub genau diese Datei als Profil anzeigt.
 
