@@ -53,7 +53,7 @@ Alle Werte stehen in `argocd/apps/prod/wiki-docs-sync/values.yaml` und kommen al
 | `wikijs.locale` | `WIKIJS_LOCALE` | `en` | Locale; gehört **nicht** in den Pfad, Wiki.js setzt es selbst davor |
 | `wikijs.pathPrefix` | `WIKIJS_PATH_PREFIX` | `docs` | Wurzel der gespiegelten Seiten |
 | `wikijs.legacyPrefixes` | `WIKIJS_LEGACY_PREFIXES` | leer | Präfixe, deren Seiten einmalig gelöscht werden (siehe Umstellung) |
-| `wikijs.dryRun` | `DRY_RUN` | `true` zum Start | nur protokollieren, nichts ändern |
+| `wikijs.dryRun` | `DRY_RUN` | `false` | `true` = nur protokollieren, nichts ändern; vor größeren Änderungen an Quelle oder Präfix einschalten |
 | `wikijs.minPages` | `MIN_PAGES` | `20` | Mindestzahl an Seiten, sonst Abbruch |
 | `wikijs.tokenSecretName`, `tokenSecretKey` | `WIKIJS_API_TOKEN` | `wiki-docs-sync-wikijs-token`, `token` | Wiki.js-API-Key |
 
@@ -63,19 +63,19 @@ Der GitHub-Token braucht für das öffentliche Docs-Repo nur Lesezugriff auf öf
 
 `capulus-wiki-sync` wird mit semantic-release versioniert. Jedes Release baut das Image `ghcr.io/pkr-lab/capulus-wiki-sync:vX.Y.Z`. Renovate öffnet in capulus-core einen PR, der `image.tag` anhebt (Regel in `renovate.json`). Das Image enthält keine Zugangsdaten und kann öffentlich sein, dann braucht der Namespace kein Pull-Secret (`imagePullSecrets` in den Values).
 
-## Umstellung vom alten Sync
+## Umstellung vom alten Sync (durchgeführt am 2026-10-18)
 
-Der alte Sync las `capulus-core/docs` (eine Ebene tief) und schrieb nach `Github/capulus-core/docs/…` samt Seite `Github/capulus-core/ReadMe`. Umstellung ohne Datenverlust:
+Der alte Sync las `capulus-core/docs` (eine Ebene tief) und schrieb nach `Github/capulus-core/docs/…` samt Seite `Github/capulus-core/ReadMe`. Die Umstellung lief so, und derselbe Ablauf eignet sich für einen Wechsel des Präfixes:
 
 1. Image `capulus-wiki-sync` veröffentlichen, Paket öffentlich stellen.
-2. Chart-Änderung mergen. Der Sync läuft mit `dryRun: true` und protokolliert nur.
-3. Log des letzten Jobs prüfen: `kubectl -n wiki-docs-sync logs job/<job>` im PROD-Cluster. Erwartet: `[CREATE]` für alle Seiten, `[DELETE]` nur für Seiten, die wirklich weg sollen.
-4. `dryRun: false` setzen und mergen. Der erste echte Lauf legt den neuen Baum unter `/en/docs` an.
-5. Wiki.js-Navigation auf „Site Tree“ stellen, Seiten stichprobenartig öffnen.
-6. Alten Baum entfernen: `wikijs.legacyPrefixes: ["Github/capulus-core"]` setzen, mergen, nach dem Lauf wieder auf `[]` stellen.
-7. Erst danach `docs/` aus capulus-core löschen.
+2. Chart mit `dryRun: true` mergen. Das Log des ersten Jobs zeigte `neu=274 gelöscht=0 Fehler=0`.
+3. `dryRun: false` setzen. Der erste echte Lauf legte alle 274 Seiten an, der zweite meldete `unverändert=274`.
+4. Einmalig `wikijs.legacyPrefixes: ["Github/capulus-core"]` setzen: Der nächste Lauf löschte die 145 alten Seiten, danach wurde der Wert wieder geleert.
+5. `docs/` und die Komponenten-READMEs aus capulus-core entfernen.
 
-Die URLs der Seiten ändern sich dabei. Verweise auf alte Wiki-Seiten (zum Beispiel auf der Website) müssen angepasst werden.
+Das Log eines Laufs liest man ohne Zugriff auf den PROD-Cluster über den ArgoCD-Hub: `argocd app logs prod-wiki-docs-sync --core --kind Job --name wiki-docs-sync-<Minuten seit Epoche des Slots>`. Offen bleibt in Wiki.js die Navigation: Administration → Navigation → „Site Tree“.
+
+Die URLs der Seiten haben sich geändert. Verweise auf alte Wiki-Seiten müssen angepasst werden.
 
 ## Fehlersuche
 
