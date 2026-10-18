@@ -14,7 +14,7 @@ Stand: 2026-10-16. Dieses Verzeichnis enthält die Findings des Security-Audits 
 
 **Der Audit selbst hat nichts verändert.** Außer diesem Verzeichnis `docs/incidents/` wurde keine Datei im Repo angefasst. Auf den Hosts und in den Clustern liefen nur lesende Befehle (`ss`, `ufw status`, `sshd -T`, `stat`, `kubectl get`, `k3s secrets-encrypt status`, `tailscale debug netmap`); dazu ein lesender Aufruf im ntfy-Pod (`kubectl exec … ntfy user list`). Es wurden keine Secrets gelesen oder ausgegeben, kein `POST` an Dienste gesendet, nichts committet oder gepusht.
 
-**Veröffentlichung.** Das Repo `pkr-lab/capulus-core` ist **öffentlich**, und `wiki-docs-sync` spiegelt `docs/` nach Wiki.js. Diese Dateien beschreiben **noch offene** Schwachstellen mit Fundstelle. Bis die High-Findings behoben sind, sollten sie nicht gepusht werden (lokal halten oder erst nach der Behebung einchecken). Der README-Index im Repo-Root verweist bewusst nicht auf dieses Verzeichnis.
+**Veröffentlichung.** Das Repo `pkr-lab/capulus-core` ist **öffentlich**, und `wiki-docs-sync` spiegelt die Doku (heute `pkr-lab-docs`) nach Wiki.js. Diese Dateien beschreiben **noch offene** Schwachstellen mit Fundstelle. Bis die High-Findings behoben sind, sollten sie nicht gepusht werden (lokal halten oder erst nach der Behebung einchecken). Der README-Index im Repo-Root verweist bewusst nicht auf dieses Verzeichnis.
 
 **Abweichung von der Repo-Konvention.** `CLAUDE.md` sieht Incidents unter `docs/5-incidents/5xxxx-slug.md` vor. Wie im Auftrag verlangt liegen sie unter `docs/incidents/NNN-slug.md`. Falls sie bleiben sollen, können sie vor dem Commit in die Konvention überführt werden.
 

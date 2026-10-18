@@ -88,22 +88,16 @@ Die Datenmigration von TECH nach PROD steht in [60030](60030-argocd-und-bootstra
 - **`maxReplicas` ist auf 1 gedeckelt.** Die Seiten liegen zwar vollständig in PostgreSQL, aber Wiki.js cached den API-Enable-Status und die Key-Validierung offenbar
   pro Pod-Instanz ohne Sync zwischen Replicas (ohne Redis o. Ä.). Mehrere gleichzeitig aktive Pods führten zu inkonsistenten „API Key invalid“/„API disabled“-Fehlern
   beim wiki-docs-sync. Das Wiki selbst stoppt man mit `wikijs.autoscaling.enabled=false` plus `wikijs.replicaCount=0`.
-- **wiki-docs-sync:**
-  - Der CronJob läuft alle 15 Minuten. `sync.py` listet `docs/` **eine Ebene rekursiv**: 1 Call für `docs/` selbst plus 1 pro Unterordner (auch `assets/` und
-    `superpowers/`). Mit heute 14 Unterordnern sind das 15 Contents-API-Calls pro Lauf, also ~60 pro Stunde und damit genau das Limit für unauthentifizierte
-    Anfragen (60/h, früher waren es ~44/h bei ~11 Calls). Jeder weitere Kategorie-Ordner überschreitet es. Deshalb ist der GitHub-PAT (Secret `github-api-token`,
-    `scripts/seal-github-token.sh`, hebt das Limit auf 5000/h) hier faktisch Pflicht. Er ist nur für die Contents-Listing-Anfragen relevant, nicht für die
-    Datei-Downloads über `raw.githubusercontent.com`, und kommt aus einem **vorhandenen** Secret, das der Chart nicht anlegt.
-  - `wikijs.url` ist der **interne ClusterIP-Service**, nicht die öffentliche Cloudflare-Tunnel-URL: Cloudflares Bot-Schutz blockt Requests von `urllib`
-    (403, „error code 1010“), und der Sync-Job läuft ohnehin im selben Cluster wie Wiki.js.
-  - **`locale` steht separat vom `pathPrefix`:** Wiki.js reserviert zweistellige Pfad-Segmente (z. B. `en`) für das Locale, es wird **nicht** Teil des
-    `pathPrefix`, sondern von Wiki.js automatisch vor den Pfad gehängt. `docsSubpath` ist der Unterordner unterhalb des `pathPrefix`, in den die
-    `docs/*.md`-Dateien gespiegelt werden, `github.extraFiles` (z. B. `README.md` mit `slug: ReadMe`) landen dagegen direkt unter dem `pathPrefix`. Der `slug` bestimmt
-    Wiki.js-Seitenpfad und Fallback-Titel.
-  - Der Wiki.js-API-Token liegt als SealedSecret `wiki-docs-sync-wikijs-token` im Chart-Template (Wiki.js: Administration → Utilities → API Access). Die
-    Templates lesen keinen `secrets:`-Block aus den Values.
-  - Die frühere NetworkPolicy-Ausnahme wiki-docs-sync → wikijs (`argocd_network_policy_extra_ingress`) gibt es nicht mehr: Beide Apps laufen in PROD, und dort gibt
-    es keine Standard-Policy ([40080](../4-planung/40080-multi-cluster-entw-prod-tech.md), [d0030](../d-sicherheit/d0030-network-policies.md)).
+- **wiki-docs-sync:** Aufbau und Betrieb stehen in [wiki-sync](../wiki-sync.md). Begründungen zum Chart:
+  - Der Code liegt im Repo capulus-wiki-sync und läuft als eigenes Image; das Chart enthält kein Skript mehr. Früher steckte `sync.py` in einem ConfigMap auf dem Standard-Image `python`, jede Skriptänderung war ein Chart-Commit und die Logik war nicht testbar.
+  - Der CronJob läuft alle 15 Minuten. Der Sync lädt das Docs-Repo als **Tarball**: ein GitHub-API-Aufruf pro Lauf, egal wie viele Ordner das Repo hat. Das alte Contents-Listing brauchte einen Aufruf pro Ordner und lag damit schon am Limit für anonyme Anfragen (60/h). Der PAT (Secret `github-api-token`, `scripts/seal-github-token.sh`) ist deshalb nur noch Komfort und für private Repos nötig; er kommt aus einem **vorhandenen** Secret, das der Chart nicht anlegt.
+  - `wikijs.url` ist der **interne ClusterIP-Service**, nicht die öffentliche Cloudflare-Tunnel-URL: Cloudflares Bot-Schutz blockt Requests von `urllib` (403, „error code 1010“), und der Sync-Job läuft ohnehin im selben Cluster wie Wiki.js.
+  - **`locale` steht separat vom `pathPrefix`:** Wiki.js reserviert zweistellige Pfad-Segmente (z. B. `en`) für das Locale, es wird **nicht** Teil des `pathPrefix`, sondern von Wiki.js automatisch vor den Pfad gehängt.
+  - Der Sync prüft die `responseResult` jeder Mutation. Früher blieb ein abgelehntes `create` oder `update` still, weil nur GraphQL-Fehler ausgewertet wurden.
+  - Ein Lauf schreibt nur geänderte Seiten. Sonst entstünde bei jedem Lauf eine neue Wiki.js-Version jeder Seite.
+  - `dryRun` ist beim Einführen an, weil der Sync alles unter dem Präfix löscht, was keine Quelle hat.
+  - Der Wiki.js-API-Token liegt als SealedSecret `wiki-docs-sync-wikijs-token` im Chart-Template (Wiki.js: Administration → Utilities → API Access). Die Templates lesen keinen `secrets:`-Block aus den Values.
+  - Die frühere NetworkPolicy-Ausnahme wiki-docs-sync → wikijs (`argocd_network_policy_extra_ingress`) gibt es nicht mehr: Beide Apps laufen in PROD, und dort gibt es keine Standard-Policy ([40080](../4-planung/40080-multi-cluster-entw-prod-tech.md), [d0030](../d-sicherheit/d0030-network-policies.md)).
 
 ## Xibo (xibosignage)
 

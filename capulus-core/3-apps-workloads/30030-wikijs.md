@@ -4,7 +4,7 @@
 
 Wiki.js ist ein Open-Source-Wiki/Knowledge-Base-System mit Markdown-Editor,
 eingebauten Benutzergruppen und pfadbasierten Zugriffsregeln (Page Rules).
-Die Deployment-Konfiguration liegt unter `argocd/apps/prod/wikijs/`.
+Die Deployment-Konfiguration liegt unter `argocd/apps/prod/wikijs/`. Die Inhalte kommen aus dem Docs-Repo `pkr-lab-docs` und werden vom CronJob `wiki-docs-sync` gespiegelt, siehe [wiki-sync](../wiki-sync.md); Änderungen am Inhalt macht man im Docs-Repo, nicht im Wiki.
 
 ---
 

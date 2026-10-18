@@ -43,3 +43,7 @@ Jedes Projekt hat mindestens `index.md` (Zweck, Überblick, Architektur), `insta
 - Links zwischen Seiten sind relativ, Links in Code-Repos sind absolute GitHub-URLs.
 - Vor dem PR: `python3 scripts/check-doc-links.py`.
 - Konventionen für Dateinamen und Aufbau der capulus-core-Docs: [TEMPLATE.md](capulus-core/TEMPLATE.md).
+
+## Wiki
+
+Die Seiten werden automatisch in Wiki.js im PROD-Cluster gespiegelt, die Ordnerstruktur bleibt als Seitenbaum erhalten. Änderungen macht man hier, nicht im Wiki. Aufbau und Betrieb: [wiki-sync](capulus-core/wiki-sync.md).

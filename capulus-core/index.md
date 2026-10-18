@@ -141,7 +141,10 @@ flowchart LR
     core["capulus-core<br/>ArgoCD-Apps, Promotion"]
     ios["capulus-ios<br/>SwiftUI-App"]
     docs["pkr-lab-docs<br/>Dokumentation"]
+    sync["capulus-wiki-sync<br/>Docs → Wiki.js"]
   end
+  docs -->|"Tarball"| sync
+  sync -->|"Image, Tag per Renovate"| core
   ansible -->|"rendert argocd/bootstrap/"| core
   core -->|"Tag + SHA-256: alert-caller"| ansible
   core -->|"pki/ Root-CA"| ansible
@@ -157,6 +160,7 @@ flowchart LR
 | [capulus-ansible](https://github.com/pkr-lab/capulus-ansible) | Playbooks und Rollen für Hosts, k3s, Kiosks | rendert `argocd/bootstrap/` (`make render-bootstrap CORE_DIR=…`), lädt alert-caller-Quellen aus einem core-Tag |
 | [capulus-ios](https://github.com/pkr-lab/capulus-ios) | SwiftUI-App „Homeserver Dashboard“ | spricht die API von `carplay-api` an, trägt eine Kopie der Root-CA |
 | [pkr-lab-docs](https://github.com/pkr-lab/pkr-lab-docs) | diese Dokumentation | – |
+| [capulus-wiki-sync](https://github.com/pkr-lab/capulus-wiki-sync) | Code des Wiki-Syncs (Docs → Wiki.js) | läuft als Image im Chart `argocd/apps/prod/wiki-docs-sync`, siehe [wiki-sync](wiki-sync.md) |
 
 ---
 
@@ -296,7 +300,7 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [Alarmmonitor-Kiosks](3-apps-workloads/30010-alamos-apager.md) | TECH | Raspberry-Pi-Kiosks für ALAMOS AMweb, zentral verwaltet |
 | [Vereinsheim-Alarmmonitor](../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md) | TECH | Banana-Pi-Kiosk fürs Vereinsheim, Alarmstatus-Anzeige + Heartbeat-Monitoring |
 | [Vereinsheim-Windows-PC](3-apps-workloads/30021-vereinsheim-windows-pc-steuerung.md) | — | Windows-PC am Standort: Online-Check und Herunterfahren |
-| [Wiki.js](3-apps-workloads/30030-wikijs.md) | PROD | Team-Wiki, `docs/` wird per wiki-docs-sync automatisch gespiegelt |
+| [Wiki.js](3-apps-workloads/30030-wikijs.md) | PROD | Team-Wiki, die Doku wird per [wiki-docs-sync](wiki-sync.md) automatisch gespiegelt |
 | [MediaMTX Live-Streaming](3-apps-workloads/30040-mediamtx.md) | TECH | RTMP/RTSP-Ingest → HLS, Publish- und Zuschauer-Autorisierung über mediamtx' eingebaute interne Benutzerverwaltung (HTTP Basic Auth) |
 | [Paperless-ngx](3-apps-workloads/30050-paperless-ngx.md) | PROD | Dokumentenmanagement mit OCR — Briefe, Rechnungen, Verträge scannen und durchsuchen |
 | [n8n](3-apps-workloads/30070-n8n.md) | TECH | Low-Code-Automatisierung — Dienste verknüpfen ohne Programmieren |

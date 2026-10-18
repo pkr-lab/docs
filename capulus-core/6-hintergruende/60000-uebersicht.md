@@ -52,5 +52,5 @@ siehe [TEMPLATE](../TEMPLATE.md)).
 
 ## Sync ins Wiki
 
-Die Docs werden von `wiki-docs-sync` nach Wiki.js gespiegelt (eine Ebene tief, also auch diese Kategorie). Jeder zusätzliche Kategorie-Ordner kostet einen weiteren GitHub-API-Call je Lauf, siehe
+Die Docs werden von `wiki-docs-sync` nach Wiki.js gespiegelt, die ganze Ordnerstruktur von pkr-lab-docs bleibt als Seitenbaum erhalten. Aufbau und Betrieb: [wiki-sync](../wiki-sync.md), Hintergründe in
 [60050](60050-helm-charts-prod.md#wikijs-und-wiki-docs-sync).
