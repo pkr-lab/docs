@@ -87,6 +87,16 @@ Kuma-UI (nicht Teil von Git/Helm):
    Link noch ein iframe**, das direkt auf `status-prod.pke-lab.de` zeigt.
    Nutzer sehen nur die Zusammenfassung, nicht den echten Hostnamen.
 
+**Stand 2026-10-19:** Die Status-Page `homelab` existiert (Titel „Home-Lab“, Gruppe „Services“ mit n8n, Wiki, Immich). Prüfen: `curl https://status-prod.pke-lab.de/api/status-page/homelab` liefert JSON.
+
+**CORS:** Uptime Kuma sendet keine `Access-Control-Allow-Origin`-Header, ein Browser auf `edv-kretzer.de` darf die Antwort ohne sie nicht lesen. Das Chart legt deshalb die Traefik-Middleware `uptime-kuma-cors` an (`templates/middleware-cors.yaml`) und hängt sie per Annotation an den öffentlichen Ingress. Erlaubt sind GET, HEAD und OPTIONS für die Ursprünge aus `ingressPublic.corsOrigins` (`https://www.edv-kretzer.de`, `https://edv-kretzer.de`), ohne Zugangsdaten. Prüfen:
+
+```bash
+curl -s -D - -o /dev/null -H "Origin: https://www.edv-kretzer.de" https://status-prod.pke-lab.de/api/status-page/homelab | grep -i access-control
+```
+
+Die Middleware gilt für den ganzen Host, also auch für `/dashboard`. Dort schützt weiter der Login, CORS ersetzt keine Anmeldung.
+
 > Das Haupt-Dashboard (`/dashboard`) bleibt hinter dem normalen
 > Admin-Login — nur die Status-Page-Route ist laut Kuma-Design
 > unauthentifiziert öffentlich erreichbar. Der generische Hostname ist ein
