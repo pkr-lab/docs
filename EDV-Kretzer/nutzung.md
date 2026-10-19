@@ -5,7 +5,7 @@
 | Aufgabe | Vorgehen |
 |---|---|
 | Neue Anwendung im Katalog | Eintrag in `data/apps.json` ergänzen (Felder siehe [Konfiguration](konfiguration.md)) |
-| Neuigkeit veröffentlichen | Eintrag in `data/updates.json` ergänzen oder den n8n-Workflow auslösen |
+| Neuigkeit veröffentlichen | entfällt, der Verlauf auf `updates.html` kommt automatisch aus den Releases von capulus-core |
 | Text ändern | die jeweilige HTML-Datei bearbeiten; `<title>` und `<meta name="description">` mit anpassen |
 | Neue Seite anlegen | HTML-Datei nach dem Muster einer vorhandenen Seite erstellen, in der Navigation und in `sitemap.xml` und `sitemap.html` eintragen |
 | Bild einfügen | nach `assets/images/` legen, mit `alt`-Text einbinden |
