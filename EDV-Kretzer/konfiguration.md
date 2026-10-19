@@ -14,9 +14,11 @@ Liste der Anwendungen für `anwendungen.html`.
 | `tags` | Liste | Schlagwörter, durchsuchbar |
 | `url` | String | Link zur Projektseite des Werkzeugs |
 
-## `data/updates.json`
+## `data/releases.json`
 
-Liste der Einträge für den Changelog auf `updates.html`, neueste zuerst nach `date` sortiert.
+Die letzten zehn Releases von capulus-core für den Verlauf auf `updates.html`, neueste zuerst. Die Datei wird nicht von Hand gepflegt: `scripts/build-releases.mjs` erzeugt sie aus der GitHub-API (nur capulus-core, keine Entwürfe und Vorabversionen), der Workflow `release-verlauf` (`.github/workflows/releases.yml`) läuft stündlich, committet bei Änderung und deployt. Der Titel und der Text sind HTML-escaped, die Kurzfassung entsteht aus den Abschnitten „Features“ und „Bug Fixes“ der Release-Notes (je bis zu drei Einträge). Zusätzlich zu den folgenden Feldern gibt es `url` (Link auf das GitHub-Release).
+
+`data/updates.json` ist die frühere, handgepflegte Liste. Sie wird von der Seite nicht mehr gelesen.
 
 | Feld | Bedeutung |
 |---|---|
@@ -39,4 +41,4 @@ Liste der Einträge für den Changelog auf `updates.html`, neueste zuerst nach `
 
 ## n8n-Automatisierung
 
-`automation/n8n-update-veroeffentlichen.json` ist ein n8n-Workflow. Bei einem GitHub-Release von capulus-core oder per Webhook liest er `data/updates.json` über die GitHub-API, hängt einen Eintrag an und committet die Datei zurück. Nach dem Commit deployt `deploy.yml`.
+`automation/n8n-update-veroeffentlichen.json` ist ein n8n-Workflow für die frühere Liste `data/updates.json`, die `updates.html` nicht mehr anzeigt. Er ist damit ohne Wirkung auf die Seite und kann in n8n deaktiviert werden. Bei einem GitHub-Release von capulus-core oder per Webhook liest er `data/updates.json` über die GitHub-API, hängt einen Eintrag an und committet die Datei zurück. Nach dem Commit deployt `deploy.yml`.

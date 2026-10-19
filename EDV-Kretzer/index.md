@@ -15,7 +15,7 @@ Reines HTML, CSS und etwas JavaScript, ohne Build-Schritt und ohne Framework. Di
 | `anwendungen.html` | Katalog der Self-Hosted-Dienste, geladen aus `data/apps.json` |
 | `mediamtx-drohnenstream.html` | Anleitung: Drohnen-Livestream per MediaMTX zum ELW |
 | `app.html` | Die eigene iOS-App fürs Homelab mit Screenshots |
-| `updates.html` | Changelog aus `data/updates.json` und Live-Status der Dienste |
+| `updates.html` | Verlauf der letzten zehn capulus-core-Releases aus `data/releases.json` und Live-Status der Dienste |
 | `ueber-mich.html`, `kontakt.html` | Vorstellung und Kontaktformular (Zammad) |
 | `sitemap.html`, `sitemap.xml`, `robots.txt` | Seitenübersicht und Hinweise für Suchmaschinen |
 | `impressum.html`, `datenschutz.html` | rechtliche Seiten |
@@ -28,10 +28,10 @@ flowchart LR
   html --> css["css/style.css, animations.css"]
   html --> js["js/main.js, apps.js, updates.js"]
   js -->|"fetch"| apps["data/apps.json"]
-  js -->|"fetch"| upd["data/updates.json"]
+  js -->|"fetch"| upd["data/releases.json"]
   js -->|"fetch (öffentlich)"| kuma["Uptime-Kuma-Status-Page"]
   push["Push auf main"] --> gha["GitHub Action deploy.yml"]
-  gha -->|"SSH: git pull --ff-only"| netcup["netcup-Webserver"]
+  gha -->|"SSH: fetch und checkout"| netcup["netcup-Webserver"]
 ```
 
 | Ordner / Datei | Inhalt |
@@ -41,7 +41,7 @@ flowchart LR
 | `js/main.js` | Navigation, Dropdown, Einblend-Animationen, Kontaktformular-Einbindung |
 | `js/apps.js` | rendert den Anwendungskatalog mit Filter und Suche |
 | `js/updates.js` | rendert den Changelog und das Status-Widget |
-| `data/` | `apps.json`, `updates.json` |
+| `data/` | `apps.json`, `releases.json`, `status.json`, `updates.json` (alt) |
 | `automation/` | n8n-Workflow zum Veröffentlichen von Updates |
 | `.github/workflows/deploy.yml` | Deployment nach netcup |
 
