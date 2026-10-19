@@ -25,7 +25,7 @@ Nach dem Merge nach `main` deployt GitHub Actions automatisch. Der Status der Di
 
 Ein Banner oben auf jeder Seite zeigt, dass gerade am Server oder an der Website gearbeitet wird. Er liest `data/status.json` und erscheint nur, wenn dort `"active": true` steht.
 
-**Schalter im Cluster (n8n):** Der n8n-Workflow „EDV-Kretzer – Status-Hinweis schalten“ (`automation/n8n-status-schalten.json`) stellt ein Formular bereit: Aktion (Wartung, Störung, Hinweis einschalten oder ausschalten), betroffene Bereiche (Mehrfachauswahl), Text und Dauer (offen, 1 Stunde bis 3 Tage). Nach dem Absenden ist der Banner nach etwa einer Minute auf der Website. Die Formular-URL zeigt der Knoten „Formular“ in n8n (Production URL).
+**Schalter im Cluster (n8n):** Der n8n-Workflow „EDV-Kretzer – Status-Hinweis schalten“ (`automation/n8n-status-schalten.json`) stellt ein Formular bereit: Aktion (Wartung, Störung, Hinweis einschalten oder ausschalten), betroffene Bereiche (Mehrfachauswahl), weitere Bereiche als Freitext (z. B. „Pi-hole, Grafana“, Trenner Komma, Semikolon oder Zeilenumbruch, höchstens 12 Einträge insgesamt), Text und Dauer (offen, 1 Stunde bis 3 Tage). Nach dem Absenden ist der Banner nach etwa einer Minute auf der Website. Die Formular-URL zeigt der Knoten „Formular“ in n8n (Production URL).
 
 Einrichtung einmalig in n8n (https://n8n.prod.homeserver):
 1. Workflow aus `automation/n8n-status-schalten.json` importieren.
