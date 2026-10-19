@@ -83,3 +83,11 @@ Wie vereinbart: restic auf dem NAS-Volume, Vaultwarden zuerst. Gebaut ist `argoc
 ## Test des restic-Jobs (2026-10-18)
 
 `kubectl -n vaultwarden create job --from=cronjob/vaultwarden-restic-backup restic-test` lief durch: Snapshot gespeichert, Aufbewahrung `keep 7 daily, 4 weekly, 6 monthly` angewandt, `restic check` mit „no errors were found“. Ein erster Aufruf wurde vom Nutzer zu früh gelöscht (Pod noch `ContainerCreating`); der Job hatte trotzdem einen Snapshot geschrieben, daher zwei Snapshots im Repository. Testjob danach gelöscht.
+
+## Umsetzung n8n (2026-10-19)
+
+n8n ist als zweiter Dienst dran. Auslöser: Der Umzug des n8n-Datenvolumes von NFS auf `local-path` (SQLite-WAL-Timeouts, [30070](../3-apps-workloads/30070-n8n.md#architektur)) hat die Daten auf die SSD des Nodes `homeserver` verlegt, und für n8n gab es kein Backup. Gebaut ist `argocd/apps/tech/n8n/templates/restic-cronjob.yaml` (täglich 02:20), `restic-pvc.yaml` (`n8n-restic`, `nas`, 5 Gi) und `restic-sealedsecret.yaml`, alles hinter `resticBackup.enabled` (Standard `false`). Das Skript `scripts/seal-restic-password.sh` nimmt jetzt den Dienst als Argument (`vaultwarden` ist der Standard). Der Name enthält `backup`, damit deckt `BackupJobStale` den Job ab. Beschreibung, Einrichtung, Restore-Test: [20010](../2-betrieb-hardware/20010-nas-backup.md#restic-für-n8n-im-cluster).
+
+**Nachweis.** Die restic-Ausschlüsse und den `sqlite3`-Dump habe ich lokal mit einem nachgebauten Verzeichnisbaum geprüft: `config`, `IndexedDB` und der Datenbankdump landen im Snapshot, Caches, `binaryData`, Logs und die Datenbankdateien aus dem Quellverzeichnis nicht. `helm template` ohne Schalter erzeugt keine restic-Objekte, mit Schalter PVC, SealedSecret und CronJob; `helm lint` und `scripts/check-token-register.py` laufen durch. Der echte Lauf im Cluster steht aus.
+
+**Offen (du).** `./scripts/seal-restic-password.sh n8n` (Passwort in den Passwortmanager), Merge, Testjob auslösen, Restore-Test. Danach die übrigen Dienste in der Reihenfolge Zammad, Nextcloud, Paperless, Wiki.js, Xibo, Semaphore, lldap, Uptime Kuma.
