@@ -10,8 +10,9 @@ Reines HTML, CSS und etwas JavaScript, ohne Build-Schritt und ohne Framework. Di
 
 | Seite | Inhalt |
 |---|---|
-| `index.html` | Startseite mit Kurzvorstellung und strukturierten Daten (`Person`) |
+| `index.html` | Startseite mit Kurzvorstellung |
 | `projekt.html` | Das Projekt capulus-core: Architektur, Komponenten, Hintergründe |
+| `capulus.html` | capulus im Überblick: SVG-Architekturdiagramm, Projektkarten mit aktueller Version, neueste Releases |
 | `anwendungen.html` | Katalog der Self-Hosted-Dienste, geladen aus `data/apps.json` |
 | `mediamtx-drohnenstream.html` | Anleitung: Drohnen-Livestream per MediaMTX zum ELW |
 | `app.html` | Die eigene iOS-App fürs Homelab mit Screenshots |
@@ -26,9 +27,9 @@ Reines HTML, CSS und etwas JavaScript, ohne Build-Schritt und ohne Framework. Di
 flowchart LR
   browser["Browser"] --> html["HTML-Seiten"]
   html --> css["css/style.css, animations.css"]
-  html --> js["js/main.js, apps.js, updates.js"]
+  html --> js["js/main.js, apps.js, updates.js, capulus.js"]
   js -->|"fetch"| apps["data/apps.json"]
-  js -->|"fetch"| upd["data/releases.json"]
+  js -->|"fetch"| upd["data/releases.json, versions.json, projects.json"]
   js -->|"fetch (öffentlich)"| kuma["Uptime-Kuma-Status-Page"]
   push["Push auf main"] --> gha["GitHub Action deploy.yml"]
   gha -->|"SSH: fetch und checkout"| netcup["netcup-Webserver"]
@@ -40,10 +41,12 @@ flowchart LR
 | `css/` | `style.css` (Designsystem mit CSS-Variablen), `animations.css` |
 | `js/main.js` | Navigation, Dropdown, Einblend-Animationen, Kontaktformular-Einbindung |
 | `js/apps.js` | rendert den Anwendungskatalog mit Filter und Suche |
-| `js/updates.js` | rendert den Changelog und das Status-Widget |
-| `data/` | `apps.json`, `releases.json`, `status.json`, `updates.json` (alt) |
-| `automation/` | n8n-Workflow zum Veröffentlichen von Updates |
-| `.github/workflows/deploy.yml` | Deployment nach netcup |
+| `js/updates.js` | rendert den Release-Verlauf und das Status-Widget |
+| `js/capulus.js` | rendert Projektkarten und neueste Releases auf `capulus.html` |
+| `data/` | `apps.json`, `projects.json`, `releases.json`, `versions.json`, `status.json` |
+| `scripts/` | `build-releases.mjs` (Release-Daten), `build-seo.mjs` (SEO) |
+| `automation/` | n8n-Workflow „Status-Hinweis schalten“ |
+| `.github/workflows/` | `deploy.yml` (Deployment nach netcup), `releases.yml` (Release-Daten), `seo.yml` (SEO), `status.yml` (Status-Banner), `ci.yml` (Prüfung jedes PR) |
 
 ## Seiten
 
@@ -52,4 +55,4 @@ flowchart LR
 - [Nutzung](nutzung.md)
 - [Releases](releases.md)
 - [SEO](seo.md)
-- [Phase 5: Strukturvorschlag](phase-5-strukturvorschlag.md)
+- [Phase 5: Ausbau der Website](phase-5-ausbau.md)

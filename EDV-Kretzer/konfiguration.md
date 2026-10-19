@@ -14,6 +14,22 @@ Liste der Anwendungen für `anwendungen.html`.
 | `tags` | Liste | Schlagwörter, durchsuchbar |
 | `url` | String | Link zur Projektseite des Werkzeugs |
 
+## `data/projects.json`
+
+Handgepflegte Liste der Projekte für die Karten auf `capulus.html`, in der Reihenfolge der Anzeige.
+
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `repo` | String | Name des Repos unter `pkr-lab` |
+| `name` | String | Anzeigename |
+| `summary` | String | Kurzbeschreibung |
+| `stack` | Liste | Technologien, das erste Element erscheint als `programmingLanguage` im JSON-LD |
+| `docs` | String | Link zur Doku in pkr-lab-docs |
+
+## `data/versions.json`
+
+Wird nicht von Hand gepflegt. `scripts/build-releases.mjs` schreibt je Repo aus `projects.json` das neueste GitHub-Release (`tag`, `date`, `url`), der Workflow `releases.yml` stündlich. Repos ohne Release fehlen.
+
 ## `data/releases.json`
 
 Die letzten zehn Releases von capulus-core für den Verlauf auf `updates.html`, neueste zuerst. Die Datei wird nicht von Hand gepflegt: `scripts/build-releases.mjs` erzeugt sie aus der GitHub-API (nur capulus-core, keine Entwürfe und Vorabversionen), der Workflow `release-verlauf` (`.github/workflows/releases.yml`) läuft stündlich, committet bei Änderung und deployt. Der Titel und der Text sind HTML-escaped, die Kurzfassung entsteht aus den Abschnitten „Features“ und „Bug Fixes“ der Release-Notes (je bis zu drei Einträge). Zusätzlich zu den folgenden Feldern gibt es `url` (Link auf das GitHub-Release).
