@@ -2,7 +2,7 @@
 
 Stand 2026-10-19. capulus-core wurde am 2026-10-18 in capulus-core, capulus-ansible, capulus-ios und capulus-wiki-sync getrennt, die Doku zog nach pkr-lab-docs, und die Releases laufen über die zentralen Workflows in `pkr-lab/.github` (v1.0.1). Diese Seite hält fest, was dabei kaputtgegangen ist, was repariert wurde, was geprüft wurde und was noch zu entscheiden ist.
 
-> **Grenze der Prüfung:** Die Nachprüfung lief von einem Arbeitsrechner aus, dessen Shell-Sandbox kein LAN erreicht (auch nicht den Router). `kubectl`, `argocd`, SSH und damit alle Live-Tests gegen die Cluster und Hosts sind **nicht** gelaufen. Was hier „ok“ heißt, ist statisch, lokal oder über GitHub belegt. Die Live-Tests stehen als Befehle in [Live-Tests](#live-tests).
+> **Stand der Prüfung:** Die erste Runde lief ohne LAN-Zugriff, nur statisch. Am Abend des 2026-10-19 kamen die lesenden Live-Tests dazu (`kubectl`, Ansible-`ping`, Check-Modus auf dem homeserver). Nicht möglich waren Läufe, die das Vault-Passwort brauchen (worker-0/1, PROD-Cluster-Kontext, Semaphore-Anmeldung) und das ArgoCD-CLI (Token abgelaufen). Siehe [Live-Tests](#live-tests).
 
 ---
 
@@ -56,23 +56,17 @@ Alternativ oder zusätzlich kann der zentrale Release-Workflow das Label setzen 
 
 ### Wochenfenster ist für den Fallback nicht erreichbar (Befund A)
 
-Alle Repos nutzen `"schedule": ["before 6am on monday"]`. Der Self-hosted-Lauf kann dieses Fenster nicht treffen. Im Log vom 2026-10-19 meldet Renovate für die gruppierten Branches „Skipping branch creation as not within schedule“; Ausnahme sind Patch-Updates (Regel „at any time“). Seit dem 2026-06-05 (PR #13, #14, GitHub-App) gibt es in capulus-core keinen Renovate-PR. Damit wird auch der SHA-Pin der zentralen Workflows nirgends nachgezogen.
+Alle Repos nutzten `"schedule": ["before 6am on monday"]`. Der Self-hosted-Lauf kann dieses Fenster nicht treffen. Im Log vom 2026-10-19 meldet Renovate für die gruppierten Branches „Skipping branch creation as not within schedule“; Ausnahme sind Patch-Updates (Regel „at any time“). Seit dem 2026-06-05 (PR #13, #14, GitHub-App) gibt es in capulus-core keinen Renovate-PR.
 
-Möglichkeiten, jeweils für `renovate.json` in capulus-core, capulus-ansible, capulus-ios, capulus-wiki-sync, pkr-lab-docs und `.github`:
-
-| Variante | Wirkung | Aufwand |
-|---|---|---|
-| `"schedule": ["on monday"]` | Fenster ganzer Montag Berlin, passt zu Cron 05:00 UTC auch bei Verzögerung | eine Zeile je Repo |
-| Cron früher und nicht zur vollen Stunde (`17 2 * * 1`) | trifft das Fenster meistens, bei GitHub-Verzögerung nicht sicher | eine Zeile in `renovate.yml`, unzuverlässig |
-| Zeitplan entfernen | PRs jederzeit, jeder Lauf kann PRs öffnen | eine Zeile je Repo |
-
-**Empfehlung:** `on monday`. Achtung: Beim ersten Lauf in capulus-core würden bis zu 5 PRs gleichzeitig entstehen (`prConcurrentLimit: 5`), weitere folgen in den Wochen danach. In capulus-core löst `commitMessagePrefix: "feat(deps):"` je gemergtem PR ein Minor-Release aus.
+**Entscheidung (2026-10-19):** Zeitplan `on monday` (ganzer Montag) und Renovate nur in den vier capulus-Repos. Umgesetzt in capulus-core (`renovate.json`, `renovate.yml`), capulus-ansible, capulus-ios und capulus-wiki-sync. Hinweis: Beim ersten Lauf in capulus-core entstehen bis zu 5 PRs gleichzeitig (`prConcurrentLimit: 5`), weitere in den Wochen danach. `commitMessagePrefix: "feat(deps):"` löst dort je gemergtem PR ein Minor-Release aus. Die `renovate.json` in pkr-lab-docs und `.github` bleiben liegen, werden vom Fallback-Lauf aber nicht mehr bearbeitet.
 
 ### Die sieben Repos ohne `renovate.json`
 
 cubi, ui-terminal-config, DocFlowEngine, PowerShell, ps-data-fixtures, EDV-Kretzer und pkr-lab haben keine Renovate-Konfiguration. Ihr einziger Renovate-relevanter Inhalt ist der SHA-Pin der zentralen Workflows (EDV-Kretzer zusätzlich `appleboy/ssh-action`).
 
-**Vorschlag ohne Onboarding-PRs und ohne neue Dateien in den sieben Repos:** Ein zweiter Schritt in `renovate.yml` von capulus-core ruft Renovate mit einer eigenen globalen Config für diese Repos auf:
+**Entscheidung (2026-10-19):** Renovate läuft nur in den capulus-Repos, für diese sieben Repos wird nichts eingerichtet. Neue Versionen von `pkr-lab/.github` (SHA-Pin in `release.yml` und `commitlint.yml`) werden dort von Hand nachgezogen. Der folgende Vorschlag blieb ungenutzt und gilt als Option, falls sich das ändert.
+
+**Option ohne Onboarding-PRs und ohne neue Dateien in den sieben Repos:** Ein zweiter Schritt in `renovate.yml` von capulus-core ruft Renovate mit einer eigenen globalen Config für diese Repos auf:
 
 ```json
 {
@@ -125,14 +119,17 @@ Legende: **ok** = belegt, **Fehler** = gefunden, **gefixt** = Fix als Commit vor
 | Ansible: Auflösung | `ansible-playbook --syntax-check` für alle 11 Playbooks (`site`, `worker-0`, `worker-1`, `prod`, `entw`, `alarm-kiosks`, `banana-pi-kiosks`, `xibo-kiosks`, `alert-caller`, `render-bootstrap`, `vaultwarden-restore`) mit ansible-core 2.21.5 und den Collections aus `requirements.yml` | ok |
 | Ansible: Inventory | `ansible-inventory --list`, 10 Gruppen, 9 Hosts | ok |
 | Ansible: Vault-Werte, Secrets-Referenzen | Vault-Passwort liegt nicht vor | offen |
-| Ansible: `--check --diff` gegen Hosts | SSH nicht erreichbar | offen |
+| Ansible: Erreichbarkeit | `ansible all -m ping`: homeserver, prod-vm, infotafel, vereinsheim-alarmmonitor erreichbar; worker-0/1 brauchen Vault (`become_pass`); entw-vm nicht erreichbar (liegt auf worker-1); ugreen-nas SSH verweigert; alert-caller-vm hat den Platzhalter `alert-caller-vm-ip-eintragen` | ok / offen |
+| Ansible: `--check --diff` homeserver | `site.yml --limit homeserver`: 143 Tasks ok, Abbruch an der ersten vault-abhängigen Variable (`semaphore_secrets`); gemeldete Änderungen nur Rauschen (apt-Cache, Download-Tasks, Dateien in `/tmp`). `ssh_hardening` bricht im Check-Modus ab (der Assert liest `sshd -T`, das im Check-Modus nicht läuft) und wurde übersprungen. Auf dem Host wurde nichts verändert, die sshd-Datei besteht weiter. | teilweise ok |
 | Ansible: `render-bootstrap` | Vergleich mit `argocd/bootstrap/` in core | Fehler (Drift `metallb-system`), gefixt (Nr. 3) |
 | Ansible: `alert_caller` | Tag `v3.49.0` in core vorhanden, alle 3 Dateien und SHA256 stimmen, identisch auch auf `main` | ok |
-| Semaphore-Bootstrap | Code gelesen, Repository-Update gegen Mock-API getestet | Fehler, gefixt (Nr. 1); Live offen |
+| Semaphore-Bootstrap | Code gelesen, Repository-Update gegen Mock-API getestet; Pod `semaphore` läuft, die Konfiguration im Programm ist ohne Admin-Anmeldung nicht lesbar | Fehler, gefixt (Nr. 1); Live offen |
+| Live-AppProject `tech` | enthält `metallb-system` nicht, entspricht dem Stand in core. Die Drift wird erst beim nächsten `make argocd` (Ansible-Template) im Cluster wirksam. | ok |
 | Argo CD: Quellen | alle `repoURL` (core), `path`, `targetRevision` (`main`) in `argocd/bootstrap*/`; Verzeichnisse existieren; jeder App-Ordner hat seinen Namespace im AppProject (TECH und PROD) | ok |
-| Argo CD: Synced/Healthy, `argocd app diff` | kein Zugriff | offen |
+| Argo CD: Quellen, Synced/Healthy | `kubectl -n argocd get applications`: 45 Applications, alle `repoURL` capulus-core, `path` und `targetRevision main` korrekt, alle `Synced`, 44 `Healthy`, `ollama` `Progressing` (Pod `Pending`, weil `worker-1` ausgefallen ist: „Kubelet stopped posting node status“; kein Split-Thema) | ok |
+| Argo CD: `argocd app diff` | CLI-Token abgelaufen (`token is expired`), Anmeldung nicht durchgeführt. Da alle Apps `Synced` sind, gibt es keinen Diff. | ok (indirekt) |
 | Helm: Rendern | `helm template` aller 41 Charts (34 direkt, 7 nach `helm dependency build` in Scratch-Kopie); 7 Ordner sind reine Manifeste | ok |
-| Helm: `helm diff`, `kubectl --dry-run=server` | kein Zugriff | offen |
+| Helm: `helm diff`, `kubectl --dry-run=server` | nicht nötig, da alle Apps `Synced` sind | – |
 | Images | alle 7 selbstgebauten Referenzen (`alert-caller`, `carplay-api`, `isc-news-bot`, `n8n-custom`, `pacman` je `sha-…`; `capulus-wiki-sync` `v1.0.0` und `v1.1.0`) in GHCR vorhanden | ok |
 | Token-Register | `check-token-register.py` (47 Einträge, 0 Probleme); 95 repoübergreifende Verweise (`capulus-ansible:…`, `pkr-lab-docs:…#Anker`) lösen auf | ok |
 | iOS: Anbindung | alle 6 Routen der App (`/api/dashboard`, `/api/updates`, `/api/brightness` GET und PUT, `/api/power/wake`, `/api/power/shutdown`) gegen die Routen in `carplay-api/src/cmd/server/main.go`; Host `carplay-api.prod.homeserver` gegen `values.yaml`; WoL-Agent `:9102/wol` gegen die Rolle `banana_pi_kiosk` | ok |
@@ -148,37 +145,25 @@ Legende: **ok** = belegt, **Fehler** = gefunden, **gefixt** = Fix als Commit vor
 
 ## Live-Tests
 
-Die folgenden Schritte sind nicht gelaufen. Alle sind lesend, sofern nicht anders vermerkt. Aus einer Shell mit LAN-Zugriff:
+Gelaufen am 2026-10-19 (alles lesend): `kubectl get nodes`, `kubectl -n argocd get applications/appprojects`, `ansible all -m ping`, `ansible-playbook site.yml --check --diff --limit homeserver`, `ssh homeserver ls`. Ergebnisse stehen in der Testmatrix.
 
-```bash
-kubectl get nodes -o wide
-argocd app list
-argocd app list -o json | jq -r '.[]|[.metadata.name,.spec.source.repoURL,.spec.source.path,.spec.source.targetRevision,.status.sync.status,.status.health.status]|@tsv'
-argocd app diff <app>
-helm template t argocd/apps/<cluster>/<app> | kubectl diff -f -
-kubectl apply --dry-run=server -f argocd/bootstrap/
-ansible-playbook site.yml --check --diff --ask-vault-pass
-```
-
-Zusätzlich sind diese Punkte nur live prüfbar:
+Noch offen, jeweils mit Befehl bzw. Handgriff:
 
 | Punkt | Prüfung |
 |---|---|
-| Semaphore-Repository | In der Semaphore-Oberfläche Projekt `home-server` → Repositories → `home-server-git`: URL muss `https://github.com/pkr-lab/capulus-ansible.git` sein. Sonst `make semaphore-bootstrap` mit dem Fix ausführen (**ändert Semaphore-Konfiguration**, vorher ankündigen). Danach das Template „Deploy Home Server“ als Testlauf starten (falls die Semaphore-Version „Dry run“ anbietet, damit). |
-| Semaphore-Verlauf | Letzte Läufe des täglichen Templates (06:00) seit 2026-10-18 ansehen. |
-| Live-AppProject `tech` | `kubectl -n argocd get appproject tech -o yaml`: enthält `metallb-system` nur, wenn `make argocd` seit 2026-10-18 lief. |
-| Argo CD Applications | `argocd app list`: alle `Synced` und `Healthy`, `repoURL` überall `…/capulus-core.git`. |
-| wiki-docs-sync | Nach Merge und PR auf `v1.1.0`: `kubectl -n wiki-docs-sync get cronjob,job`. |
+| ArgoCD-CLI | `argocd login argocd.tech.homeserver` (Token abgelaufen), danach `argocd app list`. |
+| Semaphore-Repository | In der Oberfläche Projekt `home-server` → Repositories → `home-server-git`: URL muss `https://github.com/pkr-lab/capulus-ansible.git` sein. Sonst nach dem Merge von Fix Nr. 1 `make semaphore-bootstrap` ausführen (**ändert Semaphore-Konfiguration**). Dazu den Verlauf des täglichen 06:00-Templates seit 2026-10-18 ansehen. |
+| Ansible mit Vault | `make check` bzw. `make worker-0-check` mit Vault-Passwort. Vorher `ssh_hardening` im Check-Modus beachten (bricht ab). |
+| PROD-Cluster | Kubeconfig-Kontext für PROD (VM `prod-vm`) fehlt auf diesem Rechner; wiki-docs-sync dort nach dem Renovate-PR auf `v1.1.0` prüfen: `kubectl --context prod -n wiki-docs-sync get cronjob,job`. |
+| worker-1 | Seit mindestens einem Tag ausgefallen (`NotReady`, Tailscale „offline“). Betrifft ollama und die ENTW-VM. Ursache nicht untersucht. |
 
 ---
 
 ## Offene Entscheidungen
 
-1. Renovate-Zeitplan ändern (`on monday`, siehe oben)? Gilt für sechs Repos.
-2. Zweiten Renovate-Schritt für die sieben Repos ohne Config einführen? Token-Scope prüfen.
-3. Rulesets: dauerhaft aus lassen oder wieder einschalten (dann Bypass-Mechanismus für den Release-Commit festlegen und das gespeicherte Ruleset korrigieren)? `CLAUDE.md` von capulus-core entsprechend anpassen.
-4. Label `org.opencontainers.image.created` im zentralen Release-Workflow ergänzen?
-5. Lange CHANGELOGs in pkr-lab-docs, capulus-ansible und capulus-ios: unverändert gelassen. Aktuell 327 Zeilen (pkr-lab-docs), 218 (capulus-ansible) und 30 (capulus-ios). Zu entscheiden, ob sie so bleiben, gekürzt oder ausgelagert werden.
-6. `Deploy to netcup`: Secrets setzen oder Workflow deaktivieren?
-7. Authentik-Reste (D) und n8n-Texte (E) entfernen? Beides ändert Cluster-Konfiguration.
-8. Branches pushen und PRs öffnen: nichts ist gepusht.
+Entschieden am 2026-10-19: Renovate-Zeitplan `on monday`, Renovate nur in den vier capulus-Repos, lange CHANGELOGs bleiben unverändert, Rulesets werden bald vom Betreiber wieder eingeschaltet, Branches und PRs werden geöffnet.
+
+1. Rulesets: Beim Wiedereinschalten Bypass-Mechanismus für den Release-Commit festlegen und das gespeicherte Ruleset korrigieren ([Rulesets](#rulesets)). `CLAUDE.md` von capulus-core entsprechend anpassen.
+2. `Deploy to netcup`: Secrets in EDV-Kretzer hinterlegen (`NETCUP_HOST`, `NETCUP_USER`, `NETCUP_SSH_KEY`, `NETCUP_PATH`, optional `NETCUP_PORT`) oder den Workflow deaktivieren.
+3. Label `org.opencontainers.image.created` im zentralen Release-Workflow: nicht nötig, solange die Regel für das wiki-sync-Image gilt. Nur sinnvoll, wenn weitere versionierte Images dazukommen, für die dieselbe Karenzzeit gelten soll.
+4. Authentik-Reste (D) und n8n-Texte (E): bekannt, bleiben liegen.

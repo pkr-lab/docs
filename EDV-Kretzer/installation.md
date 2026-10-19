@@ -25,3 +25,17 @@ Jeder Push auf `main` startet `.github/workflows/deploy.yml`. Der Workflow verbi
 | `NETCUP_PATH` | Pfad zum Docroot mit dem Git-Checkout |
 
 Auf dem Server muss das Docroot ein Klon des Repos sein. Manuell startet man das Deployment über „Run workflow“ (`workflow_dispatch`).
+
+### Secrets anlegen
+
+Stand 2026-10-19 sind im Repo keine Secrets hinterlegt, der Lauf endet mit `missing server host`. Mit der GitHub-CLI (als Repo-Admin angemeldet) fragt jeder Befehl den Wert interaktiv ab, er landet weder in der Shell-Historie noch im Repo:
+
+```bash
+gh secret set NETCUP_HOST -R pkr-lab/EDV-Kretzer
+gh secret set NETCUP_USER -R pkr-lab/EDV-Kretzer
+gh secret set NETCUP_PATH -R pkr-lab/EDV-Kretzer
+gh secret set NETCUP_PORT -R pkr-lab/EDV-Kretzer
+gh secret set NETCUP_SSH_KEY -R pkr-lab/EDV-Kretzer < ~/.ssh/<deploy-key>
+```
+
+Für `NETCUP_SSH_KEY` ein eigenes Schlüsselpaar nur für diesen Zweck erzeugen (`ssh-keygen -t ed25519 -f ~/.ssh/netcup-deploy -C edv-kretzer-deploy`), den öffentlichen Teil in `~/.ssh/authorized_keys` des netcup-Benutzers eintragen und den privaten Teil als Secret speichern. `NETCUP_PORT` kann entfallen, wenn der Port 22 ist. `NETCUP_PATH` ist das Docroot mit dem Git-Checkout, ohne abschließenden Schrägstrich. Danach den Workflow über „Run workflow“ prüfen.
