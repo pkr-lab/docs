@@ -247,6 +247,10 @@ Bildschirmhelligkeit (sysfs), manuelles Wake-on-LAN und Poweroff für worker-0/w
   - **Typen bleiben nativ:** Body als **ein** Jinja-Dict bauen und per `body_format: raw` + `to_json` senden. `body_format: json`
     serialisiert `"{{ x | int }}"` als JSON-String, und Semaphores strikter Go-Decoder antwortet mit HTTP 400 (z. B. `ssh_key_id`,
     `project_id`).
+  - **Repository** (`git_url`, `git_branch`) wird bei Abweichung per PUT nachgezogen. Ohne das behielt ein vorhandenes Repository
+    `home-server-git` nach der Aufspaltung die URL von capulus-core, während die Templates schon auf `site.yml` und `worker-0.yml`
+    zeigten, die dort nicht mehr liegen: Semaphore fand das Playbook nicht (Stand 2026-10-19, Nachprüfung
+    [600b0](../../capulus-core/6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md)).
   - **Schedules** (`cron`) sind self-healing: existiert der Name schon, wird der komplette Body per PUT neu gesetzt. Sie laufen in
     `SEMAPHORE_SCHEDULE_TIMEZONE` (Europe/Berlin), `0 6 * * *` feuert also ganzjährig um 06:00 Ortszeit.
   - **HTTPS ist Pflicht** für `semaphore_api_base`: Der TECH-Traefik leitet HTTP per 308 um, und `ansible.builtin.uri` folgt einem

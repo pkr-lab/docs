@@ -51,3 +51,5 @@ flowchart LR
 - [Konfiguration](konfiguration.md)
 - [Nutzung](nutzung.md)
 - [Releases](releases.md)
+- [SEO](seo.md)
+- [Phase 5: Strukturvorschlag](phase-5-strukturvorschlag.md)

@@ -22,6 +22,7 @@ Die Fach-Kategorien (`a`–`f`, `1`–`3`) beschreiben, **was läuft und wie man
 | [60080 carplay-api und iOS-App](60080-carplay-api-und-ios-app.md) | Verträge, Absicherung, Datenquellen, Transport und Tailscale in der App, Modelle und Bedienung |
 | [60090 pacman (Schulungsobjekt)](60090-pacman-schulungsobjekt.md) | Server, Bestenliste, Zugriffslog, Trainingsmodus, Frontend-Skripte |
 | [600a0 CI-Workflows, Skripte und Lint](600a0-ci-workflows-und-skripte.md) | Alle Workflows (inkl. CodeQL und Security-Issues), Promotions- und Sync-Skripte, Ruleset, Dependabot und Renovate, `.ansible-lint`, `.yamllint` |
+| [600b0 Nachprüfung nach der Repo-Aufspaltung](600b0-nachpruefung-repo-aufspaltung.md) | Befunde und Fixes nach dem Split, Renovate (wiki-sync, Zeitplan, Repos ohne Config), Rulesets und Release-Commit, Testmatrix, Live-Tests, offene Entscheidungen |
 
 ## So ist ein Eintrag aufgebaut
 

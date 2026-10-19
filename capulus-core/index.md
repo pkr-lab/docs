@@ -361,6 +361,7 @@ Einstieg und Zuordnung von Dateien zu Docs: **[capulus-core/6-hintergruende/6000
 | [carplay-api und iOS-App](6-hintergruende/60080-carplay-api-und-ios-app.md) | Verträge, Absicherung, Datenquellen, Transport über Tailscale |
 | [pacman (Schulungsobjekt)](6-hintergruende/60090-pacman-schulungsobjekt.md) | Server, Bestenliste, Trainingsmodus, Frontend-Skripte |
 | [CI-Workflows, Skripte und Lint](6-hintergruende/600a0-ci-workflows-und-skripte.md) | Workflows, Promotions- und Sync-Skripte, Ruleset, Dependabot/Renovate, Lint-Konfiguration |
+| [Nachprüfung nach der Repo-Aufspaltung](6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md) | Befunde, Fixes, Testmatrix, Renovate und Rulesets, offene Entscheidungen |
 
 Komponenten-Seiten (früher Ordner-READMEs): [ENTW-Ordner](komponenten/entw-apps.md) (ENTW-Ordner),
 [PROD im Hub](komponenten/bootstrap-prod.md) (PROD im Hub anbinden, Umzug mit Daten),
