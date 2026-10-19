@@ -283,6 +283,54 @@ Ein echtes Zurückspielen in das Datenverzeichnis läuft weiter über die Rolle 
 
 ---
 
+## restic für n8n (im Cluster)
+
+n8n hat einen eigenen, verschlüsselten und versionierten Backup-Job (`n8n-restic-backup`, täglich 02:20, TECH-Cluster, Namespace `n8n`). Er entstand, weil die n8n-Daten nach dem Umzug von NFS auf `local-path` (SQLite blockierte auf NFS, siehe [30070](../3-apps-workloads/30070-n8n.md#architektur)) nur noch auf der SSD des Nodes `homeserver` liegen. Aufbau wie bei Vaultwarden, Chart-Dateien `restic-cronjob.yaml`, `restic-pvc.yaml` und `restic-sealedsecret.yaml` unter `argocd/apps/tech/n8n/templates/`, alles hinter `resticBackup.enabled` (Standard `false`).
+
+- **Was:** Ein konsistenter `sqlite3 .backup` der Datenbank (`/stage/database.sqlite`, danach `pragma integrity_check`, der Job bricht bei einem anderen Ergebnis als `ok` ab) plus das übrige Datenverzeichnis in ein restic-Repository auf dem NAS-Volume (PVC `n8n-restic`, StorageClass `nas`, 5 Gi). Wichtig darin: `config` mit dem Verschlüsselungsschlüssel der n8n-Credentials (ohne ihn sind alle gespeicherten Zugangsdaten in der Datenbank unlesbar), `whatsapp-session` (sonst muss der QR-Code neu gekoppelt werden), `nodes` und `ssh`. Aufbewahrung: 7 tägliche, 4 wöchentliche, 6 monatliche Snapshots (`restic forget --prune`); danach `restic check --read-data-subset=5%`.
+- **Ausgeschlossen:** `binaryData` (Zwischenablage der Ausführungen), `n8nEventLog*`, `crash.journal`, die Datenbankdateien im Quellverzeichnis (ersetzt durch den Dump) und die Chromium-Caches (`Cache`, `Code Cache`, `GPUCache`, `DawnGraphiteCache`, `DawnWebGPUCache`, `GPUPersistentCache`). Zusammen sind das gut 300 MB von knapp 400 MB, übrig bleiben rund 140 MB vor der Deduplizierung.
+- **Einrichten (einmalig):** `./scripts/seal-restic-password.sh n8n` fragt das Repository-Passwort ab (leer = zufällig, wird einmal angezeigt), versiegelt es als `n8n-restic` für den Namespace `n8n` und schaltet `resticBackup.enabled` in `argocd/apps/tech/n8n/values.yaml` ein. Das Passwort in den Passwortmanager legen, **ohne es sind alle Snapshots unlesbar**. Danach Merge. Der Job legt das Repository beim ersten Lauf an (`restic init`).
+- **Prüfen:** Ersten Lauf auslösen: `kubectl -n n8n create job --from=cronjob/n8n-restic-backup restic-test`, `kubectl -n n8n logs job/restic-test` (endet mit `fertig:`), danach `kubectl -n n8n delete job restic-test`. Den Testjob nicht löschen, solange der Pod noch `ContainerCreating` ist. Der Alarm `BackupJobStale` (Name enthält `backup`) meldet, wenn der letzte Erfolg über 30 Stunden zurückliegt.
+- **Der Job läuft auf `homeserver`:** Das PVC `n8n-data` ist `local-path` und damit an den Node gebunden, der Scheduler setzt den Backup-Pod automatisch dorthin. Er hängt das Datenverzeichnis schreibbar ein, weil SQLite im WAL-Modus für den lesenden `.backup` die Datei `-shm` öffnen können muss. Die Pod-Labels tragen bewusst einen eigenen Namen (`n8n-restic-backup`), damit der Service `n8n` den Backup-Pod nicht als Ziel auswählt.
+- **Snapshots ansehen und Wiederherstellung testen (vierteljährlich, nicht im Live-Datenverzeichnis):**
+
+```bash
+kubectl -n n8n apply -f - <<'YAML'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: restic-restore-test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: restic
+      image: alpine:3.24
+      command: ["sh", "-c", "apk add --no-cache restic sqlite >/dev/null && restic snapshots && restic restore latest --target /restore && ls -R /restore | head -20 && sqlite3 /restore/stage/database.sqlite 'select count(*) from workflow_entity; select count(*) from credentials_entity' ; sleep 3600"]
+      env:
+        - name: RESTIC_REPOSITORY
+          value: /repo
+        - name: RESTIC_CACHE_DIR
+          value: /tmp/cache
+        - name: RESTIC_PASSWORD
+          valueFrom:
+            secretKeyRef: {name: n8n-restic, key: password}
+      volumeMounts:
+        - {name: repo, mountPath: /repo, readOnly: true}
+        - {name: restore, mountPath: /restore}
+  volumes:
+    - name: repo
+      persistentVolumeClaim: {claimName: n8n-restic}
+    - name: restore
+      emptyDir: {}
+YAML
+kubectl -n n8n logs -f pod/restic-restore-test
+kubectl -n n8n delete pod restic-restore-test
+```
+
+- **Echtes Zurückspielen:** n8n auf 0 skalieren (der ArgoCD-Selbstheilungslauf setzt Replicas zurück, dafür den `argocd-application-controller` kurz anhalten, siehe [20000](20000-nas-storage.md#migrations-runbook-hdd-worker-0sda--nas-nas)), den Restore in ein leeres `local-path`-PVC schreiben, `stage/database.sqlite` als `database.sqlite` ins Datenverzeichnis legen (ohne `-wal` und `-shm`), `config` und `whatsapp-session` aus `source/` übernehmen, Besitzer auf `1000:1000` setzen, n8n wieder hochskalieren.
+
+---
+
 ## Fehlerbehebung
 
 **Task Scheduler zeigt Fehler / Backup läuft nicht:**
