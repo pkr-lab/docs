@@ -32,7 +32,7 @@ Renovate-PR gegen eine generierte Lockdatei.
 
 ## Verhalten
 
-- **Zeitplan:** Minor-/Major-Updates wöchentlich (montags vor 6 Uhr), Patch-
+- **Zeitplan:** Minor-/Major-Updates wöchentlich (montags, ganzer Tag), Patch-
   Updates sofort — damit Sicherheitspatches nicht bis Montag liegen bleiben.
 - **Gruppierung:** Alle Änderungen einer App (Chart-Version + Image-Tag)
   landen in einem gemeinsamen PR statt in mehreren Einzel-PRs.
@@ -115,9 +115,16 @@ keine zweite Config zu pflegen.
    `Pull requests`, `Issues`, `Workflows` je auf „Read and write".
 2. Token als Repo-Secret `RENOVATE_TOKEN` hinterlegen
    (Settings → Secrets and variables → Actions → New repository secret).
-3. Fertig — der Workflow läuft danach automatisch montags 05:00 UTC (vor dem
-   `before 6am on monday`-Zeitplan in `renovate.json`, Europe/Berlin) und ist
-   zusätzlich per „Run workflow" manuell auslösbar.
+3. Fertig — der Workflow startet danach montags 05:00 UTC und ist zusätzlich per
+   „Run workflow" manuell auslösbar.
+
+**Zeitplan (Stand 2026-10-19):** 05:00 UTC entspricht 06:00 Uhr (Winter) bzw. 07:00 Uhr (Sommer) in Berlin, GitHub verzögert den Cron-Start zusätzlich (Läufe seit September zwischen 09:59 und 12:49 UTC). Der frühere Zeitplan `before 6am on monday` wurde dadurch nie getroffen: Renovate meldete „Skipping branch creation as not within schedule“, und seit Juni 2026 entstand in capulus-core kein Renovate-PR mehr. Der Zeitplan lautet jetzt `on monday` (ganzer Montag, Europe/Berlin).
+
+**Geltungsbereich:** Der Fallback-Lauf bearbeitet nur capulus-core, capulus-ansible, capulus-ios und capulus-wiki-sync (`RENOVATE_REPOSITORIES` in `renovate.yml`). In den übrigen Repos hält Renovate den SHA-Pin der zentralen Workflows nicht aktuell, das geschieht von Hand ([600b0](../6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md#renovate)).
+
+**Eigenes Image ohne Release-Zeitpunkt:** Für `ghcr.io/pkr-lab/capulus-wiki-sync` gilt eine eigene Regel (`minimumReleaseAge: null`,
+Zeitplan „at any time“). Das Image trägt kein Label `org.opencontainers.image.created`, Renovate kennt daher keinen Release-Zeitpunkt und
+hielte jeden Update wegen `minimumReleaseAge` dauerhaft als „pending“ zurück (so blieb das Chart auf `v1.0.0`, obwohl `v1.1.0` existiert).
 
 **Verhältnis zur App:** Beide Wege schreiben denselben `renovate.json`-Stand
 in dieselben PRs — es entsteht kein Konflikt, wenn irgendwann beide parallel

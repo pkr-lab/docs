@@ -135,7 +135,7 @@ Ein-Personen-Repos (wie hier) reicht oft schon die Selbstdisziplin, die
 
 - [f0030-release-automation.md](../f-cicd-automatisierung/f0030-release-automation.md) — die hier
   als Vorlage genutzte, bereits produktive Implementierung
-- [.releaserc.json](https://github.com/pkr-lab/capulus-core/blob/main/.releaserc.json) — zu kopierende Konfiguration
+- [Konfiguration der zentralen Workflows](../../github-workflows/konfiguration.md) — erzeugte semantic-release-Konfiguration; die frühere `.releaserc.json` in capulus-core entfällt
 - [.github/workflows/release.yml](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/release.yml) —
   zu kopierender Workflow
 - [Conventional Commits](https://www.conventionalcommits.org/)

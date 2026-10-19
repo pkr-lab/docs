@@ -15,7 +15,7 @@ mergen, wenn die CI-Jobs grün sind.
 | Regel | Wirkung |
 |---|---|
 | Pull Request | Kein Direkt-Push auf `main`. Kein Pflicht-Review (`0` Freigaben), du arbeitest allein — die Sicherheit kommt aus den Checks. |
-| Pflicht-Checks | `make lint (yamllint, ansible-lint, helm lint)`, `helm template \| kubeconform`, `go build, vet, test, tidy`, `docs links`, `token register`, `gitleaks` — die sechs Jobs aus [`ci.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/ci.yml) |
+| Pflicht-Checks | `make lint (yamllint, helm lint)`, `helm template \| kubeconform`, `go build, vet, test, tidy`, `token register`, `gitleaks` — fünf der sechs Jobs aus [`ci.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/ci.yml) |
 | Kein Force-Push, kein Löschen | `main` ist nicht überschreibbar |
 | „Up to date“ nicht verlangt | `strict_required_status_checks_policy: false` — sonst müsste jeder PR nach jedem anderen Merge neu gebaut werden |
 
@@ -61,16 +61,33 @@ Wer sonst noch PRs aufmacht:
 | [Dependabot](../d-sicherheit/d0080-codeql-dependabot.md) | nur Sicherheits-PRs (`fix(deps): …`, Labels `dependencies` und `security`). Die CI läuft darauf ohne PAT, Dependabot-PRs lösen Workflows aus. Gemergt wird von Hand. |
 | Kleine GitOps-Schritte (Migration: App stoppen, kopieren, starten) | ebenfalls per PR. Ein Lauf dauert ca. 2 Minuten (der `make lint`-Job ist der längste). Nur im Notfall per Admin-Bypass mergen. |
 
-Nicht betroffen sind `release.yml` (setzt nur Tags und Releases, pusht keine
-Commits) und `mirror-gitlab.yml` (liest `main`).
+Nicht betroffen ist `mirror-gitlab.yml` (liest `main`). `release.yml` pusht seit der Umstellung auf die zentralen Workflows den Commit
+`chore(release): X [skip ci]` mit `CHANGELOG.md` direkt auf `main` und braucht bei aktivem Ruleset eine Ausnahme (siehe oben).
 
 ## Vorhandene Rulesets im Repo
 
+Stand 2026-10-19: Alle Rulesets sind **deaktiviert** (`enforcement: disabled`, geändert am 2026-10-18 gegen 15:29 Uhr während der Umstellung auf die
+zentralen Release-Workflows). Es gibt auch keinen klassischen Branch-Schutz. Ein Merge nach `main` ist damit nicht durch Checks gesperrt, und der
+Release-Commit `chore(release): X [skip ci]` kann direkt auf `main` landen.
+
 | Ruleset | Stand | Bemerkung |
 |---|---|---|
-| `entw-1` | aktiv | `entw`: kein Löschen, kein Force-Push |
-| `entw-2` | aktiv | `entw`: nur per PR, Admin-Bypass immer; Pflicht-Checks leer (auf `entw`-PRs läuft mangels passendem Trigger keine CI, die Freigabe übernimmt [die Promotion](f0080-entw-promotion.md)) |
-| `Protect MAIN` | aktiv (seit 2026-09-20) | Löschen/Force-Push/PR (0 Freigaben) plus `code_quality`, trifft `main` **und** `entw`. Die Regeln addieren sich mit „main: PR + CI“. Auf `entw` gilt damit auch hier PR-Pflicht ohne Bypass (der Admin-Bypass von `entw-2` hebt die Regeln eines anderen Rulesets nicht auf). |
+| `entw-1` | deaktiviert | `entw`: kein Löschen, kein Force-Push |
+| `Protect MAIN` | deaktiviert | Löschen/Force-Push/PR (0 Freigaben) plus `code_quality`, trifft `main` **und** `entw` |
+| `main: PR + CI` | deaktiviert | PR-Pflicht, Admin-Bypass (`pull_request`) und Pflicht-Checks. Die gespeicherten Check-Namen sind veraltet (siehe unten) |
+
+Das Ruleset `entw-2` aus früheren Ständen existiert nicht mehr.
+
+**Wiedereinschalten:** Das gespeicherte Ruleset `main: PR + CI` verlangt `make lint (yamllint, ansible-lint, helm lint)` und `docs links`. Beide Jobs
+gibt es nicht mehr (der Job heißt `make lint (yamllint, helm lint)`, die Link-Prüfung läuft in pkr-lab-docs), `isc-news-bot (typecheck, unit und
+Mock-Tests)` fehlt. Ein aktiviertes Ruleset würde jeden PR auf „pending“ halten. Zuerst `scripts/setup-main-ruleset.sh` ausführen, das die aktuelle Liste
+enthält. Es legt das Ruleset als `active` an.
+
+**Ausnahme für den Release-Commit:** Das Ruleset verlangt Pull Requests, der Release-Workflow pusht aber `CHANGELOG.md` direkt auf `main`. Der
+`GITHUB_TOKEN` (`github-actions[bot]`) lässt sich nicht als Bypass-Akteur eintragen (nach Community-Berichten; eine offizielle Quelle dazu wurde nicht
+gefunden, vor dem Einschalten ausprobieren). Möglichkeiten: ein GitHub-App-Token oder ein Deploy-Key bzw. PAT eines Akteurs mit Bypass für den Schritt
+`semantic-release` (Änderung im zentralen Workflow `pkr-lab/.github`), oder Rulesets ausgeschaltet lassen. Entscheidung offen, siehe
+[600b0](../6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md#rulesets).
 
 ## Stolperfallen
 
