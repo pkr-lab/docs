@@ -27,10 +27,14 @@ Ein Banner oben auf jeder Seite zeigt, dass gerade am Server oder an der Website
 
 **Schalter im Cluster (n8n):** Der n8n-Workflow „EDV-Kretzer – Status-Hinweis schalten“ (`automation/n8n-status-schalten.json`) stellt ein Formular bereit: Aktion (Wartung, Störung, Hinweis einschalten oder ausschalten), betroffene Bereiche (Mehrfachauswahl), Text und Dauer (offen, 1 Stunde bis 3 Tage). Nach dem Absenden ist der Banner nach etwa einer Minute auf der Website. Die Formular-URL zeigt der Knoten „Formular“ in n8n (Production URL).
 
-Einrichtung einmalig in n8n (https://n8n.prod.homeserver):
+Einrichtung (2026-10-19 erfolgt, der Workflow ist in n8n aktiv):
 1. Workflow aus `automation/n8n-status-schalten.json` importieren.
-2. Die Zugangsdaten „GitHub PAT (EDV-Kretzer)“ verwenden (Typ Header Auth, Header `Authorization: Bearer <TOKEN>`). Der Token braucht für das Repo `pkr-lab/EDV-Kretzer` die Berechtigung **Actions: Read and write**. Hat der vorhandene Token die nicht, einen neuen fine-grained Token anlegen und im Zugangsdaten-Eintrag ersetzen.
+2. Zugangsdaten „GitHub PAT (Status-Schalter)“ anlegen (Typ Header Auth, Name `Authorization`, Wert `Bearer <TOKEN>`, erlaubte Domain `api.github.com`).
 3. Workflow aktivieren. Die Bereichsliste steht im Knoten „Formular“ und lässt sich dort ändern.
+
+Der Token ist ein fine-grained Token des Kontos `pkr-lab` mit **Repository access: Only select repositories → EDV-Kretzer** und der einzigen Berechtigung **Actions: Read and write** (Metadata: Read-only kommt automatisch). Bei „Public repositories (read-only)“ oder fehlendem Actions-Recht antwortet GitHub mit 403 „Resource not accessible by personal access token“. Er steht im [Token-Register](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml) als `n8n-github-status-schalter`.
+
+**Token erneuern:** Neuen fine-grained Token mit denselben Einstellungen erzeugen, in n8n unter Credentials den Eintrag „GitHub PAT (Status-Schalter)“ öffnen und den Wert durch `Bearer <neuer Token>` ersetzen, den alten Token auf GitHub löschen und `issued` im Register aktualisieren. Danach das Formular mit „Ausschalten“ testen: Es ändert den Banner nicht, startet aber den Workflow und das Deployment.
 
 Der Schalter ist nur über n8n erreichbar, also im Heimnetz oder per Tailscale. Schalten Sie den Hinweis ein, bevor Sie am Cluster arbeiten: Fällt n8n selbst aus, geht es nicht mehr. Der Banner liegt bewusst auf dem Webserver bei netcup und nicht im Cluster, damit er auch bei einem Ausfall sichtbar bleibt.
 
