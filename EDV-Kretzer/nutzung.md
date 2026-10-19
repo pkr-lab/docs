@@ -25,13 +25,23 @@ Nach dem Merge nach `main` deployt GitHub Actions automatisch. Der Status der Di
 
 Ein Banner oben auf jeder Seite zeigt, dass gerade am Server oder an der Website gearbeitet wird. Er liest `data/status.json` und erscheint nur, wenn dort `"active": true` steht.
 
-**Ein- und Ausschalten:** Im Repo EDV-Kretzer unter Actions den Workflow „Status-Hinweis“ über „Run workflow“ starten (geht auch in der GitHub-App auf dem Handy). Der Workflow schreibt `data/status.json`, committet sie und deployt sofort.
+**Schalter im Cluster (n8n):** Der n8n-Workflow „EDV-Kretzer – Status-Hinweis schalten“ (`automation/n8n-status-schalten.json`) stellt ein Formular bereit: Aktion (Wartung, Störung, Hinweis einschalten oder ausschalten), betroffene Bereiche (Mehrfachauswahl), Text und Dauer (offen, 1 Stunde bis 3 Tage). Nach dem Absenden ist der Banner nach etwa einer Minute auf der Website. Die Formular-URL zeigt der Knoten „Formular“ in n8n (Production URL).
+
+Einrichtung einmalig in n8n (https://n8n.prod.homeserver):
+1. Workflow aus `automation/n8n-status-schalten.json` importieren.
+2. Die Zugangsdaten „GitHub PAT (EDV-Kretzer)“ verwenden (Typ Header Auth, Header `Authorization: Bearer <TOKEN>`). Der Token braucht für das Repo `pkr-lab/EDV-Kretzer` die Berechtigung **Actions: Read and write**. Hat der vorhandene Token die nicht, einen neuen fine-grained Token anlegen und im Zugangsdaten-Eintrag ersetzen.
+3. Workflow aktivieren. Die Bereichsliste steht im Knoten „Formular“ und lässt sich dort ändern.
+
+Der Schalter ist nur über n8n erreichbar, also im Heimnetz oder per Tailscale. Schalten Sie den Hinweis ein, bevor Sie am Cluster arbeiten: Fällt n8n selbst aus, geht es nicht mehr. Der Banner liegt bewusst auf dem Webserver bei netcup und nicht im Cluster, damit er auch bei einem Ausfall sichtbar bleibt.
+
+**Ein- und Ausschalten per GitHub:** Im Repo EDV-Kretzer unter Actions den Workflow „Status-Hinweis“ über „Run workflow“ starten (geht auch in der GitHub-App auf dem Handy). Der Workflow schreibt `data/status.json`, committet sie und deployt sofort.
 
 | Eingabe | Bedeutung |
 |---|---|
 | `aktiv` | Haken gesetzt: Banner an. Ohne Haken: Banner aus |
 | `art` | `maintenance` (gelb, „Wartung“), `incident` (rot, „Störung“), `info` (blau, „Hinweis“) |
 | `titel` | optional, leer = Standardtitel der Art |
+| `bereiche` | optional, durch Komma getrennt, erscheint im Banner als „Betroffen: …“ |
 | `text` | Meldungstext |
 | `bis` | optional, Zeitpunkt wie `2026-10-21T18:00:00+02:00`. Danach blendet sich der Banner von selbst aus |
 
