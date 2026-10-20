@@ -6,11 +6,13 @@ Aufruf:
 
 ```bash
 cubi autosync     # oder: cubi sync
-cubi branch
+cubi feature-testing
 cubi scale
 ```
 
-Alle drei stehen auch im Hauptmenü, und in der ArgoCD-App-Liste öffnen `s` (Auto-Sync), `b` (Branch) und `z` (Pods skalieren) sie direkt.
+Alle drei stehen auch im Hauptmenü, und in der ArgoCD-App-Liste öffnen `s` (Auto-Sync), `t` (Feature-Testing) und `z` (Pods skalieren) sie direkt.
+
+**Cubi beendet sich nach der Ausführung.** Hat eines der drei Features eine Änderung durchgeführt (nach dem Bestätigen und der Nachkontrolle), kehrt Cubi zur Shell zurück, egal ob es direkt, aus dem Hauptmenü oder aus der ArgoCD-Liste gestartet wurde. Dann lassen sich sofort andere Befehle eingeben. Abbrechen mit Esc, ein verneintes `(y/N)` oder „Nichts zu tun“ führen weiter zurück ins Menü.
 
 ---
 
@@ -89,7 +91,9 @@ kubectl get applicationset <name> -n argocd -o jsonpath='{.spec.ignoreApplicatio
 
 ---
 
-## Branch einer App umstellen
+## Feature-Testing: Branch einer App umstellen
+
+`cubi feature-testing` stellt Apps auf einen Feature-Branch um, damit man eine Änderung im Cluster testen kann, bevor sie in `main` landet. Der Befehl hieß früher `cubi branch`, dieser Name funktioniert weiter als Alias (ebenso `cubi ft`).
 
 1. Modus wählen: *Branch umstellen* oder *Auf main zurücksetzen*.
 2. Apps per Mehrfachauswahl wählen. Die Liste zeigt den aktuellen Branch (`spec.source.targetRevision`, `HEAD` wenn leer), den Auto-Sync-Zustand und das Quell-Repository. Bei Multi-Source-Apps stehen die Branches mit `|` getrennt in der Spalte, hinter dem Repository steht `(+n)`. Im Modus *Auf main zurücksetzen* sind alle Apps vorgewählt, die nicht auf `main` stehen.
@@ -108,8 +112,8 @@ Geändert wird nur die gewählte `targetRevision`. Der Patch ist ein JSON-Patch 
 Beispiel:
 
 ```
-$ cubi branch
-? Branch › Branch umstellen
+$ cubi feature-testing
+? Feature-Testing › Branch umstellen
 ? Apps: Branch umstellen › 2 gewählt: app-a, app-d
 ? Ziel-Branch › feature/login
 ? Source von app-d › pkr-lab/charts chart @ v1
@@ -126,8 +130,8 @@ $ cubi branch
 Zurücksetzen:
 
 ```
-$ cubi branch
-? Branch › Auf main zurücksetzen
+$ cubi feature-testing
+? Feature-Testing › Auf main zurücksetzen
 ? Apps: auf main zurücksetzen › 1 gewählt: app-a
   app-a  feature/login → main
 ? 1 App(s) auf main umstellen? › Ja
@@ -140,21 +144,22 @@ Hinweis: Eine App unter einer übergeordneten App (App of Apps) kann den Branch 
 
 ---
 
-## Pods auf 0 stellen und wiederherstellen
+## Pods skalieren und wiederherstellen
 
-`cubi scale` stellt die Deployments und StatefulSets einer App auf 0 Replikas und später auf die vorherigen Werte zurück.
+`cubi scale` setzt die Deployments und StatefulSets einer App auf 0 Replikas oder auf eine frei gewählte Anzahl (auch nach oben) und später auf die vorherigen Werte zurück.
 
-1. Aktion wählen: *Auf 0 Pods stellen* oder *Pods wiederherstellen*.
-2. Apps per Mehrfachauswahl wählen. Die Liste zeigt pro App die Anzahl der Workloads, den Zustand (`normal` oder `auf 0 (vorher 5)`) und den Auto-Sync-Zustand. Apps, für die die Aktion nichts ändern würde, erscheinen abgeblendet und werden übersprungen.
-3. Cubi liest die aktuellen Replikas, zeigt pro App jeden betroffenen Workload und fragt `(y/N)`.
+1. Aktion wählen: *Auf 0 Pods stellen*, *Auf eigene Anzahl stellen* oder *Pods wiederherstellen*. Bei *eigene Anzahl* gibt man die Zahl direkt ein (Vorgabe `1`, mindestens `0`).
+2. Apps per Mehrfachauswahl wählen. Die Liste zeigt pro App die Anzahl der Workloads, den Zustand (`normal` oder `geändert (vorher 5)`) und den Auto-Sync-Zustand. Apps, für die die Aktion nichts ändern würde, erscheinen abgeblendet und werden übersprungen.
+3. Bei *eigene Anzahl* und Apps mit mehreren Workloads wählt man per Mehrfachauswahl, welche Workloads die Zahl bekommen (alle sind vorgewählt, die Liste zeigt die aktuelle Anzahl). Die Zahl gilt je Workload.
+4. Cubi liest die aktuellen Replikas, zeigt pro App jeden betroffenen Workload und fragt `(y/N)`. Workloads, die schon die gewünschte Anzahl haben, lässt es aus.
 
 Die Workloads einer App stammen aus `status.resources` der Application (Gruppe `apps`, Kinds `Deployment` und `StatefulSet`). Andere Ressourcen wie CronJobs oder Argo Rollouts fasst Cubi nicht an.
 
-**Auf 0 stellen.** Cubi merkt die bisherigen Replikas (und die Auto-Sync-Einstellung) als JSON in der ConfigMap `cubi-state` unter `<app>.scale`. Ist Auto-Sync aktiv, schaltet es ihn wie oben ab, bei ApplicationSet-Apps samt Regel im ApplicationSet. Sonst würde ArgoCD die Pods mit Auto-Sync oder selfHeal wieder hochfahren. Erst danach skaliert Cubi jeden Workload mit `kubectl scale`. Schlägt ein Schritt davor fehl, bleibt der Cluster unverändert. Zum Schluss prüft Cubi nach einigen Sekunden, ob die Replikas bei 0 geblieben sind.
+**Auf 0 oder eigene Anzahl stellen.** Cubi merkt die bisherigen Replikas (und die Auto-Sync-Einstellung) als JSON in der ConfigMap `cubi-state` unter `<app>.scale`. Ist Auto-Sync aktiv, schaltet es ihn wie oben ab, bei ApplicationSet-Apps samt Regel im ApplicationSet. Sonst würde ArgoCD die Pods mit Auto-Sync oder selfHeal wieder hochfahren. Erst danach skaliert Cubi jeden Workload mit `kubectl scale`. Schlägt ein Schritt davor fehl, bleibt der Cluster unverändert. Zum Schluss prüft Cubi nach einigen Sekunden, ob die Replikas bei 0 geblieben sind.
 
-**Wiederherstellen.** Cubi skaliert jeden gemerkten Workload auf seinen vorherigen Wert, schaltet danach das gemerkte Auto-Sync wieder ein (bei ApplicationSet-Apps wird die Regel entfernt) und löscht den Eintrag in der ConfigMap. Schlägt ein Skalieren fehl, bleibt der Eintrag erhalten, und der Vorgang lässt sich wiederholen. Auto-Sync, das Cubi nicht deaktiviert hat, bleibt unangetastet.
+**Wiederherstellen.** Cubi skaliert jeden gemerkten Workload auf seinen ursprünglichen Wert (auch dann, wenn man zwischendurch mehrfach eine eigene Anzahl gesetzt hat; gemerkt wird der erste Stand vor Cubis Eingriff), schaltet danach das gemerkte Auto-Sync wieder ein (bei ApplicationSet-Apps wird die Regel entfernt) und löscht den Eintrag in der ConfigMap. Schlägt ein Skalieren fehl, bleibt der Eintrag erhalten, und der Vorgang lässt sich wiederholen. Auto-Sync, das Cubi nicht deaktiviert hat, bleibt unangetastet.
 
-Läuft die App unter einer übergeordneten App, warnt Cubi, weil diese die Änderung zurücksetzen kann. Ein HorizontalPodAutoscaler ist bei 0 Replikas inaktiv und greift nach dem Wiederherstellen wieder.
+Läuft die App unter einer übergeordneten App, warnt Cubi, weil diese die Änderung zurücksetzen kann. Ein HorizontalPodAutoscaler ist bei 0 Replikas inaktiv und greift nach dem Wiederherstellen wieder. Wer nach oben skaliert, sollte beachten, dass Auto-Sync für die App ausgeschaltet wird, weil ArgoCD die Anzahl sonst aus Git zurücksetzt.
 
 Beispiel:
 
@@ -173,6 +178,19 @@ $ cubi scale
 ✔ app-a: 5 Pods → 0 Pods
 Prüfe, ob die Änderung hält …
 ✔ app-a: Änderung hält
+```
+
+Eigene Anzahl:
+
+```
+$ cubi scale
+? Pods skalieren › Auf eigene Anzahl stellen
+? Anzahl Pods pro Workload › 4
+? Apps: auf 4 Pods stellen › 1 gewählt: app-a
+? Workloads wählen › 2 gewählt: app-a · Deployment/app-a-web, app-a · StatefulSet/app-a-db
+  app-a  5 Pods → 8 Pods  (2 Workloads)
+    Deployment/app-a-web (web) → 4
+    StatefulSet/app-a-db (web) → 4
 ```
 
 Später:

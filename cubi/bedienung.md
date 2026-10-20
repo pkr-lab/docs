@@ -92,8 +92,8 @@ nach Enter:
 | Ort | Aktion |
 | --- | --- |
 | `cubi autosync` (auch im ArgoCD-Menü mit `s`) | Auto-Sync für mehrere Apps ändern |
-| `cubi branch` (auch im ArgoCD-Menü mit `b`) | Branch mehrerer Apps umstellen |
-| `cubi scale` (auch im ArgoCD-Menü mit `z`) | mehrere Apps auf 0 Pods stellen oder wiederherstellen |
+| `cubi feature-testing` (auch im ArgoCD-Menü mit `t`) | Branch mehrerer Apps auf einen Feature-Branch umstellen |
+| `cubi scale` (auch im ArgoCD-Menü mit `z`) | mehrere Apps auf 0 oder eine eigene Anzahl Pods stellen (Workloads einzeln wählbar) oder wiederherstellen |
 | ArgoCD-App-Liste, `m` | mehrere Apps in einem Aufruf synchronisieren (vorgewählt: alle OutOfSync-Apps) |
 | GitHub, Issue bearbeiten | mehrere Labels hinzufügen oder entfernen, mehrere Personen zuweisen oder entfernen |
 
