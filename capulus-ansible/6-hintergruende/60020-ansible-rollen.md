@@ -43,29 +43,40 @@ alamos-apager auf eine lokal hinterlegte, vault-verschlüsselte Fallback-URL ums
 ### xibo_kiosk (Raspberry Pi 3 B+, Bilder-Slideshow)
 
 Kein echter Xibo-Player, denn Xibo unterstützt den Raspberry Pi nicht offiziell ([300e0](../../capulus-core/3-apps-workloads/300e0-xibosignage.md)).
-Stattdessen mountet der Pi den NFS-Ordner `xibosignage-display` read-only, ein winziger lokaler Python-Webserver liefert eine
-statische Slideshow-Seite aus, und Chromium zeigt sie im Kiosk-Modus.
+Stattdessen holt der Pi die Bilder aus dem NFS-Ordner `xibosignage-display` in einen lokalen Cache, und Chromium zeigt sie im
+Kiosk-Modus per `file://`. Ablauf und Betrieb: [300e8](../3-apps-workloads/300e8-infotafel-kiosk.md).
 
 - Server und Pfad des NFS-Ordners **müssen identisch** zu `argocd/apps/tech/n8n/values.yaml` → `xibosignage.display` sein: n8n
-  schreibt dorthin, der Pi liest read-only. Das Scan-Intervall des Manifest-Generators bestimmt die Verzögerung, mit der ein neues Bild
-  in der Slideshow auftaucht.
+  schreibt dorthin, der Pi liest read-only. `xibo_kiosk_sync_interval_seconds` bestimmt die Verzögerung, mit der ein neues Bild
+  im Cache landet, `xibo_kiosk_manifest_reload_seconds` die, mit der die Seite es übernimmt.
+- **Ziel ist ein sofort sichtbares Bild nach dem Boot.** Deshalb hängt Chromium an nichts außer dem X-Server: kein `network-online.target`,
+  kein Webserver, kein NFS-Mount. Alles, was ein Netzwerk braucht, läuft im Sync-Dienst, der Chromium nicht ausbremsen kann.
+- **Eigene X11-Sitzung statt Desktop.** Auf Raspberry Pi OS Bookworm ist die Desktop-Sitzung Wayland (labwc oder wayfire), das
+  frühere Skript setzte aber `DISPLAY=:0` und `xset` voraus. Welche Umgebung wirklich lief, war nicht festgelegt, und `unclutter`
+  funktioniert unter Wayland nicht. Mit getty-Autologin und `startx` (wie bei `banana_pi_kiosk`) steht X11 fest, die Desktop-Sitzung
+  (lightdm) ist maskiert, der Standard-Target ist `multi-user.target`. Die Rolle richtet das Autologin selbst ein.
+- **NFS-Eintrag mit `noauto`.** Ein Mount beim Boot mit `_netdev` hängt am Netzwerk. Den Mount erledigt stattdessen `xibosignage-sync.py`
+  (`mount <Pfad>` mit 30-Sekunden-Timeout) gegen den fstab-Eintrag. Der Pi bootet damit auch bei totem NAS in dieselbe Slideshow.
 - **Idempotenz beim NFS-Mount:** War der Mount aus einem früheren (ggf. abgebrochenen) Lauf noch aktiv, blockt der read-only
   NFS-Export `chown`/`chmod` im nächsten Task („Das Dateisystem ist nur lesbar“), weil dann die Attribute des Exports statt des lokalen
-  Verzeichnisses gelten. Deshalb wird das Mountpoint-Verzeichnis nur angefasst, solange nichts gemountet ist.
-- Der Kiosk-Browser läuft in der grafischen Session (`DISPLAY=:0`) von `xibo_kiosk_user`. Autologin für diesen User muss schon eingerichtet
-  sein (Raspberry Pi Imager, „Enable autologin“), die Rolle richtet es nicht ein (wie bei `alamos_kiosk`).
-- Chromium startet hier **mit** `--incognito`: Die Slideshow braucht keine Anmeldung, es gibt keinen Login-Zustand zu erhalten.
-- Das Start-Skript wartet **unbegrenzt**, bis der lokale Webserver antwortet. Startet Chromium blind, landet es auf seiner eigenen
-  Fehlerseite „nicht erreichbar“, die sich nie von selbst neu lädt (nur per manuellem F5). Ein Timeout würde denselben kaputten
-  Zustand erzeugen, ein Neustart des Skripts holt das dank `Restart=always`/`RestartSec=5` ohnehin nach.
+  Verzeichnisses gelten. Deshalb wird der Mount vor dem Anlegen des Mountpoints ausgehängt.
+- **Atomarer Cache, nie leerer Bildschirm.** Der Sync schreibt nach `media/.partial/`, sichert per `fsync` und ersetzt dann per
+  `os.replace`. Er verwirft eine Datei, wenn sich die Quelle währenddessen ändert, und holt Dateien, die jünger als fünf Sekunden sind,
+  erst im nächsten Lauf, weil n8n sie evtl. noch schreibt. Eine leere Quelle löscht den Cache **nicht**: Ein fehlgeschlagener
+  Workflow darf die Infotafel nicht schwarz schalten.
+- **`file://` und `manifest.js`.** `fetch` auf lokale JSON-Dateien blockiert Chromium, daher ist die Bildliste ein Skript
+  (`window.XIBO_MANIFEST=[…]`), das die Seite per `<script>` neu lädt. Die Bild-URLs tragen `?v=<mtime>` statt eines Zeitstempels,
+  damit der Browser-Cache greift und trotzdem geänderte Dateien erkennt.
+- **Chromium-Profil unter `/dev/shm`.** Es wird bei jedem Start gelöscht und neu angelegt. Das verhindert den Dialog „nicht korrekt beendet“
+  nach Stromausfall und schont die SD-Karte. Ein Neustart-Loop im Start-Skript ersetzt `Restart=always` der früheren Unit.
+- **Skalierung statt WebP.** Bilder über 1920×1080 skaliert der Sync mit ImageMagick (`nice 19`, Speicherlimit). Eine WebP-Umwandlung
+  würde den Pi 3 B+ stärker belasten, als sie nützt, und der n8n-Workflow liefert die Bilder ohnehin schon in dieser Größe.
 - Das Skript unterstützt die Binärnamen `chromium-browser` **und** `chromium`: Debian Bookworm hat das Binary umbenannt, das
   Paket `chromium-browser` existiert nur noch als Übergangspaket ohne Binary dieses Namens. So läuft es auf Bullseye- wie Bookworm-Pis.
-- Die Manifest-Unit hat **kein** `After=…mount`, weil sich der Mount-Unit-Name aus dem Pfad nicht zuverlässig ableiten lässt
-  (`systemd-escape`-Regeln). Das Skript ist stattdessen tolerant: Fehlt der Mount kurz, liefert `find` nichts und die `manifest.json`
-  wird leer geschrieben, der nächste Timer-Lauf holt das nach. `slideshow.js` überspringt ein nicht lesbares Manifest oder eine
-  zwischen Scan und Anzeige verschwundene Datei einfach, das nächste Bild kommt beim nächsten Tick.
-- Der Webserver liefert die statische Seite **und** über den Symlink `media` im Webroot die Bilder aus dem NFS-Ordner. Er ist nur
-  auf `localhost` gebunden: Der Kiosk-Chromium auf demselben Pi ist der einzige Client.
+- **GPU-Flags sind nicht vorgesetzt.** Ob die Hardwarebeschleunigung greift, hängt vom Image ab (`chrome://gpu`). Falsche Flags enden
+  auf dem Pi in einem schwarzen Bildschirm, deshalb steht nur `xibo_kiosk_chromium_extra_flags` zur Verfügung, leer im Standard.
+- `xibosignage-sync.service` hängt an `network-online.target`, der Kiosk bewusst nicht. Die Dienste `ModemManager`, `triggerhappy`,
+  `cups` und `cups-browsed` deaktiviert die Rolle (`xibo_kiosk_disable_services`), weitere Kandidaten stehen in 300e8.
 
 ---
 

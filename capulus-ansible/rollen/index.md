@@ -36,6 +36,6 @@
 | [`wake_on_lan`](wake_on_lan.md) | worker-0, worker-1 | `ethtool wol g` bei jedem Boot |
 | [`wireguard_backup`](wireguard_backup.md) | homeserver | Notfall-Tunnel, falls die Tailscale-Control-Plane ausfällt |
 | [`worker_apt_update`](worker_apt_update.md) | worker-0, worker-1 | apt-Update der Worker (haben keine `common`-Rolle) |
-| [`xibo_kiosk`](xibo_kiosk.md) | xibosignage-Displays | NFS-Mount, Manifest-Timer, Chromium-Slideshow-Kiosk |
+| [`xibo_kiosk`](xibo_kiosk.md) | xibosignage-Displays | Sync-Timer mit lokalem Bilder-Cache, Chromium-Slideshow-Kiosk in eigener X11-Sitzung |
 
 Hintergründe und Fallstricke: [60020 Ansible-Rollen](../6-hintergruende/60020-ansible-rollen.md).
