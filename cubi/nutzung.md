@@ -15,6 +15,7 @@ cubi
 cubi argocd
 cubi autosync
 cubi branch
+cubi scale
 cubi tokens
 cubi login
 ```

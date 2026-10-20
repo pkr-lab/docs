@@ -104,4 +104,5 @@ python3 -m unittest discover -s tests
 | `tests/test_term.py` | Tastenerkennung, Zeilenzählung |
 | `tests/test_inline_pty.py` | echtes Pseudo-Terminal: keine Alt-Screen-/Clear-Sequenzen, Zusammenfassungszeile, Abbruch, Terminal-Modus danach, Cursor wieder sichtbar, Ctrl+C im Einstiegspunkt |
 | `tests/test_no_fullscreen.py` | durchsucht den Quelltext nach Alternate Screen, Clear, Pager, Editor, Browser und Kommentaren |
-| `tests/test_autosync.py`, `tests/test_branch.py` | Patch-Aufbau, Wiederherstellung, Warnungen, Remote-Prüfung (gemockt) |
+| `tests/test_argocd_apps.py` | Zustand in der ConfigMap, ApplicationSet-Regeln (Fake-Cluster), Nachkontrolle |
+| `tests/test_autosync.py`, `tests/test_branch.py`, `tests/test_scale.py` | Planung, Reihenfolge der Schritte, Warnungen, Remote-Prüfung (gemockt) |

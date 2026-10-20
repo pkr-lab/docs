@@ -16,6 +16,7 @@ cubi
 | ArgoCD | Table of all apps with sync and health status, filters, sync (also for several apps), diff, refresh, link to the GitHub source |
 | Auto-Sync | Disable and re-enable ArgoCD auto-sync for several apps at once, remembering prune and selfHeal |
 | Branch | Switch the target branch of several ArgoCD apps, or reset them to `main` |
+| Pods skalieren | Set the pods of several ArgoCD apps to 0 and restore them later, remembering replicas and auto-sync |
 | Tailscale | Device list with status, ping, SSH, up and down |
 | GitHub | Workflow runs, pull requests, issues (incl. editing) and commits of a repo, plus the repo's project Kanban board |
 | Kubernetes | Pods with logs and shell, nodes, warnings, switching namespace and context |
@@ -40,6 +41,7 @@ cubi ist ein Python-3-Programm ohne Server. `bin/cubi` startet `cubi.main`, das 
 | `connect.py` | `cubi connect` | SSH-Verbindung zu VMs und Hosts, gruppiert nach `connect` in der Konfiguration |
 | `argocd.py` | `cubi argocd` (`argo`) | Tabelle aller Apps mit Sync- und Health-Status, Filter, Sync (auch mehrere Apps), Diff, Refresh; Status direkt per `kubectl` |
 | `autosync.py` | `cubi autosync` (`sync`) | Auto-Sync mehrerer Apps deaktivieren und mit den gemerkten Einstellungen wieder aktivieren, siehe [ArgoCD-Features](argocd-features.md) |
+| `scale.py` | `cubi scale` | Deployments und StatefulSets mehrerer Apps auf 0 Replikas stellen und mit den gemerkten Werten wiederherstellen, siehe [ArgoCD-Features](argocd-features.md) |
 | `branch.py` | `cubi branch` | `targetRevision` mehrerer Apps umstellen oder auf `main` zurücksetzen, siehe [ArgoCD-Features](argocd-features.md) |
 | `tailscale.py` | `cubi tailscale` (`ts`) | Geräteliste, Ping, SSH, `up` und `down` |
 | `github.py` | `cubi github` (`gh`) | Workflow-Läufe, Pull Requests, Issues und Commits eines Repos, Kanban-Board |
@@ -60,6 +62,6 @@ Beziehung zu capulus-core: Das Modul `tokens` liest `ops/token-register.yaml` un
 - [Konfiguration](konfiguration.md)
 - [Nutzung](nutzung.md)
 - [Bedienung](bedienung.md): Tasten, Einfach- und Mehrfachauswahl
-- [ArgoCD-Features](argocd-features.md): Auto-Sync und Branch umstellen
+- [ArgoCD-Features](argocd-features.md): Auto-Sync, Branch umstellen, Pods auf 0 stellen
 - [Select-Komponente](select-komponente.md): Aufbau und Wiederverwendung im Code
 - [Releases](releases.md)
