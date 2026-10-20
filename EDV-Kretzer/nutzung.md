@@ -7,8 +7,9 @@
 | Neue Anwendung im Katalog | Eintrag in `data/apps.json` ergänzen (Felder siehe [Konfiguration](konfiguration.md)) |
 | Neuigkeit veröffentlichen | entfällt, der Verlauf auf `updates.html` kommt automatisch aus den Releases von capulus-core |
 | Text ändern | die jeweilige HTML-Datei bearbeiten; `<title>` und `<meta name="description">` mit anpassen |
-| Neue Seite anlegen | HTML-Datei nach dem Muster einer vorhandenen Seite erstellen, in der Navigation und in `sitemap.xml` und `sitemap.html` eintragen |
+| Neue Seite anlegen | HTML-Datei nach dem Muster einer vorhandenen Seite erstellen, in Navigation und `sitemap.html` eintragen und in `scripts/build-seo.mjs` registrieren ([seo.md](seo.md#neue-seite-anlegen)). `sitemap.xml` entsteht automatisch |
 | Bild einfügen | nach `assets/images/` legen, mit `alt`-Text einbinden |
+| Neues Projekt auf `capulus.html` | Eintrag in `data/projects.json`, die Version kommt automatisch |
 | Wartungs- oder Störungshinweis | Workflow „Status-Hinweis“ starten, siehe unten |
 
 ## Ablauf einer Änderung
