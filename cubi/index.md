@@ -1,6 +1,6 @@
 # cubi
 
-Interactive terminal tool for everyday Kubernetes work. It bundles tools you already have installed into one menu that you navigate with the arrow keys.
+Interactive terminal tool for everyday Kubernetes work. It bundles tools you already have installed into one menu that you navigate with the arrow keys. Everything is drawn inline in the normal terminal, so the history stays visible.
 
 ```
 cubi
@@ -13,7 +13,10 @@ cubi
 | Section | Contents |
 | --- | --- |
 | Connect | SSH to VMs and hosts, grouped as defined in the config |
-| ArgoCD | Table of all apps with sync and health status, filters, sync, diff, refresh, link to the GitHub source |
+| ArgoCD | Table of all apps with sync and health status, filters, sync (also for several apps), diff, refresh, link to the GitHub source |
+| Auto-Sync | Disable and re-enable ArgoCD auto-sync for several apps at once, remembering prune and selfHeal |
+| Feature-Testing | Switch the target branch of several ArgoCD apps, or reset them to `main` |
+| Pods skalieren | Set the pods of several ArgoCD apps to 0 or any number and restore them later, remembering replicas and auto-sync |
 | Tailscale | Device list with status, ping, SSH, up and down |
 | GitHub | Workflow runs, pull requests, issues (incl. editing) and commits of a repo, plus the repo's project Kanban board |
 | Kubernetes | Pods with logs and shell, nodes, warnings, switching namespace and context |
@@ -36,7 +39,10 @@ cubi ist ein Python-3-Programm ohne Server. `bin/cubi` startet `cubi.main`, das 
 | Modul (`src/cubi/modules/`) | Aufruf | Aufgabe |
 |---|---|---|
 | `connect.py` | `cubi connect` | SSH-Verbindung zu VMs und Hosts, gruppiert nach `connect` in der Konfiguration |
-| `argocd.py` | `cubi argocd` (`argo`) | Tabelle aller Apps mit Sync- und Health-Status, Filter, Sync, Diff, Refresh; Status direkt per `kubectl` |
+| `argocd.py` | `cubi argocd` (`argo`) | Tabelle aller Apps mit Sync- und Health-Status, Filter, Sync (auch mehrere Apps), Diff, Refresh; Status direkt per `kubectl` |
+| `autosync.py` | `cubi autosync` (`sync`) | Auto-Sync mehrerer Apps deaktivieren und mit den gemerkten Einstellungen wieder aktivieren, siehe [ArgoCD-Features](argocd-features.md) |
+| `scale.py` | `cubi scale` | Deployments und StatefulSets mehrerer Apps auf 0 oder eine frei gewählte Anzahl Replikas stellen und mit den gemerkten Werten wiederherstellen, siehe [ArgoCD-Features](argocd-features.md) |
+| `feature_testing.py` | `cubi feature-testing` (`branch`, `ft`) | `targetRevision` mehrerer Apps umstellen oder auf `main` zurücksetzen, siehe [ArgoCD-Features](argocd-features.md) |
 | `tailscale.py` | `cubi tailscale` (`ts`) | Geräteliste, Ping, SSH, `up` und `down` |
 | `github.py` | `cubi github` (`gh`) | Workflow-Läufe, Pull Requests, Issues und Commits eines Repos, Kanban-Board |
 | `kube.py` | `cubi kubernetes` (`k8s`, `kubectl`) | Pods mit Logs und Shell, Nodes, Warnungen, Namespace- und Kontextwechsel |
@@ -44,7 +50,9 @@ cubi ist ein Python-3-Programm ohne Server. `bin/cubi` startet `cubi.main`, das 
 | `tokens.py` | `cubi tokens` (`token`) | Alter, Ablauf und Rotation der Tokens aus dem Token-Register von capulus-core |
 | `auth.py` | `cubi login` (`auth`) | Login-Status für ArgoCD, GitHub und Tailscale samt Login-Befehlen |
 
-Gemeinsame Bausteine: `ui.py` (Tabellen, Menüs, Eingaben), `shell.py` (Unterprozesse), `config.py` (Konfiguration), `token_register.py` (Register lesen und fortschreiben), `argocd_config.py`, `timeutil.py`.
+Gemeinsame Bausteine: `ui.py` (Fassade für Auswahl, Eingaben und Ausgabe), `choice.py` und `term.py` (inline gezeichnete Auswahl, siehe [Select-Komponente](select-komponente.md)), `shell.py` (Unterprozesse), `config.py` (Konfiguration), `token_register.py` (Register lesen und fortschreiben), `argocd_config.py`, `argocd_apps.py` (Apps lesen und patchen), `timeutil.py`.
+
+cubi bleibt immer in der normalen Terminal-Ansicht: kein Vollbild, kein Löschen des Terminals, kein Pager, Editor oder Browser. Details unter [Bedienung](bedienung.md).
 
 Beziehung zu capulus-core: Das Modul `tokens` liest `ops/token-register.yaml` und führt `scripts/check-token-register.py` im Checkout von [capulus-core](../capulus-core/index.md) aus. Runbooks mit dem Präfix `pkr-lab-docs:` öffnet es aus dem Checkout dieses Docs-Repos.
 
@@ -53,4 +61,7 @@ Beziehung zu capulus-core: Das Modul `tokens` liest `ops/token-register.yaml` un
 - [Installation](installation.md)
 - [Konfiguration](konfiguration.md)
 - [Nutzung](nutzung.md)
+- [Bedienung](bedienung.md): Tasten, Einfach- und Mehrfachauswahl
+- [ArgoCD-Features](argocd-features.md): Auto-Sync, Feature-Testing (Branch umstellen), Pods skalieren
+- [Select-Komponente](select-komponente.md): Aufbau und Wiederverwendung im Code
 - [Releases](releases.md)

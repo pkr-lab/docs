@@ -72,8 +72,8 @@ periodisch über die Xibo-REST-API in einen festen NAS-Ordner, und ein
                     ▼
          Raspberry Pi 3 B+ ("infotafel")
          capulus-ansible/roles/xibo_kiosk:
-         manifest.json-Scan (alle 30s, alphabetisch sortiert)
-         + Chromium-Kiosk-Slideshow
+         Sync-Timer (alle 30s): NFS -> lokaler Bilder-Cache
+         + Chromium-Kiosk-Slideshow (file://, aus dem Cache)
          + Tailscale (Fernzugriff)
 ```
 
@@ -338,9 +338,10 @@ Watch Inbox (Local File Trigger, beobachtet /data/xibosignage-inbox)
 
 ## Raspberry-Pi-Rollout (Ansible)
 
-**Voraussetzung:** Raspberry Pi OS (Desktop) bereits geflasht, Autologin für
-den Kiosk-User im Raspberry Pi Imager aktiviert ("Enable autologin") — das
-richtet diese Rolle nicht zusätzlich ein.
+**Voraussetzung:** Raspberry Pi OS bereits geflasht, SSH-Zugang und der Kiosk-User
+vorhanden. Autologin und die eigene X11-Sitzung (statt Desktop) richtet die Rolle selbst
+ein, ein Autologin im Raspberry Pi Imager ist nicht mehr nötig. Details:
+[300e8](../../capulus-ansible/3-apps-workloads/300e8-infotafel-kiosk.md).
 
 ### 1. Host eintragen
 
@@ -388,21 +389,25 @@ Das Playbook `capulus-ansible/xibo-kiosks.yml` führt pro Pi aus:
 |---|---|
 | `tailscale` | VPN-Beitritt, reiner Client (kein Subnetz-Advertising) — Fernzugriff/-wartung ohne Portfreigabe |
 | `node_exporter` | Metriken-Quelle (Port 9100, nur lokal) für Grafana, siehe [Monitoring](#monitoring-grafana) |
-| `xibo_kiosk` | NFS-Mount von `xibosignage-display` (read-only), Manifest-Generator-Timer, lokaler Python-Webserver, Chromium-Kiosk-Slideshow |
+| `xibo_kiosk` | NFS-Eintrag für `xibosignage-display` (read-only, `noauto`), Sync-Timer mit lokalem Bilder-Cache, Chromium-Kiosk-Slideshow in eigener X11-Sitzung |
 | `thermal_watchdog` / `resource_watchdog` | Selbstschutz für unbeaufsichtigte Geräte (gleiches Bundling wie bei den ALAMOS-Kiosks, siehe [capulus-core/3-apps-workloads/30010-alamos-apager.md](30010-alamos-apager.md)) |
 
 ### Wie die Slideshow funktioniert
 
-- `xibosignage-manifest.timer` läuft alle `xibo_kiosk_manifest_interval_seconds`
-  (Default 30s) und schreibt eine `manifest.json` mit allen Bilddateien im
-  NFS-Mount.
-- Ein winziger `python3 -m http.server` (nur auf `127.0.0.1` gebunden)
-  liefert die Slideshow-Seite (`index.html`/`slideshow.js`) + Bilder aus.
-- `slideshow.js` liest die `manifest.json` periodisch neu ein und zeigt die
-  Bilder als Crossfade-Slideshow (`xibo_kiosk_slide_duration_ms`, Default
-  10s pro Bild).
-- Chromium läuft im Kiosk-Modus (`--kiosk --incognito`) gegen
-  `http://127.0.0.1:8080/`.
+Ausführlich (Startablauf, Mauszeiger, Cache, Systemdateien, Messung) in
+[300e8](../../capulus-ansible/3-apps-workloads/300e8-infotafel-kiosk.md). Kurzfassung:
+
+- Der Pi bootet ohne Desktop: Autologin auf tty1, `startx`, openbox, Chromium im Kiosk-Modus
+  gegen `file:///var/www/xibosignage-slideshow/index.html`. Chromium wartet weder auf das
+  Netzwerk noch auf einen Webserver.
+- `xibosignage-sync.timer` (Default alle 30s) startet `xibosignage-sync.py`: Es mountet den
+  NFS-Ordner, kopiert neue oder geänderte Bilder atomar in den lokalen Cache
+  `/var/www/xibosignage-slideshow/media/` (zu große Bilder skaliert es auf 1920×1080) und schreibt
+  die Bildliste `manifest.js`. Ist das NAS nicht erreichbar, bleibt der Cache unverändert.
+- `slideshow.js` zeigt das erste Bild sofort (Preload, Decode), danach Crossfade-Slideshow
+  (`xibo_kiosk_slide_duration_ms`, Default 10s pro Bild), und liest `manifest.js` alle 10s neu.
+  Ohne Cache erscheint das mitgelieferte `default.svg`.
+- Den Mauszeiger blenden `unclutter` und die Seite nach 3s Inaktivität aus.
 
 Das Semaphore-Projekt **"xibo-displays"** ist nach `make semaphore-bootstrap`
 automatisch in der UI verfügbar (siehe [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md))
@@ -514,10 +519,10 @@ erreichen (neuer, leerer Unterordner derselben PVC):
 | `infotafel` zeigt Bilder, die längst aus der Playlist entfernt wurden | `kubectl -n n8n exec deploy/n8n -- ls -la /data/xibosignage-display` — liegen noch `xibo-playlist-*`-Dateien ohne aktuelles Playlist-Gegenstück? Workflow-Ausführungshistorie in n8n prüfen, ob der letzte Lauf fehlgeschlagen ist (Cleanup-Schritt läuft nur bei erfolgreichem Durchlauf) |
 | n8n "Local File Trigger" feuert nicht (nur relevant für den [deaktivierten Alternativ-Pfad](#alternative-deaktiviert-onlinesync--inbox--display)) | `kubectl -n n8n exec deploy/n8n -- ls -la /data/xibosignage-inbox` — Mount vorhanden? PVC `xibosignage-inbox-data` im Status `Bound`? (`kubectl -n n8n get pvc`) |
 | n8n-PVCs bleiben `Pending` | Statische PV falsch benannt/gebunden — `kubectl get pv xibosignage-inbox-pv xibosignage-display-pv` prüfen, `nfs.path` muss exakt existieren (siehe [Ordner anlegen](#nas-ordner-einrichten-display)) |
-| Pi zeigt nur "Warte auf Bilder…" | `ssh pi@<host> 'cat /var/www/xibosignage-slideshow/manifest.json'` — leer? `mountpoint /mnt/xibosignage-display` prüfen, ggf. `sudo mount -a` |
+| Pi zeigt nur das Standardbild "Infotafel / Bilder werden geladen" | `ssh <user>@<host> 'cat /var/www/xibosignage-slideshow/manifest.js; journalctl -u xibosignage-sync -b --no-pager \| tail -20'` — leer? Der Sync meldet dort, ob der Mount klappt. Von Hand testen: `sudo mount /mnt/xibosignage-display` |
 | Pi-Mount schlägt fehl | `nfs-common` installiert? (`dpkg -l | grep nfs-common`), NAS vom Pi aus erreichbar? (`showmount -e 192.168.178.97`) |
-| Chromium startet nicht / schwarzer Bildschirm | Autologin auf dem Pi aktiv? `systemctl status xibosignage-kiosk xibosignage-webserver` auf dem Pi |
-| `xibosignage-kiosk.service` im Crash-Loop, `journalctl -u xibosignage-kiosk` zeigt `exec: chromium-browser: Nicht gefunden` (exit 127) | Auf aktuellen (Debian-trixie-basierten) Raspberry-Pi-OS-Images ist `chromium-browser` nur noch ein leeres transitionales Dummy-Paket, das Binary heißt `chromium` (`/usr/bin/chromium`). `xibosignage-kiosk-start.sh.j2` löst das Binary zur Laufzeit dynamisch auf (`command -v chromium \|\| command -v chromium-browser`) — bei älterem Rollenstand `make xibo-kiosks` erneut laufen lassen, um das aktualisierte Skript auszurollen |
+| Chromium startet nicht / schwarzer Bildschirm | Nach dem ersten Rollout muss der Pi neu starten. Danach: `journalctl -t xibosignage-kiosk -b` zeigt `x11 bereit` und `starte chromium`, `pgrep -a Xorg` den X-Server, `cat /etc/systemd/system/getty@tty1.service.d/autologin.conf` das Autologin |
+| `journalctl -t xibosignage-kiosk` zeigt `weder chromium-browser noch chromium gefunden` | Auf aktuellen Raspberry-Pi-OS-Images heißt das Binary `chromium`, auf älteren `chromium-browser`. `xibosignage-kiosk-start.sh` löst es zur Laufzeit auf, bei fehlendem Paket `make xibo-kiosks` erneut laufen lassen |
 | `Permission denied (publickey)` bei `make xibo-kiosks` | `make semaphore-targets` lief nicht für den neuen Pi (siehe [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)) |
 | Nach Workflow-Import in n8n: "Watch Inbox" und/oder "Original archivieren" zeigen "Install this node to use it" | n8n blockt Local File Trigger/Execute Command standardmäßig (Sicherheitsfeature) — `env.NODES_EXCLUDE: "[]"` in `argocd/apps/tech/n8n/values.yaml` setzt das für diese Instanz zurück, danach n8n-Pod neu starten und Workflow neu öffnen |
 | Pi advertised ungewollt das Heim-Subnetz im Tailscale-Adminpanel | `tailscale_advertise_routes: ""` fehlt in `capulus-ansible/group_vars/xibo_displays.yml` — sollte nach dem nächsten Rollout verschwinden (`tailscale set --advertise-routes=` ohne Wert entfernt bestehende Routes nicht automatisch, ggf. einmalig `sudo tailscale set --advertise-routes=` manuell auf dem Pi nachziehen) |

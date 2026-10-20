@@ -2,15 +2,21 @@
 
 ## Bedienung
 
-- Enter or the right arrow opens an entry.
-- Esc or the left arrow goes back one level.
+- Up and down arrows move, Enter confirms, Esc goes back one level or cancels, Ctrl+C cancels and exits.
+- In multi-selections, Space toggles an entry and `a` toggles all.
+- `cubi autosync`, `cubi feature-testing` and `cubi scale` end cubi after they have changed something, so the shell is free again. Cancelling returns to the menu.
 - In tables, `r` reloads. The footer shows the extra keys of the current section.
+
+Alle Tasten, das Inline-Verhalten und die Stellen mit Mehrfachauswahl stehen unter [Bedienung](bedienung.md).
 
 Abschnitte direkt öffnen:
 
 ```bash
 cubi
 cubi argocd
+cubi autosync
+cubi feature-testing
+cubi scale
 cubi tokens
 cubi login
 ```

@@ -311,6 +311,7 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [Immich](3-apps-workloads/300c0-immich.md) | PROD | Foto-/Video-Backup vom Handy inkl. Gesichtserkennung, eigener NAS-Storage-Export |
 | [Homeserver-Dashboard-API](3-apps-workloads/300d0-carplay-api.md) | TECH | Go/Gin-API + power-agent für die reine iOS-App Homeserver Dashboard (Metriken, Alerts, Status, Helligkeit, Wake/Shutdown) |
 | [xibosignage](3-apps-workloads/300e0-xibosignage.md) | PROD | Xibo CMS + Bilder-Slideshow auf Raspberry Pi 3B+, n8n-Workflow für automatisches Einspielen |
+| [Infotafel-Kiosk](../capulus-ansible/3-apps-workloads/300e8-infotafel-kiosk.md) | — | Raspberry-Pi-3-B+-Kiosk der Infotafel: Startablauf, Mauszeiger, lokaler Bilder-Cache |
 | [pacman — Besuchertracking](3-apps-workloads/300f0-pacman-visitor-tracking.md) | TECH | IP/GeoIP-Besucher-Tracking-Demo für die IT-Security-Schulung |
 | [Ollama](3-apps-workloads/300g0-ollama.md) | TECH | Lokales LLM, nur bei Bedarf hochgefahren (vom n8n-Workflow gesteuert) |
 | [ALAMOS-Einsatzalarm → Zammad](3-apps-workloads/300h0-alamos-einsatz-zammad.md) | TECH | n8n-Workflow: Einsatzalarm wird zum Zammad-Ticket |
