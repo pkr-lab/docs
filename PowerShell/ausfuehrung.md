@@ -59,3 +59,21 @@ Dieser Ordner enthält Skripte, die **einmalig oder manuell** ausgeführt werden
 Unregister-ScheduledTask -TaskName "GPO-Watchdog" -Confirm:$false
 Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "GPOWatchdogStarter"
 ```
+
+---
+
+## Fehlersuche
+
+Die Meldungen aller Skripte sammelt [Debugging und Fehlersuche](debugging.md), die Logdateien liegen unter `C:\Users\Public\10020115_WinScripts\Logs\`.
+
+| Skript | Symptom | Ursache und Lösung |
+|---|---|---|
+| `WatchDogInstall.ps1` | `Kein interaktiver Benutzer erkannt …` (Exit 1) | kein angemeldeter Benutzer (zum Beispiel per Remote-Sitzung ohne Anmeldung), im Benutzerkontext starten |
+| | Warnung `Dieses Skript läuft als Administrator …` | als normaler Benutzer starten, sonst landen Run-Key und Task im Admin-Profil |
+| | Warnung `Watchdog-Skript nicht gefunden: <pfad>` | Standardpfad existiert noch nicht, Skripte zuerst kopieren oder `-ScriptPath` setzen |
+| | `Fehler beim Registrieren der Aufgabe: …` (Exit 2) | fehlende Rechte für die Aufgabenplanung |
+| | Watchdog läuft nach dem Login nicht | `Get-ScheduledTask -TaskName GPO-Watchdog`, `Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Run -Name GPOWatchdogStarter` |
+| `DateienSendenVM.ps1` | `Quelldatei nicht gefunden: <pfad>` | `-SourceZip` setzen |
+| | `Copy-VMFile` scheitert | Hyper-V-Gastdienste in der VM aktivieren, VM läuft? |
+| | `Backup-GPO`/`Import-GPO` nicht gefunden | RSAT: Modul GroupPolicy installieren, als Administrator ausführen |
+| | `Ungültige Eingabe.` | gültige Menünummer wählen |

@@ -18,6 +18,21 @@ Zentrale Dokumentation aller Projekte von pkr-lab. Jedes Projekt hat einen eigen
 | .github | wiederverwendbare Workflows für Releases und Commitlint | [GitHub](https://github.com/pkr-lab/.github) | [github-workflows/](github-workflows/index.md) |
 | pkr-lab | GitHub-Profilseite | [GitHub](https://github.com/pkr-lab/pkr-lab) | [pkr-lab/](pkr-lab/index.md) |
 
+## Fehlersuche
+
+Einstieg bei Störungen: **[Zentrale Fehlersuche](capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md)** (Symptom → richtige Anleitung). Jedes Projekt hat eine eigene Seite „Debugging und Fehlersuche“ oder einen Abschnitt „Fehlersuche“:
+
+| Projekt | Fehlersuche |
+|---|---|
+| capulus-core | [Zentrale Fehlersuche](capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md), [Skripte und Workflows](capulus-core/f-cicd-automatisierung/f00c0-skripte-und-workflows-referenz.md) |
+| capulus-ansible | [Rollen: Fehlersuche je Rolle](capulus-ansible/rollen/index.md#fehlersuche-je-rolle), [Troubleshooting](capulus-ansible/a-betriebssystem/a0040-troubleshooting.md) |
+| capulus-ios | [Debugging](capulus-ios/debugging.md) |
+| cubi | [Debugging](cubi/debugging.md) |
+| ui-terminal-config | [Debugging](ui-terminal-config/debugging.md) |
+| DocFlowEngine | [Debugging](DocFlowEngine/debugging.md) |
+| PowerShell | [Debugging](PowerShell/debugging.md), [git-pull-push](PowerShell/bash-git-pull-push.md) |
+| EDV-Kretzer | [Debugging](EDV-Kretzer/debugging.md) |
+
 ## Aufbau
 
 ```

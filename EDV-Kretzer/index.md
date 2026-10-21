@@ -38,18 +38,27 @@ flowchart LR
 |---|---|
 | `assets/icons`, `assets/images` | Logo, Favicon, SVG-Sprite, Screenshots |
 | `css/` | `style.css` (Designsystem mit CSS-Variablen), `animations.css` |
-| `js/main.js` | Navigation, Dropdown, Einblend-Animationen, Kontaktformular-Einbindung |
+| `js/main.js` | Navigation, Dropdown, Einblend-Animationen, Info-Banner, Status-Hinweis (alle Seiten) |
 | `js/apps.js` | rendert den Anwendungskatalog mit Filter und Suche |
 | `js/updates.js` | rendert den Changelog und das Status-Widget |
 | `data/` | `apps.json`, `releases.json`, `status.json`, `updates.json` (alt) |
-| `automation/` | n8n-Workflow zum Veröffentlichen von Updates |
-| `.github/workflows/deploy.yml` | Deployment nach netcup |
+| `automation/` | n8n-Workflows: Status-Hinweis schalten, früherer Update-Feed |
+| `scripts/build-releases.mjs` | erzeugt `data/releases.json` aus der GitHub-API |
+| `.github/workflows/` | `deploy.yml`, `releases.yml`, `status.yml`, `release.yml`, `commitlint.yml`, siehe [Automatisierung](automatisierung.md) |
 
 ## Seiten
 
 - [Installation](installation.md)
 - [Konfiguration](konfiguration.md)
 - [Nutzung](nutzung.md)
+- [Komponenten](komponenten.md): JavaScript, Status-Banner, Zammad-Chat und -Formular, Katalog, Changelog, Status-Widget
+- [Automatisierung](automatisierung.md): Deployment, Release-Verlauf, Status-Hinweis, n8n
+- [Debugging und Fehlersuche](debugging.md)
 - [Releases](releases.md)
 - [SEO](seo.md)
 - [Phase 5: Strukturvorschlag](phase-5-strukturvorschlag.md)
+
+
+## Fehlersuche
+
+Fehlerbilder, Logs und Checkliste: [Debugging und Fehlersuche](debugging.md). Komponentenweise: [Komponenten](komponenten.md#debugging-und-fehlersuche), [Automatisierung](automatisierung.md#debugging-und-fehlersuche). Zentral: [zentrale Fehlersuche](../capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).

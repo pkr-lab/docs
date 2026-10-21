@@ -56,3 +56,18 @@ Skripte in diesem Ordner werden **automatisch vom Watchdog** bei jedem Login aus
 ```powershell
 Remove-Item "$env:APPDATA\Microsoft\Templates\*.dotx"
 ```
+
+---
+
+## Fehlersuche
+
+Die Meldungen aller Skripte sammelt [Debugging und Fehlersuche](debugging.md), die Logdateien liegen unter `C:\Users\Public\10020115_WinScripts\Logs\`.
+
+| Skript | Meldung | Ursache und Lösung |
+|---|---|---|
+| Log_Software | `Keine klassischen Programme gefunden.`, `Fehler beim Auslesen klassischer Programme: …`, `Fehler beim Auslesen der UWP-Apps: …` | Registry- bzw. AppX-Abfrage lieferte nichts oder scheiterte (Rechte) |
+| doc_Word | `Logging-Modul nicht gefunden: <pfad>` | `-ModulePath` prüfen (Standard unter `Win11_C`) |
+| | `Vorlagenordner wurde nicht gefunden: <pfad>` und `Vorlagenordner fehlt.` | `-TemplateSourcePath` prüfen |
+| | `Keine .dotx Dateien im Ordner gefunden: <pfad>` und `Keine Vorlagen vorhanden.` | Quelle enthält keine `.dotx` |
+| | `Fehler beim Kopieren von <vorlage>: …`, `Konnte Registry für Version <v> nicht setzen: …` | Word offen oder Rechte |
+| | `Konnte Vorlage nicht in Word öffnen: …`, `Fehler beim Starten von Word COM: …` | Word nicht installiert oder blockiert, Word schließen |

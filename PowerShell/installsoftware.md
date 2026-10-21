@@ -39,3 +39,15 @@ Skripte zur Installation von herstellerspezifischen Verwaltungswerkzeugen (BIOS,
 ```powershell
 Uninstall-Module -Name HPCMSL -AllVersions -Force
 ```
+
+---
+
+## Fehlersuche
+
+Die Meldungen aller Skripte sammelt [Debugging und Fehlersuche](debugging.md), die Logdateien liegen unter `C:\Users\Public\10020115_WinScripts\Logs\`.
+
+| Meldung | Ursache und Lösung |
+|---|---|
+| `Lenovo Installer nicht gefunden: <pfad>` und `Lenovo Installer fehlt. Bitte von https://support.lenovo.com herunterladen.` | `system_update.exe` liegt nicht am Pfad (`-InstallerPath`) |
+| `Unbekannter Hersteller '<name>' – keine Installation durchgefuehrt.` | weder HP noch Lenovo, normal bei anderen Geräten |
+| `Kritischer Fehler: …` | Installation scheiterte, Detail im Log, Modul `HPCMSL` (HP) per `Install-Module` prüfen |

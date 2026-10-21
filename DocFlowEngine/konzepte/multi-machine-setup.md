@@ -147,3 +147,18 @@ ausschließen, das aktuell im Repo fehlt).
 4. `defaultNameFormat` deterministisch machen + optionalen Ziel-Existenz-Check
    (Baustein 5).
 5. Zeitversetzte Scheduled Tasks konfigurieren (Baustein 4).
+
+
+---
+
+## Fehlersuche
+
+Meldungen und Entscheidungsfluss: [Debugging und Fehlersuche](../debugging.md).
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| Dateien werden auf mehreren Rechnern doppelt kopiert | `stateFile` liegt lokal statt im geteilten Ordner | `stateFile`, `lockFile` und `projectRoutesFile` auf den geteilten Ordner setzen |
+| `Lauf abgebrochen: aktive Lock-Datei '…' gefunden (<rechner>\|<pid>\|<zeit>).` | anderer Rechner läuft oder ein Lauf ist abgestürzt (Lock ist jünger als `lockTimeoutMinutes`) | Inhalt der Lock-Datei zeigt, wer sie hält. Nach Ablauf des Timeouts übernimmt der nächste Lauf, sonst Datei löschen |
+| `Zieldatei existiert bereits, überspringe Kopie: …` | anderer Rechner war schneller | normal bei Parallelbetrieb |
+| Lock wird nie frei | OneDrive synchronisiert die Lock-Datei verzögert | `lockTimeoutMinutes` prüfen, Synchronisierung abwarten |
+| Verschiedene Whitelists je Rechner | Laufzeit-Kopie lokal | `projectRoutesFile` auf den geteilten Pfad setzen |

@@ -64,3 +64,13 @@ git config core.hooksPath .githooks
 ```
 
 Bei Repos mit Makefile (capulus-core, capulus-ansible) erledigt `make hooks` den letzten Schritt.
+
+
+## Fehlersuche
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| Workflow-Aufruf meldet „workflow was not found“ | SHA oder Pfad im `uses:` falsch | [Nutzung: Fehlersuche](nutzung.md#fehlersuche) |
+| Kein Release nach dem Merge | Commit-Format, nach dem letzten Tag keine Commits mit `feat`/`fix` | [Nutzung: Fehlersuche](nutzung.md#fehlersuche) |
+| `commit-msg`-Hook lehnt ab | Kopfzeile verletzt das Format | `<typ>(<scope>): <beschreibung>` ([Lokaler Hook](#lokaler-hook)) |
+| Push auf `main` abgelehnt | Branch-Schutz | PR verwenden, [Branch-Schutz (capulus-core)](../capulus-core/f-cicd-automatisierung/f0090-branch-schutz-main.md#fehlersuche) |

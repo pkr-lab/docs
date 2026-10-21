@@ -126,3 +126,10 @@ explizit so eingerichtet, siehe README).
 |---|---|
 | `scripts/Invoke-OneDriveSync.ps1` | Kein Modul-Import. Beendet den OneDrive-Prozess des Benutzers und startet ihn neu (`Stop-Process`/`Start-Process`), um einen frischen Sync-Check anzustoßen - kein offizieller, garantierter "Sync jetzt"-Befehl existiert. `-ExecutablePath` überschreibbar; ohne gefundene `OneDrive.exe` (z. B. `$env:LOCALAPPDATA` nicht gesetzt, wie auf macOS/Linux) bricht das Skript kontrolliert mit einer Warnung ab statt mit einem Fehler. |
 | `scripts/Rename-ExistingAufgaben.ps1 -Path <string> [-ConfigPath <string>] [-Apply]` | Manuell auszuführendes Migrationsskript für Alt-Bestand. Nutzt `Load-Config`/`Get-PraefixSuffixRegistry`/`Get-DocFlowMigratedFileName`/`Lock-DocFlowRun`/`Load-State`/`Save-State`. Ohne `-Apply` reine Vorschau (keine Änderung). Mit `-Apply`: benennt Dateien um (Kollisionsschutz durch angehängten Zähler) und registriert sie - falls `-Path` unterhalb eines konfigurierten `sources[]`-Eintrags liegt - unter demselben Dedup-Key-Format wie `Copy-NewFiles` (`"$($source.path)\|<relativer Pfad>"`) in `.docflow-state.json`, damit `Invoke-DocFlowEngine` sie beim nächsten Lauf nicht erneut als neue Datei behandelt. |
+
+
+---
+
+## Fehlersuche
+
+Jede Funktion schreibt ihre Meldungen über `Write-Log` (Level `Trace` bis `Error`). Die Zuordnung von Meldung zu Teilmodul steht in [Debugging und Fehlersuche](debugging.md#fehlermeldungen). Einzelne Funktionen lassen sich im Debugger prüfen: Die Teildateien werden per Dot-Sourcing geladen, ein Haltepunkt mit `Set-PSBreakpoint -Script .\scripts\DocFlowEngine\<Teilmodul>.ps1 -Line <n>` funktioniert nach `Import-Module … -Force`.

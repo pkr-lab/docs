@@ -44,3 +44,8 @@ capulus-core, capulus-ansible, capulus-ios, capulus-wiki-sync, cubi, ui-terminal
 - [Konfiguration](konfiguration.md)
 - [Nutzung](nutzung.md)
 - [Releases](releases.md)
+
+
+## Fehlersuche
+
+Fehlerbilder der Release- und Commitlint-Workflows: [Nutzung: Fehlersuche](nutzung.md#fehlersuche). Je Repo, das die Workflows nutzt, gibt es zusätzlich die Fehlerbilder der Aufrufer (zum Beispiel [capulus-core: Skripte und Workflows](../capulus-core/f-cicd-automatisierung/f00c0-skripte-und-workflows-referenz.md#workflows)). Stand der Prüfung (2026-10-21): Das Repo `pkr-lab/.github` liegt nicht unter `~/gitlab`, die Angaben stützen sich auf die vorhandene Doku und die Aufrufer-Workflows der anderen Repos (TODO: prüfen gegen das Repo selbst).

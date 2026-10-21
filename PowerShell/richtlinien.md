@@ -78,3 +78,22 @@ Werden automatisch vom Watchdog bei jedem Login ausgeführt.
 ```powershell
 Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "RemoveWindowsStore"
 ```
+
+---
+
+## Fehlersuche
+
+Die Meldungen aller Skripte sammelt [Debugging und Fehlersuche](debugging.md), die Logdateien liegen unter `C:\Users\Public\10020115_WinScripts\Logs\`. Alle Richtlinien-Skripte brechen mit `Administratorrechte erforderlich.` ab, wenn sie nicht erhöht laufen (der Watchdog-Task läuft mit `-RunLevel Highest`). Die vollständige Meldungstabelle steht im Abschnitt [Richtlinien](debugging.md#richtlinien-administrator-nötig).
+
+| Skript | Meldung | Ursache und Lösung |
+|---|---|---|
+| Passwort | `Fehler beim Erstellen des Registry-Pfads: …`, `Fehler beim Setzen der PIN-Komplexitaet: …` | HKLM-Schreibzugriff verweigert |
+| WinInstallStore | `Fehler beim Deaktivieren des Stores: …` | wie oben |
+| SoftwareInstallUninstall | `Fehler beim Entfernen von SRP: …`, `Konnte nicht entfernen: <name> …` | Registry-Schlüssel gesperrt |
+| Personalisierung | `Benutzer-Hintergrund nicht gefunden: <pfad>`, `Sperrbildschirmbild nicht gefunden: <pfad>` | Bilddatei fehlt (`$UserWallpaper`, `$LockImageScreen`) |
+| | `Fehler beim Setzen der ADMX-Richtlinien: …` | Rechte oder Pfad |
+| SystemHilfe | `OEM-Logo nicht gefunden (wird uebersprungen): <pfad>` | `$LogoPath` prüfen, Branding läuft ohne Logo |
+| | `Fehler beim OEM-Branding: …`, `Fehler beim Setzen der Legal Notice: …` | Registry-Rechte |
+| Firewall | `Fehler beim Aktivieren der Firewall: …`, `Fehler beim Setzen der Standardregeln: …` | `Set-NetFirewallProfile` abgelehnt, Fremd-Firewall |
+| | `Firewall-Regel nicht gefunden (uebersprungen): …` | Regel existiert in dieser Windows-Version nicht, Warnung |
+| alle | Wirkung erst nach Neustart | OEM-Branding und Store-Einstellung brauchen einen Neustart, Rückbau: [Rollback](nutzung.md#rollback) |

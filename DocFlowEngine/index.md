@@ -51,6 +51,7 @@ Detail-Dokumentation (Übersicht: [uebersicht.md](uebersicht.md)), aufgeteilt na
 - [DocFlowEngine/module-reference.md](module-reference.md) - Funktionsreferenz der Teilmodule
 - [DocFlowEngine/logging.md](logging.md) - Log-Level, Log-Format, Verhalten im DryRun
 - [DocFlowEngine/testing.md](testing.md) - Pester-Tests installieren und ausführen
+- [DocFlowEngine/debugging.md](debugging.md) - Fehlermeldungen, Entscheidungsfluss „Warum wurde die Datei nicht kopiert?“, Checkliste, lokales Debugging
 
 Konzeptdokumente:
 
@@ -64,3 +65,8 @@ Konzeptdokumente:
 - Zugriffsrechte benötigt: Lesezugriff auf Quellordner, Schreibzugriff auf Zielordner
 - Zustandsdatei (`stateFile`) wird am konfigurierten Pfad gespeichert (muss schreibbar sein) - im Multi-Machine-Betrieb üblicherweise im geteilten OneDrive/SharePoint-Ordner statt im lokalen Repo-Verzeichnis, siehe [DocFlowEngine/konzepte/multi-machine-setup.md](konzepte/multi-machine-setup.md)
 - Log-Datei wird im konfigurierten Pfad gespeichert (Verzeichnis muss existieren oder `createIfMissing` setzen)
+
+
+## Fehlersuche
+
+Meldungen, Entscheidungsfluss und Checkliste: [Debugging und Fehlersuche](debugging.md).

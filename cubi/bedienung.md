@@ -104,3 +104,17 @@ Alle übrigen Auswahlen sind Einfachauswahlen, weil die Aktion nur für genau ei
 ## Bestätigungen
 
 Ändernde Aktionen fragen mit `(y/N)` nach. Die Voreinstellung steht in Großbuchstaben, Enter nimmt sie. `y`/`j` bestätigen, `n` und Esc lehnen ab.
+
+---
+
+## Wenn die Bedienung hakt
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| Terminal zeigt nach einem Abbruch keine Eingabe mehr | Rohmodus nicht zurückgesetzt (zum Beispiel nach `kill -9`) | `reset` oder `stty sane` |
+| Auswahl ist abgeschnitten | Zeilen werden auf die Terminalbreite gekürzt | Terminal verbreitern oder Schrift verkleinern |
+| `cubi benötigt ein interaktives Terminal` | kein TTY | in einem echten Terminal starten |
+| Pfeiltasten tun nichts | Terminal sendet unbekannte Sequenzen | andere Terminal-Emulation (`TERM=xterm-256color`) testen |
+| Enter tut nichts in einer Mehrfachauswahl | `Mindestens 1 Eintrag wählen` | mit Space wählen |
+
+Mehr in [Debugging und Fehlersuche](debugging.md).

@@ -54,3 +54,15 @@ Danach den Workflow über „Run workflow“ starten.
 
 - Das Verzeichnis `.github` und `automation` liegen im Docroot und sind damit über die Website abrufbar. Inhalt: Workflows und der n8n-Workflow ohne Zugangsdaten. Bei Bedarf per `.htaccess` sperren.
 - Zugangsdaten gehören nur in GitHub-Secrets, nie in den Spiegel oder das Docroot.
+
+
+---
+
+## Fehlersuche
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| Lokal bleiben Katalog und Verlauf leer | Seite per `file://` geöffnet | `python3 -m http.server 8000` |
+| Deployment: `missing server host` | Secret `NETCUP_HOST` fehlt | [Secrets anlegen](#secrets-anlegen) |
+| Deployment: `Permission denied (publickey)` | Schlüssel nicht in `authorized_keys` | Schlüssel testen (Befehl oben) |
+| Deployment grün, Seite alt | Browser-Cache, falsches `NETCUP_PATH` | [Automatisierung: Fehlersuche](automatisierung.md#debugging-und-fehlersuche) |
