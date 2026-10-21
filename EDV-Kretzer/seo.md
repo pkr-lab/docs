@@ -1,23 +1,28 @@
 # SEO-Einstellungen
 
-Stand der Suchmaschinen-Einstellungen der Website. Diese Seite wird in Phase 5 (Ausbau der Website) fortgeschrieben.
+Die Suchmaschinen-Angaben entstehen automatisch. `scripts/build-seo.mjs` schreibt sie in die Seiten und erzeugt `sitemap.xml` und `robots.txt`. Von Hand gepflegt werden nur Inhalt, `<title>`, `<meta name="description">` und die Canonical-Adresse jeder Seite.
 
-## `robots.txt`
+## Was das Skript erzeugt
 
-```
-User-agent: *
-Allow: /
+| Ergebnis | Quelle |
+|---|---|
+| Open Graph (`og:type`, `og:site_name`, `og:title`, `og:description`, `og:url`, `og:locale`, `og:image`) und Twitter-Card | Titel (ohne „\| EDV-Kretzer“) und Description der Seite, Vorschaubild je Seite aus einer Tabelle im Skript |
+| JSON-LD (`@graph`) | Startseite: `Person`, `WebSite`, `WebPage`. Unterseiten: `WebPage` und `BreadcrumbList`. `capulus.html`: zusätzlich `ItemList` mit `SoftwareSourceCode` je Projekt (Version aus `data/versions.json`). `anwendungen.html`: `ItemList` aus `data/apps.json` |
+| `sitemap.xml` | alle Seiten mit kanonischer Adresse, `lastmod` (Datum des letzten Git-Commits der Seite und ihrer Datendateien), `changefreq` und `priority` |
+| `robots.txt` | `Allow: /`, `Disallow` für `/automation/`, `/scripts/` und `/.github/`, Verweis auf die Sitemap |
 
-Sitemap: https://www.edv-kretzer.de/sitemap.xml
-```
+Die erzeugten Tags tragen das Attribut `data-seo`. Bei jedem Lauf entfernt das Skript alle Open-Graph-, Twitter- und JSON-LD-Angaben und schreibt sie vor `</head>` neu. Ein zweiter Lauf ändert nichts (idempotent). Manuell gesetzte Open-Graph- oder JSON-LD-Tags werden dabei überschrieben.
 
-Alle Seiten sind erlaubt, der Verweis auf die Sitemap ist absolut.
+## Prüfungen
 
-## `sitemap.xml`
+`node scripts/build-seo.mjs --check` schreibt nichts und liefert einen Fehlercode bei:
 
-Enthält die 11 Seiten der Website mit `loc` und `priority` (Startseite 1.0, Projekt und Anwendungen 0.9, rechtliche Seiten 0.2). Ein `lastmod` fehlt noch.
+- fehlendem `<title>`, fehlender Description, keinem oder mehr als einem Canonical, Canonical ungleich `https://www.edv-kretzer.de/<Datei>` (Startseite: `/`)
+- internen `href`/`src` ohne Zieldatei
+- fehlendem Vorschaubild
+- einer HTML-Datei, die nicht in der Tabelle `PAGES` im Skript steht (und umgekehrt)
 
-## Meta-Angaben je Seite
+Warnungen (kein Fehler) gibt es bei Titeln über 80 Zeichen und Descriptions unter 50 oder über 220 Zeichen. Die CI (`ci.yml`, „Seiten-Prüfung“) führt die Prüfung auf jedem Pull Request aus.
 
 | Angabe | Stand |
 |---|---|

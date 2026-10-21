@@ -10,8 +10,9 @@ Reines HTML, CSS und etwas JavaScript, ohne Build-Schritt und ohne Framework. Di
 
 | Seite | Inhalt |
 |---|---|
-| `index.html` | Startseite mit Kurzvorstellung und strukturierten Daten (`Person`) |
+| `index.html` | Startseite mit Kurzvorstellung |
 | `projekt.html` | Das Projekt capulus-core: Architektur, Komponenten, Hintergründe |
+| `capulus.html` | capulus im Überblick: SVG-Architekturdiagramm, Projektkarten mit aktueller Version, neueste Releases |
 | `anwendungen.html` | Katalog der Self-Hosted-Dienste, geladen aus `data/apps.json` |
 | `mediamtx-drohnenstream.html` | Anleitung: Drohnen-Livestream per MediaMTX zum ELW |
 | `app.html` | Die eigene iOS-App fürs Homelab mit Screenshots |
@@ -26,9 +27,9 @@ Reines HTML, CSS und etwas JavaScript, ohne Build-Schritt und ohne Framework. Di
 flowchart LR
   browser["Browser"] --> html["HTML-Seiten"]
   html --> css["css/style.css, animations.css"]
-  html --> js["js/main.js, apps.js, updates.js"]
+  html --> js["js/main.js, apps.js, updates.js, capulus.js"]
   js -->|"fetch"| apps["data/apps.json"]
-  js -->|"fetch"| upd["data/releases.json"]
+  js -->|"fetch"| upd["data/releases.json, versions.json, projects.json"]
   js -->|"fetch (öffentlich)"| kuma["Uptime-Kuma-Status-Page"]
   push["Push auf main"] --> gha["GitHub Action deploy.yml"]
   gha -->|"SSH: fetch und checkout"| netcup["netcup-Webserver"]
