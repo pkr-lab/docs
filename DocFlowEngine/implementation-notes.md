@@ -104,3 +104,10 @@ nächste Lauf sie automatisch erneut, ohne dass jemand die Zustandsdatei bearbei
 **Wiederholungen mit fester Pause im selben Lauf.** Typische Ursachen für Kopierfehler (Datei kurz
 von OneDrive oder Word gesperrt) lösen sich meist nach wenigen Sekunden. Zwei Wiederholungen mit
 5 Sekunden Pause verlängern einen Lauf im Fehlerfall nur um 10 Sekunden pro Datei.
+
+
+---
+
+## Fehlersuche
+
+Zu den hier beschriebenen Stellen (Namensprüfung, Kopieren mit Wiederholung, Sperre, Zustand): Entscheidungsfluss und Meldungen in [Debugging und Fehlersuche](debugging.md#warum-wurde-meine-datei-nicht-kopiert).

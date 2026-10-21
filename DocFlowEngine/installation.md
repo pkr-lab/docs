@@ -46,3 +46,14 @@ cd DocFlowEngine
    # oder mit Windows PowerShell 5.1:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\DocFlowEngine.ps1
    ```
+
+
+## Fehlersuche
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| `Teilmodul '…' wurde nicht gefunden.` | Checkout unvollständig | Repo vollständig auschecken |
+| `pwsh: command not found` | PowerShell 7 fehlt | `powershell.exe` (5.1) nutzen oder PowerShell 7 installieren, beide funktionieren ([Kompatibilität](compatibility-und-admin-rechte.md)) |
+| Skript wird blockiert | Execution Policy | `-ExecutionPolicy Bypass` (nur für den Prozess) |
+
+Weitere Fälle: [Debugging und Fehlersuche](debugging.md).

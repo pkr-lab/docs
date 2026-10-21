@@ -43,3 +43,19 @@ Das Skript startet sich selbst als Hidden-Prozess neu, damit der aufrufende Term
 - PSWindowsUpdate-Modul installiert (bei Erstlauf)
 
 **Hinweis:** `-IgnoreReboot` – kein automatischer Neustart. Bitte manuell neu starten, falls Updates es erfordern.
+
+---
+
+## Fehlersuche
+
+Die Meldungen aller Skripte sammelt [Debugging und Fehlersuche](debugging.md), die Logdateien liegen unter `C:\Users\Public\10020115_WinScripts\Logs\`. Das Update-Skript startet sich selbst im Hintergrund: Der erste Aufruf legt die Logdatei `update_<datum>_<uhrzeit>.log` an und startet einen versteckten Prozess mit `-RUN_IN_BACKGROUND`. Die Ausgabe steht daher in dieser Datei und nicht in der Konsole.
+
+| Meldung oder Symptom | Ursache und Lösung |
+|---|---|
+| `LOGFILE-Parameter fehlt.` | `-RUN_IN_BACKGROUND` ohne `-LOGFILE` aufgerufen, das Skript ohne Schalter starten |
+| `Installation von PSWindowsUpdate fehlgeschlagen: …` | kein Netz, PSGallery nicht erreichbar oder keine Rechte (`Install-Module PSWindowsUpdate -Force` als Administrator) |
+| `Fehler beim Abrufen der Updates: …`, `Fehler bei der Update-Installation: …` | Windows-Update-Dienst gestört (`wuauserv`), `Get-WindowsUpdateLog` |
+| `Treiberupdate-Einstellung konnte nicht gesetzt werden: …` | Registry-Recht, Warnung |
+| `winget nicht gefunden – Software-Updates werden uebersprungen.` | App Installer fehlt |
+| `Fehler bei Winget-Updates: …` | `winget upgrade` von Hand prüfen |
+| Konsole bleibt leer | gewollt: Hintergrundmodus, Log lesen |

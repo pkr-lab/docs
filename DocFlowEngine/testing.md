@@ -1,7 +1,7 @@
 # Tests
 
 `tests/DocFlowEngine.Tests.ps1` enthält [Pester](https://pester.dev/)-Tests für alle Teilmodule.
-Stand bei Erstellung dieses Dokuments: 26 Tests, alle grün.
+Stand der Prüfung (2026-10-21): 67 Testfälle (`It`-Blöcke) in 23 `Describe`/`Context`-Blöcken. Der Ausgang eines Laufs wurde bei dieser Prüfung nicht ausgeführt (TODO: prüfen, ob alle grün sind).
 
 ## Voraussetzungen
 

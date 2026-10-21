@@ -24,20 +24,26 @@ Die erzeugten Tags tragen das Attribut `data-seo`. Bei jedem Lauf entfernt das S
 
 Warnungen (kein Fehler) gibt es bei Titeln über 80 Zeichen und Descriptions unter 50 oder über 220 Zeichen. Die CI (`ci.yml`, „Seiten-Prüfung“) führt die Prüfung auf jedem Pull Request aus.
 
-## Ablauf
+| Angabe | Stand |
+|---|---|
+| `<title>` | auf allen 11 Seiten gesetzt, nach dem Muster „Thema – Zusatz \| EDV-Kretzer“ |
+| `<meta name="description">` | auf allen Seiten vorhanden |
+| `<meta name="robots" content="index, follow">` | auf allen Seiten |
+| Canonical-Link | auf allen Seiten |
+| Open Graph | vorhanden, außer auf `impressum.html`, `datenschutz.html` und `sitemap.html` |
+| JSON-LD | nur auf `index.html` (`Person`) |
 
-1. Push auf `main`: Der Workflow `seo.yml` führt das Skript aus (mit voller Git-Historie für `lastmod`), committet geänderte Dateien als `chore(seo): … [skip ci]` und startet das Deployment.
-2. Neue Releases: `releases.yml` ruft das Skript mit auf, wenn sich `data/releases.json` oder `data/versions.json` ändern. Dann stehen Version und `lastmod` sofort richtig.
 
-## Neue Seite anlegen
+---
 
-1. HTML-Datei anlegen mit `<title>`, Description und Canonical (`<link rel="canonical" href="https://www.edv-kretzer.de/<Datei>">`).
-2. Eintrag in `PAGES` in `scripts/build-seo.mjs` ergänzen (Breadcrumb-Name, Priorität, Änderungshäufigkeit, optional Vorschaubild, Datendateien für `lastmod`, Gruppe).
-3. In Navigation und `sitemap.html` verlinken. `sitemap.xml` entsteht beim nächsten Lauf.
+## Fehlersuche
 
-## Offene Punkte
+| Prüfung | Befehl oder Ort | Hinweis |
+|---|---|---|
+| `robots.txt` erreichbar | `curl -s https://www.edv-kretzer.de/robots.txt` | muss `Sitemap: https://www.edv-kretzer.de/sitemap.xml` enthalten |
+| Sitemap vollständig | `grep -c '<loc>' sitemap.xml` (derzeit 11) | neue Seite in `sitemap.xml` und `sitemap.html` eintragen ([Nutzung](nutzung.md)) |
+| Meta-Angaben je Seite | `<title>`, `description`, Canonical, Open Graph | Open Graph fehlt bewusst auf Impressum, Datenschutz und Sitemap |
+| Seite wird nicht indexiert | Suchmaschinen-Werkzeug des Anbieters | `robots.txt` und `<meta name="robots">` prüfen |
+| Alte Seite im Index | `lastmod` fehlt in der Sitemap | [Phase 5](phase-5-strukturvorschlag.md) |
 
-- Impressum, Datenschutz und `sitemap.html` stehen weiter im Index (`index, follow`). Wer sie ausschließen will, setzt `noindex` in der Seite und nimmt sie aus `PAGES`.
-- Es gibt kein eigenes Vorschaubild für Open Graph, verwendet werden vorhandene Screenshots und das Foto. Seiten ohne Eintrag in der Tabelle haben kein `og:image`.
-- `/data/` bleibt in `robots.txt` erlaubt, weil Suchmaschinen die JSON-Dateien zum Darstellen von `anwendungen.html` und `capulus.html` brauchen.
-- `automation/`, `scripts/` und `.github/` liegen im Docroot und sind per URL abrufbar. Eine `.htaccess` mit `RedirectMatch 404` würde sie sperren, ist aber nicht eingerichtet: Erlaubt das Hosting `FileInfo` in `.htaccess` nicht, antwortet der Server überall mit 500. Vorher auf einem Testordner prüfen.
+Allgemeines: [Debugging und Fehlersuche](debugging.md).

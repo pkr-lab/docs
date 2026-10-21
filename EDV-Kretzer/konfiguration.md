@@ -53,8 +53,22 @@ Die letzten zehn Releases von capulus-core für den Verlauf auf `updates.html`, 
 
 ## Kontaktformular
 
-`kontakt.html` öffnet ein Zammad-Formular über `js/main.js`. Alternativ steht die E-Mail-Adresse im Impressum.
+`kontakt.html` öffnet ein Zammad-Formular. Die Einbindung steht inline in `kontakt.html` (nicht in `js/main.js`), siehe [Komponenten](komponenten.md#zammad-chat-und-kontaktformular). Alternativ steht die E-Mail-Adresse im Impressum.
 
 ## n8n-Automatisierung
 
 `automation/n8n-update-veroeffentlichen.json` ist ein n8n-Workflow für die frühere Liste `data/updates.json`, die `updates.html` nicht mehr anzeigt. Er ist damit ohne Wirkung auf die Seite und kann in n8n deaktiviert werden. Bei einem GitHub-Release von capulus-core oder per Webhook liest er `data/updates.json` über die GitHub-API, hängt einen Eintrag an und committet die Datei zurück. Nach dem Commit deployt `deploy.yml`.
+
+
+---
+
+## Fehlersuche
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| Katalog leer nach Änderung an `apps.json` | JSON-Syntaxfehler | `python3 -m json.tool data/apps.json` |
+| App erscheint nur unter „Alle“ | Kategorie nicht in `CATEGORIES` von `js/apps.js` | Kategorie ergänzen oder bestehende wählen |
+| Release-Verlauf alt | `releases.yml` lief nicht oder `releases.json` nicht deployt | [Automatisierung: Fehlersuche](automatisierung.md#debugging-und-fehlersuche) |
+| Status-Widget leer | Slug `homelab` oder CORS | [Komponenten: Fehlersuche](komponenten.md#debugging-und-fehlersuche) |
+| Banner erscheint nicht | `data/status.json`, `until` | [Komponenten](komponenten.md#status-hinweis-banner) |
+| Kontaktformular fehlt | Zammad-Skripte nicht geladen | [Komponenten](komponenten.md#zammad-chat-und-kontaktformular) |

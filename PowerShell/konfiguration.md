@@ -44,3 +44,8 @@ Close-Logger                                   # Optional: sauber schließen
 | `C:\Users\Public\10020115_WinScripts\Win11_C\` | lokale Kopie der Skripte |
 | `C:\Users\Public\10020115_WinScripts\Logs\` | Logdateien |
 | `C:\Users\Public\10020115_WinScripts\10020115_Win_R_WLANCounter.txt` | Zähldatei der WLAN-Erinnerung |
+
+
+## Fehlersuche
+
+Die Skripte haben keine Konfigurationsdatei, falsche Werte zeigen sich als Meldung im Log ([Debugging](debugging.md)). Häufig: feste Pfade (`C:\Users\Public\10020115_WinScripts\…`, `Software\Scripte\…`) stimmen nicht mit der Ablage der Sync-Quelle überein, `$Source` im Watchdog enthält einen Benutzernamen, oder `Logging.psm1` liegt nicht am erwarteten Pfad (`Import-Module … Logging.psm1` scheitert).

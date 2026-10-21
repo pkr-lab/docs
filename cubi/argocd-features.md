@@ -208,3 +208,102 @@ Von Hand nachsehen:
 ```bash
 kubectl get configmap cubi-state -n argocd -o jsonpath='{.data.app-a\.scale}'
 ```
+
+---
+
+## Ablauf im Überblick
+
+Alle drei Features folgen demselben Muster: Apps wählen, Plan anzeigen, bestätigen, schreiben, nachkontrollieren.
+
+```mermaid
+flowchart TD
+    A[Aktion wählen] --> B[Apps per Mehrfachauswahl]
+    B --> C[Plan je App berechnen]
+    C --> D{Änderung nötig?}
+    D -->|nein| S[übersprungen: Grund]
+    D -->|ja| E[Geplante Änderungen anzeigen]
+    E --> F{Bestätigen y/N}
+    F -->|nein| X[zurück ins Menü]
+    F -->|ja| G[Zustand in ConfigMap cubi-state merken]
+    G --> H[ApplicationSet-Regel setzen falls nötig]
+    H --> I[kubectl patch oder kubectl scale]
+    I --> J[8 Sekunden warten, Zustand neu lesen]
+    J --> K{hält die Änderung?}
+    K -->|ja| L[✔ Änderung hält, cubi beendet sich]
+    K -->|nein| M[⚠ wurde zurückgesetzt, Controller überschreibt]
+```
+
+Code: [modules/autosync.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/modules/autosync.py), [modules/feature_testing.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/modules/feature_testing.py), [modules/scale.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/modules/scale.py), gemeinsame Logik in [argocd_apps.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/argocd_apps.py).
+
+Die Nachkontrolle wartet fest `SETTLE_SECONDS = 8`. Reagiert ein Controller langsamer, kann ein späteres Zurücksetzen unbemerkt bleiben. Dann hilft ein erneuter Aufruf von `cubi argocd` ein paar Minuten später.
+
+---
+
+## Debugging und Fehlersuche
+
+cubi schreibt kein Log. Jede Meldung steht im Terminal, `✖ <app>: …` für fehlgeschlagene Schritte, `⚠` für Hinweise und Warnungen. Zum Nachvollziehen führt man die Befehle der Beispiele von Hand aus (`kubectl get applications.argoproj.io <app> -n argocd -o yaml`).
+
+### Meldungen
+
+| Meldung | Ursache | Lösung |
+|---|---|---|
+| `Zustand (cubi-state) konnte nicht gelesen werden: …` | `kubectl get configmap cubi-state` schlug aus anderem Grund als „nicht gefunden“ fehl (Rechte, Verbindung) | Rechte auf ConfigMaps im ArgoCD-Namespace und `kubectl`-Kontext prüfen |
+| `Zustand (cubi-state) konnte nicht angelegt werden: …` | `kubectl create configmap` verweigert (nicht `AlreadyExists`) | Rechte `create` auf `configmaps` im Namespace prüfen |
+| `Zustand (cubi-state) konnte nicht geschrieben werden: …` | `kubectl patch configmap` fehlgeschlagen | Rechte `patch` prüfen |
+| `ArgoCD-Apps konnten nicht gelesen werden: …` | `kubectl get applications.argoproj.io` fehlgeschlagen | siehe [ArgoCD](argocd.md#debugging-und-fehlersuche) |
+| `<app>: Änderung fehlgeschlagen` | `kubectl patch` der Application abgelehnt. Beim Branch-Wechsel scheitert der vorgeschaltete `test` auf die `repoURL`, wenn sich die App zwischenzeitlich geändert hat | Auswahl erneut starten; Rechte `patch` auf `applications.argoproj.io` prüfen |
+| `ApplicationSet <name>: Regel für <app> konnte nicht geändert werden (parallel geändert?)` | Test auf `resourceVersion` schlug fehl, weil jemand das ApplicationSet gleichzeitig änderte, oder fehlende Rechte | erneut ausführen; Rechte `patch` auf `applicationsets.argoproj.io` prüfen |
+| `<kind>/<name>: Skalieren fehlgeschlagen` | `kubectl scale` abgelehnt (Rechte, Workload nicht mehr vorhanden) | Workload und Rechte prüfen. Die gemerkten Replikas bleiben erhalten, der Vorgang lässt sich wiederholen |
+| `  <app>: gemerkte Replikas bleiben erhalten, erneut ausführen` | beim Wiederherstellen schlug mindestens ein Skalieren fehl | *Pods wiederherstellen* erneut ausführen |
+| `Ein Branch-Name darf keine Leerzeichen enthalten` | Eingabe bei *Ziel-Branch* | Branch ohne Leerzeichen eingeben |
+| `Bitte eine ganze Zahl eingeben` | keine Zahl bei *Anzahl Pods pro Workload* | ganze Zahl eingeben |
+| `Die Anzahl darf nicht negativ sein` | negative Zahl | 0 oder größer |
+| `Mindestens 1 Eintrag wählen` | Enter ohne Auswahl in der Mehrfachauswahl | mit Space mindestens eine App wählen |
+| `Nichts zu tun.` | alle gewählten Apps wurden übersprungen | Gründe stehen darüber (`übersprungen (…)`) |
+
+### Gründe für „übersprungen“
+
+| Grund | Feature | Bedeutung |
+|---|---|---|
+| `bereits manual` / `bereits auto` | Auto-Sync | Zustand entspricht schon dem Ziel |
+| `steht bereits auf <branch>` | Feature-Testing | Ziel-Revision entspricht der aktuellen |
+| `keine Source` | Feature-Testing | Application ohne `spec.source(s)` |
+| `keine Deployments/StatefulSets` | Skalieren | die App enthält keine skalierbaren Workloads (CronJobs, Rollouts und DaemonSets fasst cubi nicht an) |
+| `kein Workload gewählt` | Skalieren | Workload-Auswahl leer |
+| `bereits <n> Pods` | Skalieren | alle Workloads haben schon diese Anzahl |
+| `keine gemerkten Replikas` | Skalieren | für die App gibt es keinen Eintrag `<app>.scale` in `cubi-state` |
+
+### Warnungen in der Zusammenfassung
+
+| Warnung | Bedeutung | Maßnahme |
+|---|---|---|
+| `⚠ <app>: wurde zurückgesetzt, ein Controller überschreibt die Sync-Policy` (bzw. `targetRevision`, bzw. `Replikas weichen ab, …`) | Nachkontrolle: Der Wert ist nach 8 Sekunden wieder der alte | prüfen, ob die App von einem ApplicationSet oder einer übergeordneten App verwaltet wird; dort die Quelle ändern |
+| `⚠ Branch <branch> existiert nicht in <repo>` | Ziel-Branch nicht im Remote | Branch pushen oder Namen korrigieren, Rückfrage mit `N` bestätigen |
+| `Existenz im Remote-Repo nicht prüfbar` | kein `gh`-Zugriff, Commit-ID als Ziel, privates Nicht-GitHub-Repo | kein Fehler; ArgoCD meldet bei fehlendem Branch später `Unknown` |
+| `⚠ Auto-Sync aktiv …: ArgoCD synct sofort auf den neuen Branch` | Auto-Sync greift sofort | bei Bedarf vorher *Auto-Sync deaktivieren* |
+| `⚠ prune aktiv: Ressourcen, die im neuen Branch fehlen, werden gelöscht` | `prune: true` | Branch-Inhalt prüfen oder vorher Auto-Sync abschalten |
+| `wird von <Owner> verwaltet, die Änderung kann dort zurückgesetzt werden` | App-of-Apps oder anderer Owner, keine automatische Regel | Änderung in der Quelle der übergeordneten Ressource |
+| `keine gemerkten Einstellungen, automated ohne prune/selfHeal` | beim *Aktivieren* fehlte `<app>.sync` | danach `prune` und `selfHeal` ggf. von Hand setzen |
+
+### Zustand prüfen und aufräumen
+
+```bash
+kubectl get configmap cubi-state -n argocd -o yaml                       # gemerkte Zustände
+kubectl get applications.argoproj.io -n argocd -o custom-columns=NAME:.metadata.name,SYNC:.spec.syncPolicy.automated
+kubectl get applicationset <name> -n argocd -o jsonpath='{.spec.ignoreApplicationDifferences}'
+```
+
+Ist cubi mitten in einem Vorgang abgebrochen worden, kann ein Eintrag `<app>.sync`/`<app>.scale` stehen bleiben, obwohl der Cluster schon zurückgestellt ist. Ein erneutes *Aktivieren* oder *Wiederherstellen* räumt ihn auf. Bleiben Regeln in `ignoreApplicationDifferences` stehen (zum Beispiel nach Abbruch), entfernt man sie mit `kubectl edit applicationset <name> -n argocd`.
+
+Auf ApplicationSets, die per Git oder `kubectl apply` neu eingespielt werden, verschwinden die von cubi gesetzten Regeln wieder. Auto-Sync gilt dann aus dem Template, siehe [ArgoCD](../capulus-core/b-kubernetes-gitops/b0010-argocd.md).
+
+### Checkliste „Feature wirkt nicht“
+
+1. `kubectl auth can-i patch applications.argoproj.io -n argocd`: Rechte vorhanden?
+2. `kubectl config current-context`: richtiger Cluster?
+3. Kam am Ende `✔ Änderung hält`? Wenn `⚠`: Owner der App klären (`kubectl get application <app> -n argocd -o jsonpath='{.metadata.ownerReferences}'`).
+4. Auto-Sync: `kubectl get application <app> -n argocd -o jsonpath='{.spec.syncPolicy}'`.
+5. Scale: `kubectl get deploy,sts -n <ns>`, stimmt die Replikazahl? HPA gesetzt? ([HPA](../capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md))
+6. Branch-Test: `argocd app get <app>` (oder [ArgoCD-Ansicht](argocd.md)): zeigt `Target` den Feature-Branch? Ist er gepusht?
+
+Allgemeines: [Debugging und Fehlersuche](debugging.md).

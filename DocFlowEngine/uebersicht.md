@@ -8,6 +8,7 @@ Sie ist nach Themen aufgeteilt:
 - [Module-Reference.md](module-reference.md) - Funktionsreferenz der Teilmodule unter `scripts/DocFlowEngine/`
 - [Implementation-Notes.md](implementation-notes.md) - Begründungen für nicht-offensichtliche Implementierungsentscheidungen im Code
 - [Logging.md](logging.md) - Log-Level, Log-Format, Verhalten im DryRun
+- [Debugging.md](debugging.md) - Fehlermeldungen, Fehlersuche, lokales Debugging
 - [Testing.md](testing.md) - Pester-Tests installieren und ausführen
 
 Weiterführende Konzeptdokumente (in Ordner [konzepte/](konzepte/multi-machine-setup.md), getrennt von der übrigen

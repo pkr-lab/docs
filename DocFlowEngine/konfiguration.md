@@ -403,3 +403,22 @@ Details siehe [Logging.md](logging.md).
 Siehe [config/docflow-config.psd1](https://github.com/pkr-lab/DocFlowEngine/blob/main/config/docflow-config.psd1) im Repo-Root für die tatsächlich
 genutzte Konfiguration, sowie den kommentierten Beispiel-Workflow im
 [Haupt-README](nutzung.md#beispiel-workflow).
+
+
+---
+
+## Fehlersuche
+
+Alle Fehlermeldungen des Konfigurationsladens (`Config.ps1`) und was sie bedeuten, steht auf [Debugging und Fehlersuche](debugging.md#abbruch-bei-start-oder-konfiguration-throw). Schnellprüfung der Datei:
+
+```powershell
+Import-PowerShellDataFile -Path .\config\docflow-config.psd1
+Invoke-DocFlowEngine -ConfigPath .\config\docflow-config.psd1 -DryRun
+```
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| `Konfiguration muss mindestens einen Eintrag unter 'sources' enthalten.` (analog `namingConventions`, `aufgabenRoot`/`targets`) | Pflichtabschnitt fehlt | Abschnitt ergänzen |
+| `Pfad-Variable '{name}' ist in 'paths' nicht definiert.` | Platzhalter ohne Definition | `paths` ergänzen |
+| Whitelist greift nicht wie erwartet | `projectRoutesFile` zeigt auf eine andere Datei als gedacht | Meldung `Whitelist geladen: '…' (n Präfixe, m Kombinationen)` im Log lesen, [Logging](logging.md#typische-meldungen) |
+| Änderung an `project-routes.txt` im Repo wirkt nicht | Laufzeit-Kopie wird nur ergänzt, nicht ersetzt | Abschnitt `projectRoutesFile` |

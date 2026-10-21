@@ -106,3 +106,19 @@ python3 -m unittest discover -s tests
 | `tests/test_no_fullscreen.py` | durchsucht den Quelltext nach Alternate Screen, Clear, Pager, Editor, Browser und Kommentaren |
 | `tests/test_argocd_apps.py` | Zustand in der ConfigMap, ApplicationSet-Regeln (Fake-Cluster), Nachkontrolle |
 | `tests/test_autosync.py`, `tests/test_feature_testing.py`, `tests/test_scale.py`, `tests/test_finish.py` | Planung, Reihenfolge der Schritte, Warnungen, Remote-Prüfung (gemockt) |
+
+
+---
+
+## Debugging und Fehlersuche
+
+Die Auswahl-Komponente ist ohne Terminal testbar (`ListPrompt` rendert und verarbeitet Tasten, ohne zu lesen oder zu schreiben). Pseudo-Terminal-Tests starten cubi mit echtem TTY: `tests/test_inline_pty.py`, `tests/test_no_fullscreen.py`, `tests/test_finish.py` (siehe [Entwicklung](entwicklung.md#tests)).
+
+| Symptom | Ursache | Lösung |
+|---|---|---|
+| Ansicht überschreibt Text oberhalb | Zeilen länger als das Terminal wurden umgebrochen (die Zeilenzahl für `ESC[nA` stimmt dann nicht) | Zeilen werden auf die Terminalbreite gekürzt, bei eigenen Ansichten `fit_cell` nutzen |
+| Terminal nach Absturz ohne Echo | Rohmodus nicht zurückgesetzt | `reset` oder `stty sane`; `term.interactive()` stellt den Modus auch bei Ausnahmen wieder her |
+| Hotkey wirkt nicht | Taste kollidiert in Mehrfachauswahlen mit Space oder `a` | `ListPrompt` löst beim Anlegen einen `ValueError` aus: „Hotkey kollidiert mit der Mehrfachauswahl“ |
+| Auto-Reload fehlt | `interval` nicht gesetzt | `ui.table_select(…, interval=…)` |
+
+Weiter: [Debugging und Fehlersuche](debugging.md).

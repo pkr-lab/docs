@@ -94,9 +94,24 @@ Bei jedem Benutzer-Login:
 - Wiederherstellungsoptionen bereitstellen (Systemwiederherstellungspunkt, GPO-Backup).
 - Gestaffelte Rollouts: Pilot → breiter Rollout.
 
+## Weitere Skripte
+
+| Bereich | Inhalt | Seite |
+|---|---|---|
+| `bash/git-pull-push/` | Bash-Skript: Git-Repository aktualisieren, bei neuer Version nach `ZIEL` kopieren und einen Befehl ausführen | [bash-git-pull-push.md](bash-git-pull-push.md) |
+
+Hinweis: Im lokalen Arbeitsverzeichnis liegen die PowerShell-Skripte inzwischen unter `powershell/` und das Bash-Skript unter `bash/`. Die Pfade in dieser Doku folgen der bisherigen Struktur im Wurzelverzeichnis des Repos. TODO: prüfen, wie die Struktur nach dem Commit aussieht.
+
 ## Seiten
 
 - [Installation](installation.md)
 - [Konfiguration](konfiguration.md)
 - [Nutzung](nutzung.md)
+- [Debugging und Fehlersuche](debugging.md): Logs, Meldungen je Skript, Verhalten des Watchdogs
+- [git-pull-push](bash-git-pull-push.md)
 - [Releases](releases.md)
+
+
+## Fehlersuche
+
+Logs, Meldungen je Skript und Verhalten des Watchdogs: [Debugging und Fehlersuche](debugging.md). Je Ordner steht ein Abschnitt „Fehlersuche“ auf den Seiten [Ausführung](ausfuehrung.md#fehlersuche), [StartUp](startup.md#fehlersuche), [Richtlinien](richtlinien.md#fehlersuche), [Programme](programme.md#fehlersuche), [Update](update.md#fehlersuche) und [InstallSoftware](installsoftware.md#fehlersuche).
