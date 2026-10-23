@@ -1,6 +1,6 @@
 # GitLab-Mirror — Redundanz-Kopie für den Fall, dass GitHub ausfällt
 
-Alle sechs Stunden sowie bei jedem Push auf `main` und bei jedem neuen Tag
+Alle sechs Stunden sowie bei jedem Push auf einen Branch, bei jedem neuen Tag und beim Löschen von Branches/Tags
 spiegelt [`.github/workflows/mirror-gitlab.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/mirror-gitlab.yml)
 dieses Repo vollständig (alle Branches + alle Tags, inkl. der
 `v${version}`-Tags aus [f0030-release-automation.md](f0030-release-automation.md))
@@ -13,17 +13,17 @@ Vollkopie inklusive Versionshistorie auf GitLab.
 ## Funktionsweise
 
 ```
-push auf main / Tag  ─┐
+push (Branch/Tag/Delete) ─┐
 alle 6h (Cron)        ├──▶ .github/workflows/mirror-gitlab.yml
 workflow_dispatch    ─┘            │
                                     ▼
-                     git clone --mirror github.com/<repo>
+                     git clone --bare github.com/<repo>
                                     │
                                     ▼
-                     git push --mirror <GitLab-Remote>
+                     git push --prune <GitLab-Remote> (refs/heads/*, refs/tags/*)
 ```
 
-`git push --mirror` überträgt **alle** Refs (Branches, Tags, `refs/heads/*`,
+`git push --prune` überträgt **alle** Branches und Tags (`refs/heads/*`,
 `refs/tags/*`) 1:1 und überschreibt dabei den Stand auf GitLab, damit er
 exakt dem von GitHub entspricht — inklusive gelöschter Branches/Tags.
 
