@@ -5,7 +5,7 @@
 | Aufgabe | Vorgehen |
 |---|---|
 | Neue Anwendung im Katalog | Eintrag in `data/apps.json` ergänzen (Felder siehe [Konfiguration](konfiguration.md)) |
-| Neuigkeit veröffentlichen | entfällt, der Verlauf auf `updates.html` kommt automatisch aus den Releases von capulus-core |
+| Neuigkeit veröffentlichen | entfällt, der Verlauf auf `updates.html` kommt automatisch aus den Releases aller capulus-Repos |
 | Text ändern | die jeweilige HTML-Datei bearbeiten; `<title>` und `<meta name="description">` mit anpassen |
 | Neue Seite anlegen | HTML-Datei nach dem Muster einer vorhandenen Seite erstellen, in Navigation und `sitemap.html` eintragen und in `scripts/build-seo.mjs` registrieren ([seo.md](seo.md#neue-seite-anlegen)). `sitemap.xml` entsteht automatisch |
 | Bild einfügen | nach `assets/images/` legen, mit `alt`-Text einbinden |

@@ -16,7 +16,7 @@ Reines HTML, CSS und etwas JavaScript, ohne Build-Schritt und ohne Framework. Di
 | `anwendungen.html` | Katalog der Self-Hosted-Dienste, geladen aus `data/apps.json` |
 | `mediamtx-drohnenstream.html` | Anleitung: Drohnen-Livestream per MediaMTX zum ELW |
 | `app.html` | Die eigene iOS-App fürs Homelab mit Screenshots |
-| `updates.html` | Verlauf der letzten zehn capulus-core-Releases aus `data/releases.json` und Live-Status der Dienste |
+| `updates.html` | Verlauf der letzten zehn Releases aller capulus-Repos aus `data/releases.json` und Live-Status der Dienste |
 | `ueber-mich.html`, `kontakt.html` | Vorstellung und Kontaktformular (Zammad) |
 | `sitemap.html`, `sitemap.xml`, `robots.txt` | Seitenübersicht und Hinweise für Suchmaschinen |
 | `impressum.html`, `datenschutz.html` | rechtliche Seiten |
