@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/pkr-lab/pkr-lab-docs/compare/v1.0.0...v1.1.0) (2026-10-23)
+
+### Features
+
+* **gitlab-mirror:** add workflow for mirroring GitHub repository to GitLab ([10b2b47](https://github.com/pkr-lab/pkr-lab-docs/commit/10b2b473259b723452af76eaeb0179de6fa2c5e5))
+
 ## 1.0.0 (2026-10-18)
 
 ### ⚠ BREAKING CHANGES
