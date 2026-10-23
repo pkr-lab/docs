@@ -6,7 +6,7 @@ Stand 2026-10-19. Der frühere Strukturvorschlag ist bis auf die unten genannten
 
 | Bereich | Umsetzung |
 |---|---|
-| Seite `capulus.html` | SVG-Architekturdiagramm (Repositories, Cluster, Werkzeuge), Projektkarten aus `data/projects.json` mit Version aus `data/versions.json`, die fünf neuesten Releases von capulus-core. Beschreibung in [index.md](index.md) und [konfiguration.md](konfiguration.md) |
+| Seite `capulus.html` | SVG-Architekturdiagramm (Repositories, Cluster, Werkzeuge), Projektkarten aus `data/projects.json` mit Version aus `data/versions.json`, die fünf neuesten Releases aller capulus-Repos. Beschreibung in [index.md](index.md) und [konfiguration.md](konfiguration.md) |
 | Release-Daten | `scripts/build-releases.mjs` und der Workflow `releases.yml` (stündlich) erzeugen `data/releases.json` (nur capulus-core, zehn Einträge, für `updates.html`) und `data/versions.json` (je Projekt das neueste Release) |
 | SEO | `scripts/build-seo.mjs`, Workflow `seo.yml` und Prüfung in `ci.yml`, siehe [seo.md](seo.md) |
 | Aufräumen | Interne `*.homeserver`-Hostnamen aus `projekt.html` und `data/apps.json` entfernt, Authentik aus `data/apps.json` gestrichen (laut [Incident 030](../capulus-core/7-security-incidents/030-minio-oidc-secret-in-git-historie.md) entfernt), `data/updates.json` und der alte n8n-Workflow dazu gelöscht |
