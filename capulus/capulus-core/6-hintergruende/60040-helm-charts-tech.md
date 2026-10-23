@@ -443,6 +443,7 @@ Update-Strategie und Readiness (seit dem Vorfall [50020](../5-incidents/50020-pi
   NAS `all_squash` erzwingt und `chmod`/`chown`-lastige Container darunter leiden. Stattdessen spiegelt eine **tägliche Sicherung**
   (`backup-cronjob.yaml`) die Daten auf die NAS: schnelle lokale SSD im Betrieb, Redundanz auf dem NAS (und von dort per restic auf die
   externe USB-Platte, [20010](../2-betrieb-hardware/20010-nas-backup.md)).
+- **Das restic-Backup ist eine `Backup`-Ressource** (`restic-backup.yaml`) und kein CronJob mehr: Der capulus-operator erzeugt daraus den CronJob `vaultwarden`. Name, Host und Tag bleiben `vaultwarden`, damit die vorhandenen Snapshots weiter ausgedünnt werden ([600c0](600c0-capulus-operator.md)). Der Operator muss laufen, bevor der alte CronJob entfällt.
 - Die Sicherung läuft **vor** dem täglichen restic-Lauf des NAS (02:00 Uhr), damit dieser eine frische Kopie snapshotet. `db.sqlite3` läuft im
   WAL-Modus, eine einfache Dateikopie wäre inkonsistent, deshalb `sqlite3 .backup` (SQLites Online-Backup-API, sicher gegen einen parallel
   schreibenden Prozess). Die übrigen Dateien (`rsa_key.pem`, Attachments, Sends) gehen per `rsync`. Ziel ist eine eigene, kleine PVC.
