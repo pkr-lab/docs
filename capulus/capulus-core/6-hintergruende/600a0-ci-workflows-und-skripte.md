@@ -129,6 +129,7 @@ Action-Repository umbiegen (so geschehen bei `tj-actions/changed-files` 2025), d
 
 - Helm-Templates (`argocd/apps/*/*/templates/`) und vendorte `charts/` sind **ausgenommen**: Sie enthalten Go-Template-Ausdrücke (`{{ … }}`), die yamllint teils als `truthy`-/`comments`-Verstoß wertet. Die Regeln sind
   hier bewusst entspannt, echte Fehler fängt `helm lint`/`helm template`. Alles andere unter `ansible/` und `argocd/` wird gelintet.
+- `crds/` (`argocd/apps/*/*/crds/`) ist **ausgenommen**: Die CRDs des capulus-operator sind von controller-gen erzeugt und unterscheiden sich in der Listeneinrückung von der yamllint-Vorgabe. Die Dateien werden nicht von Hand bearbeitet ([600c0](600c0-capulus-operator.md)).
 - `comments-indentation: false` ist **nicht optional**: ansible-lint verlangt diese Mindesteinstellungen von jeder eigenen yamllint-Config, sonst verweigert es seine YAML-Prüfung komplett („Found incompatible custom yamllint
   configuration“).
 - Die Regel `empty-lines` gilt weiter: Eine YAML-Datei endet mit **genau einem** Zeilenumbruch, eine Leerzeile am Dateiende ist ein Fehler.

@@ -23,6 +23,7 @@ Die Fach-Kategorien (`a`–`f`, `1`–`3`) beschreiben, **was läuft und wie man
 | [60090 pacman (Schulungsobjekt)](60090-pacman-schulungsobjekt.md) | Server, Bestenliste, Zugriffslog, Trainingsmodus, Frontend-Skripte |
 | [600a0 CI-Workflows, Skripte und Lint](600a0-ci-workflows-und-skripte.md) | Alle Workflows (inkl. CodeQL und Security-Issues), Promotions- und Sync-Skripte, Ruleset, Dependabot und Renovate, `.ansible-lint`, `.yamllint` |
 | [600b0 Nachprüfung nach der Repo-Aufspaltung](600b0-nachpruefung-repo-aufspaltung.md) | Befunde und Fixes nach dem Split, Renovate (wiki-sync, Zeitplan, Repos ohne Config), Rulesets und Release-Commit, Testmatrix, Live-Tests, offene Entscheidungen |
+| [600c0 capulus-operator](600c0-capulus-operator.md) | Entscheidungen, Backup-Controller (Spec-Hash, restic-Gruppierung, Skript-Argumente), Alerts, Chart und CI, Reihenfolge der Umstellung |
 
 ## Fehlersuche statt Begründung
 
@@ -47,12 +48,13 @@ siehe [TEMPLATE](../TEMPLATE.md)).
 | `capulus-ansible/host_vars/`, `capulus-ansible/group_vars/`, `capulus-ansible/inventory/`, `ansible/*.yml`, `capulus-ansible/roles/libvirt_host`, `capulus-ansible/roles/dnsmasq`, `capulus-ansible/roles/disable_eee` | [60010](60010-ansible-hosts-und-playbooks.md) |
 | `capulus-ansible/roles/*` (übrige Rollen) | [60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md) |
 | `capulus-ansible/roles/argocd`, `argocd/bootstrap/`, `argocd/bootstrap-prod/`, `argocd/promotion.yaml`, SealedSecrets | [60030](60030-argocd-und-bootstrap.md) |
-| `argocd/apps/tech/*` (ohne monitoring, lldap, carplay-api, pacman) | [60040](60040-helm-charts-tech.md) |
+| `argocd/apps/tech/*` (ohne monitoring, lldap, carplay-api, pacman, capulus-operator) | [60040](60040-helm-charts-tech.md) |
 | `argocd/apps/prod/*`, `argocd/apps/entw/*` | [60050](60050-helm-charts-prod.md) |
 | `argocd/apps/tech/monitoring`, `argocd/apps/tech/logging` | [60060](60060-monitoring-und-alerting.md) |
 | `argocd/apps/tech/lldap` | [60070](60070-lldap.md) |
 | `argocd/apps/tech/carplay-api`, `ios/` | [60080](60080-carplay-api-und-ios-app.md) |
 | `argocd/apps/tech/pacman` | [60090](60090-pacman-schulungsobjekt.md) |
+| `argocd/apps/tech/capulus-operator`, `capulus-operator` (Repo) | [600c0](600c0-capulus-operator.md) |
 | `.github/workflows/`, `.github/dependabot.yml`, `renovate.json`, `scripts/`, `Makefile`, `.ansible-lint`, `.yamllint`, `ops/`, `CLAUDE.md`, `.gitignore` | [600a0](600a0-ci-workflows-und-skripte.md) |
 
 ## Sync ins Wiki

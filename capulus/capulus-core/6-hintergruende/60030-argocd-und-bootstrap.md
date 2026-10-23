@@ -15,6 +15,7 @@ und zum Versiegeln von Secrets. Bedienung: [b0010](../b-kubernetes-gitops/b0010-
   editieren. So driftet die eingecheckte Datei nie von dem ab, was das Playbook anwendet.
 - Die AppProjects werden **vor** dem ApplicationSet angewendet: Applications, die auf ein noch nicht vorhandenes Projekt zeigen,
   scheitern beim Sync.
+- **`projects.yaml` rollt nicht per GitOps aus.** Eine neue TECH-App mit neuem Namespace bleibt nach dem Merge auf `InvalidSpecError`, bis `argocd/bootstrap/projects.yaml` per `kubectl apply` im Hub angewendet ist (vorher `kubectl diff`). Beobachtet bei `capulus-operator` am 2026-10-23; der Live-Stand des Projekts `tech` war außerdem älter als das Template (`metallb-system` fehlte) und wurde dabei nachgezogen ([600c0](600c0-capulus-operator.md)).
 - Layouts: Mit `argocd_entw_layout: true` (nur ENTW-Cluster) gibt es **ein** ApplicationSet `home-server-apps-entw`, das ausschließlich
   `argocd/apps/entw/*` auf `argocd_repo_revision` (Branch `entw`) liest, Projekt `entw`. Sonst (TECH-Hub) gibt es **ein**
   ApplicationSet `home-server-apps-tech` mit Projekt `tech`. TECH und PROD lesen `main` und dort nur `argocd/apps/tech/*` bzw.

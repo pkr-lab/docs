@@ -373,6 +373,7 @@ Einstieg und Zuordnung von Dateien zu Docs: **[capulus-core/6-hintergruende/6000
 | [pacman (Schulungsobjekt)](6-hintergruende/60090-pacman-schulungsobjekt.md) | Server, Bestenliste, Trainingsmodus, Frontend-Skripte |
 | [CI-Workflows, Skripte und Lint](6-hintergruende/600a0-ci-workflows-und-skripte.md) | Workflows, Promotions- und Sync-Skripte, Ruleset, Dependabot/Renovate, Lint-Konfiguration |
 | [Nachprüfung nach der Repo-Aufspaltung](6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md) | Befunde, Fixes, Testmatrix, Renovate und Rulesets, offene Entscheidungen |
+| [capulus-operator](6-hintergruende/600c0-capulus-operator.md) | Entscheidungen, Backup-Controller, Alerts, Chart und CI |
 
 Komponenten-Seiten (früher Ordner-READMEs): [ENTW-Ordner](komponenten/entw-apps.md) (ENTW-Ordner),
 [PROD im Hub](komponenten/bootstrap-prod.md) (PROD im Hub anbinden, Umzug mit Daten),

@@ -9,6 +9,7 @@ Zentrale Dokumentation aller Projekte von pkr-lab. Jedes Projekt hat einen eigen
 | capulus-core | GitOps-Homelab: ArgoCD-Apps, Promotion ENTW → TECH → PROD, Token-Register | [GitHub](https://github.com/pkr-lab/capulus-core) | [capulus-core/](capulus-core/index.md) |
 | capulus-ansible | Ansible-Playbooks und Rollen für Hosts, k3s-Cluster und Kiosks | [GitHub](https://github.com/pkr-lab/capulus-ansible) | [capulus-ansible/](capulus-ansible/index.md) |
 | capulus-ios | SwiftUI-App „Homeserver Dashboard“ | [GitHub](https://github.com/pkr-lab/capulus-ios) | [capulus-ios/](capulus-ios/index.md) |
+| capulus-operator | Kubernetes-Operator: Backups, Datenbanken, Zertifikate, Secret-Rotation | [GitHub](https://github.com/pkr-lab/capulus-operator) | [capulus-operator/](capulus/capulus-operator/index.md) |
 | cubi | Terminal-Werkzeug für den Kubernetes-Alltag | [GitHub](https://github.com/pkr-lab/cubi) | [cubi/](cubi/index.md) |
 | ui-terminal-config | Starship, Nerd Font und KI-CLIs für Ubuntu Desktop | [GitHub](https://github.com/pkr-lab/ui-terminal-config) | [ui-terminal-config/](ui-terminal-config/index.md) |
 | DocFlowEngine | PowerShell-Modul: Dokumente erkennen, umbenennen, sortieren | [GitHub](https://github.com/pkr-lab/DocFlowEngine) | [DocFlowEngine/](DocFlowEngine/index.md) |
