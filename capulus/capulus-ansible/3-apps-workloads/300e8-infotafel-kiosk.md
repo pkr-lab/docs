@@ -30,9 +30,8 @@ Kernel / systemd
             └─ xibosignage-kiosk.service (User=<xibo_kiosk_user>, Gruppen video und render)
                  └─ xibosignage-kiosk-start.sh
                       ├─ wartet, bis X antwortet (xrandr)
-                      ├─ xibosignage-display-mode.sh once (Bildschirmmodus setzen)
+                      ├─ xibosignage-display-mode.sh once (Bildschirmmodus erzwingen)
                       ├─ xibosignage-display-mode.sh par (Seitenverhältnis-Korrektur berechnen)
-                      ├─ xibosignage-display-mode.sh & (alle 5 s prüfen, Hotplug)
                       ├─ openbox &
                       ├─ unclutter -idle 3 &
                       └─ Schleife: chromium --kiosk file:///var/www/xibosignage-slideshow/index.html
@@ -74,17 +73,33 @@ Zeitstempel für die Messung schreibt das Start-Skript ins Journal (Tag `xibosig
 
 ## Bildschirmformat
 
-Der Pi erkennt Auflösung und Seitenverhältnis des angeschlossenen Bildschirms selbst und passt Anzeige und Bilder daran an. Ein Bild erscheint verzerrt, wenn der Bildschirm nicht in seinem nativen Modus läuft, zum Beispiel 1024×768 (4:3) auf einem 16:9-Panel. Das passiert, wenn der Pi beim Boot keine EDID-Daten bekommt (Bildschirm noch aus, anderer HDMI-Eingang, Adapter) und auf einen Notfallmodus zurückfällt.
+`/usr/local/bin/xibosignage-display-mode.sh` erzwingt beim Start (`once`) immer den in `xibo_kiosk_display_mode` konfigurierten
+Modus (Default `1920x1080`) auf dem ersten verbundenen Ausgang — es sucht nicht mehr nach dem nativen/bevorzugten Modus und
+pollt auch nicht mehr im Hintergrund. Fehlt der Modus in der von `xrandr` gelisteten Liste, berechnet das Skript ihn per `cvt`
+und fügt ihn per `xrandr --newmode`/`--addmode` hinzu. Die erkannte (erzwungene) Auflösung schreibt es nach
+`/dev/shm/xibosignage-screen` (`<Breite> <Höhe>`) und protokolliert sie im Journal (Tag `xibosignage-display`).
 
-`/usr/local/bin/xibosignage-display-mode.sh` löst das so:
+Das war nicht immer so: Früher suchte das Skript den vom EDID gemeldeten bevorzugten Modus, fiel auf den ersten
+Kernel-Modus zurück und hatte eine Timeout-/Fallback-Logik für den Fall, dass gar kein Bildschirm erkannt wurde. Die
+Infotafel liefert aber **dauerhaft kein EDID** (`xrandr` zeigt `0mm x 0mm`, nur die vier VESA-Notfallmodi bis 65 MHz
+Pixeltakt) — die ganze Erkennung lief dort also ohnehin nie auf etwas anderes als den konfigurierten Fallback hinaus, siehe
+[60020](../6-hintergruende/60020-ansible-rollen.md#xibo_kiosk-raspberry-pi-3-b-bilder-slideshow) und den Incident-Report
+[50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-1-falsches-bildformat).
 
-1. Es liest per `xrandr --query` den angeschlossenen Ausgang, seinen bevorzugten (nativen) Modus und den aktuellen Modus.
-2. Weichen beide voneinander ab, setzt es den nativen Modus (`xrandr --output <Ausgang> --mode <nativ>`). Beim Start läuft es einmal synchron, bevor Chromium startet, danach im Hintergrund alle `xibo_kiosk_display_poll_seconds` (5 s). Schaltet jemand den Bildschirm später ein oder tauscht ihn, korrigiert sich der Pi dadurch selbst.
-3. Es schreibt die erkannte Auflösung nach `/dev/shm/xibosignage-screen` (`<Breite> <Höhe>`) und protokolliert sie im Journal (Tag `xibosignage-display`).
+**Ohne EDID reicht `xrandr --addmode` allein nicht.** Der vc4-KMS-Treiber (`dtoverlay=vc4-kms-v3d`) validiert jede
+Modus-Konfiguration gegen die Fähigkeiten, die er aus dem EDID kennt. Ohne EDID nimmt er konservativ nur die vier
+VESA-Notfallmodi an und lehnt `1920x1080` mit `Configure crtc 0 failed` ab — selbst wenn der Modus per `cvt`/`--addmode`
+in der Liste steht. Dafür gibt es `xibo_kiosk_edid_force` (Default `false`, für die Infotafel aktiv): Eine mit
+[`scripts/generate-edid.py`](https://github.com/pkr-lab/capulus-ansible/blob/main/scripts/generate-edid.py) erzeugte,
+spezifikationskonforme EDID-Binärdatei (validiert mit `edid-decode -c`) wird nach `/lib/firmware/edid/` deployt und per
+Kernel-Parameter `drm.edid_firmware=<xibo_kiosk_edid_connector>:edid/<xibo_kiosk_edid_filename>` in `cmdline.txt`
+eingebunden. Der Treiber hält das für ein echtes, 1920×1080@60-fähiges EDID und akzeptiert den Modus. **Nach einer
+Änderung dieser Variablen ist ein Reboot nötig** (Kernel-cmdline-Parameter), der Rolle-Handler weist darauf hin.
 
-Markiert `xrandr` keinen Modus als bevorzugt (kein `+` in der Liste), obwohl das EDID da ist, nimmt das Skript den ersten Eintrag aus `/sys/class/drm/card*-HDMI-A-<n>/modes` (der Kernel führt den bevorzugten Modus zuerst) und sonst den größten gelisteten Modus. Auf der Infotafel war das der Fall: X wählte von sich aus 1152×864 @75, der Kernel nannte 1920×1080. Das Skript schreibt dann einmal `kein bevorzugter Modus … markiert, verwende …` ins Journal.
-
-Liefert der Bildschirm gar kein EDID (`0mm x 0mm`, nur Notfallmodi), kennt der Pi das Format nicht. Dafür gibt es `xibo_kiosk_display_mode` (z. B. `"1920x1080"`): Der Modus wird gesetzt, und fehlt er in der Liste, mit `cvt` berechnet und per `xrandr --newmode/--addmode` hinzugefügt. Der Wert gilt pro Host (`host_vars/infotafel/vars.yml`). Ein CVT-Modus ist ein Notbehelf, manche Fernseher synchronisieren ihn nicht.
+Zwei naheliegende Alternativen wurden geprüft und verworfen (Details im Incident-Report): der Kernel-Parameter
+`video=<connector>:<modus>e` erzwingt nur den Connector-Status, keinen gültigen Modus; die klassischen
+Firmware-Parameter `hdmi_group`/`hdmi_mode`/`hdmi_ignore_edid` in `config.txt` werden bei aktivem Full-KMS
+(`dtoverlay=vc4-kms-v3d`) gar nicht mehr ausgewertet (`vcgencmd get_config hdmi_mode` meldet `unknown`).
 
 ### Seitenverhältnis-Korrektur
 
@@ -102,7 +117,7 @@ Der Sync liest diese Datei:
 
 Die Seite selbst verzerrt nie: `slideshow.css` nutzt `object-fit: contain`, jedes Bild behält sein Seitenverhältnis und bekommt bei Abweichung schwarze Balken. Das gilt für 16:9, 16:10 und 4:3 gleichermaßen. Auch der n8n-Workflow skaliert nur mit `onlyIfLarger` und ändert das Seitenverhältnis nicht.
 
-Ist das Bild trotzdem verzerrt, ist der Bildschirm in einem falschen Modus: `sudo /usr/local/bin/xibosignage-diagnose.sh` zeigt im Abschnitt "Bildschirm" die `xrandr`-Modi (`*` aktuell, `+` nativ) und die erkannte Auflösung. Meldet `xrandr` für den Bildschirm gar keinen nativen Modus (typisch bei erzwungenem HDMI ohne EDID, `hdmi_force_hotplug=1` mit `hdmi_group`/`hdmi_mode` in der `config.txt`), muss dort der passende Modus eingetragen oder die Erzwingung entfernt werden.
+Ist das Bild trotzdem verzerrt, ist der Bildschirm in einem falschen Modus: `sudo /usr/local/bin/xibosignage-diagnose.sh` zeigt im Abschnitt "Bildschirm" die `xrandr`-Modi (`*` aktuell, `+` nativ) und die erkannte Auflösung. Bleibt der Modus trotz `xibo_kiosk_display_mode` beim VESA-Notfallmodus (`xrandr --output … --mode …` meldet `Configure crtc 0 failed`), liefert der Bildschirm kein EDID — Abschnitt „Bildschirmformat“, `xibo_kiosk_edid_force`.
 
 ---
 
@@ -135,7 +150,7 @@ Ablauf in `/usr/local/bin/xibosignage-sync.py`:
 3. Pro Datei: überspringen, wenn die mtime im Cache gleich ist. Dateien, die jünger als `xibo_kiosk_sync_settle_seconds` (5 s) sind, werden im nächsten Lauf geholt, weil der n8n-Workflow sie evtl. noch schreibt.
 4. Übertragung atomar: Die Datei wird nach `media/.partial/` geschrieben, per `fsync` gesichert, mit der mtime der Quelle versehen und dann mit `os.replace` an ihren Platz verschoben. Hat sich die Quelle währenddessen geändert, wird das Ergebnis verworfen. Halbe Dateien sind so nie sichtbar, auch nicht nach einem Stromausfall.
 5. Skalierung: Ist ein Bild (jpg, png, webp) größer als die Zielgröße (erkannte Bildschirmauflösung, höchstens `xibo_kiosk_image_max_width` × `xibo_kiosk_image_max_height`, Default 1920×1080), wird es mit ImageMagick verkleinert (`nice 19`, `-strip`, Qualität 85, Speicherlimit 256 MiB). Kleinere Bilder und GIFs werden unverändert kopiert. Schlägt die Skalierung fehl, wird das Original kopiert. WebP-Konvertierung gibt es bewusst nicht: Das Encoden belastet den Pi 3 B+ stärker, als es nützt, und der n8n-Workflow liefert bereits auf 1920×1080 skalierte Bilder.
-6. Aus dem Cache verschwinden nur Dateien, die in der Quelle nicht mehr vorkommen. Ist die Quelle leer, bleibt der Cache stehen (Schutz vor einem leeren Bildschirm bei einem Fehler im Workflow). Wer wirklich alle Bilder entfernen will, löscht `/var/www/xibosignage-slideshow/media/*` auf dem Pi.
+6. Dateien, die in der Quelle nicht mehr vorkommen, verschwinden **sofort** aus `manifest.js`, werden aber erst nach `xibo_kiosk_orphan_grace_seconds` (Default 30 s, persistiert in `media/.orphans.json`) physisch gelöscht. Grund: Der Browser hält sein Manifest bis zu `xibo_kiosk_manifest_reload_seconds` im Speicher; würde die Datei sofort verschwinden, könnte eine laufende Rotation noch kurz auf sie zeigen und das Bild mit einem 404 überspringen, siehe [50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-3-slides-werden-manchmal-sofort-übersprungen). Ist die Quelle leer, bleibt der Cache komplett stehen (Schutz vor einem leeren Bildschirm bei einem Fehler im Workflow). Wer wirklich alle Bilder entfernen will, löscht `/var/www/xibosignage-slideshow/media/*` auf dem Pi.
 7. `manifest.js` wird nur neu geschrieben, wenn sich der Inhalt ändert, ebenfalls atomar (`.tmp` + `os.replace`).
 
 Ablauf in der Seite (`slideshow.js`):
@@ -144,14 +159,14 @@ Ablauf in der Seite (`slideshow.js`):
 - Ist die Liste leer, zeigt die Seite `default.svg`.
 - Alle `xibo_kiosk_manifest_reload_seconds` (10 s) lädt die Seite `manifest.js` neu (per `<script>`, weil `fetch` auf `file://` blockiert ist). Neue Bilder werden eingereiht, die Rotation springt nicht zurück. Kommt die Liste leer zurück, während schon Bilder laufen, wird sie ignoriert.
 - Die URL eines Bildes enthält `?v=<mtime>` statt eines Zeitstempels bei jedem Aufruf. Der Browser-Cache wird dadurch genutzt und erkennt trotzdem geänderte Dateien.
-- Ein Bild, das nicht lädt, wird übersprungen. Schlagen alle fehl, erscheint `default.svg`.
+- Ein Bild, das nicht lädt, wird komplett übersprungen (0 s Anzeigedauer, nicht nur verkürzt) und die Rotation springt nach 250 ms zum nächsten. Schlagen alle fehl, erscheint `default.svg`. Dank der Löschungs-Gnadenfrist (oben) sollte das im Normalbetrieb praktisch nie mehr vorkommen.
 
 Fehlerfälle:
 
 | Situation | Verhalten |
 |---|---|
 | Pi bootet ohne Netzwerk | Chromium startet normal, zeigt den Cache. Der Sync wartet auf `network-online.target` und läuft danach. |
-| NAS nicht erreichbar | Mount scheitert nach höchstens 30 s, alte Bilder bleiben, neuer Versuch nach 30 s. |
+| NAS nicht erreichbar | Mount scheitert nach höchstens 30 s, alte Bilder bleiben, neuer Versuch nach 30 s. Hängt die Infotafel nur noch per Tailscale im Netz (kein eigener LAN-Zugang), braucht sie `tailscale_accept_routes: true`, weil das NAS selbst keinen Tailscale-Knoten hat und nur über die vom `homeserver` annoncierte Subnetzroute erreichbar ist, siehe [50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-2-keine-neuen-bilder-falsches-routing-zum-nas). |
 | Erster Start, kein Cache | `default.svg`, danach die ersten Bilder, sobald der Sync sie geholt hat. |
 | Stromausfall während des Sync | Es gibt nur vollständige Dateien im Cache, `.partial/` wird beim nächsten Lauf geleert. |
 | Stromausfall allgemein | Das Chromium-Profil liegt unter `/dev/shm` und wird bei jedem Start neu angelegt. "Chromium wurde nicht korrekt beendet" kann nicht erscheinen. |
@@ -172,6 +187,8 @@ Alle werden von der Rolle `xibo_kiosk` ausgerollt (`make xibo-kiosks`), Quellen 
 | `/usr/local/bin/xibosignage-diagnose.sh` | `files/xibosignage-diagnose.sh` | neu |
 | `/etc/systemd/system/xibosignage-sync.service` | `templates/xibosignage-sync.service.j2` | neu |
 | `/etc/systemd/system/xibosignage-sync.timer` | `templates/xibosignage-sync.timer.j2` | neu |
+| `/lib/firmware/edid/<xibo_kiosk_edid_filename>` | `xibo_kiosk_edid_base64` (b64decode) | nur bei `xibo_kiosk_edid_force: true` |
+| `/boot/firmware/cmdline.txt` | Task in `tasks/main.yml` (`slurp` + `lineinfile`) | nur bei `xibo_kiosk_edid_force: true`: `drm.edid_firmware=<connector>:edid/<datei>` angehängt |
 | `/etc/systemd/system/xibosignage-xorg.service` | `templates/xibosignage-xorg.service.j2` | neu (Modus `systemd`) |
 | `/etc/systemd/system/xibosignage-kiosk.service` | `templates/xibosignage-kiosk.service.j2` | neu (Modus `systemd`) |
 | `/etc/systemd/system/getty@tty1.service.d/autologin.conf` | `templates/getty-autologin.conf.j2` | nur im Modus `getty`, im Modus `systemd` entfernt |
@@ -184,7 +201,7 @@ Alle werden von der Rolle `xibo_kiosk` ausgerollt (`make xibo-kiosks`), Quellen 
 
 Entfernt werden die alten Units und Skripte: `xibosignage-kiosk.service`, `xibosignage-webserver.service`, `xibosignage-manifest.service`, `xibosignage-manifest.timer`, `/usr/local/bin/xibosignage-manifest.sh`, `manifest.json` und der Symlink `media` auf den NFS-Mount.
 
-Zusätzlich installierte Pakete: `xserver-xorg`, `xinit`, `openbox`, `imagemagick`.
+Zusätzlich installierte Pakete: `xserver-xorg`, `xinit`, `openbox`, `imagemagick`, `xcvt` (stellt `cvt` bereit, seit Debian 13 nicht mehr in `x11-xserver-utils` enthalten).
 
 Variablen (Defaults in [roles/xibo_kiosk/defaults/main.yml](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/xibo_kiosk/defaults/main.yml)):
 
@@ -194,10 +211,13 @@ Variablen (Defaults in [roles/xibo_kiosk/defaults/main.yml](https://github.com/p
 | `xibo_kiosk_supplementary_groups` | `video`, `render` | Gruppen des Kiosk-Dienstes für den GPU-Zugriff ohne Login-Sitzung |
 | `xibo_kiosk_sync_interval_seconds` | `30` | Abstand der Sync-Läufe |
 | `xibo_kiosk_sync_boot_delay_seconds` | `20` | Verzögerung des ersten Sync-Laufs nach dem Boot, damit er den Start nicht bremst |
-| `xibo_kiosk_display_mode` | leer | erzwingt einen Bildschirmmodus, wenn kein EDID kommt |
+| `xibo_kiosk_display_mode` | `1920x1080` | erzwungener Bildschirmmodus (immer aktiv) |
+| `xibo_kiosk_edid_force` | `false` | erzwingt eine synthetische EDID per `drm.edid_firmware=`, wenn der Bildschirm keine liefert (Reboot nötig) |
+| `xibo_kiosk_edid_connector` / `_filename` / `_base64` | leer / `{{ display_mode }}.bin` / leer | Connector, Dateiname und Inhalt der EDID für `xibo_kiosk_edid_force` ([generate-edid.py](https://github.com/pkr-lab/capulus-ansible/blob/main/scripts/generate-edid.py)) |
 | `xibo_kiosk_pixel_aspect` | `auto` | Seitenverhältnis-Korrektur: `auto`, `off` oder fester Faktor |
 | `xibo_kiosk_manifest_reload_seconds` | `10` | wie oft die Seite die Bildliste neu liest |
-| `xibo_kiosk_slide_duration_ms` | `10000` | Anzeigedauer pro Bild |
+| `xibo_kiosk_orphan_grace_seconds` | `30` | Wartezeit vor dem Löschen einer aus der Quelle verschwundenen Bilddatei (Schutz vor der Race Condition in [50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md)) |
+| `xibo_kiosk_slide_duration_ms` | `20000` | Anzeigedauer pro Bild |
 | `xibo_kiosk_image_max_width` / `_height` | `1920` / `1080` | Obergrenze für die Skalierung, die Zielgröße selbst kommt vom erkannten Bildschirm |
 | `xibo_kiosk_display_poll_seconds` | `5` | Abstand der Bildschirmmodus-Prüfung |
 | `xibo_kiosk_cursor_hide_seconds` | `3` | Idle-Zeit bis der Zeiger verschwindet |
@@ -292,7 +312,9 @@ Die Meldungen des Sync-Dienstes stehen im Journal (`journalctl -u xibosignage-sy
 |---|---|---|
 | Schwarzer Bildschirm nach dem Boot | `xibosignage-xorg` oder `xibosignage-kiosk` läuft nicht (DRM-Gerät noch nicht bereit, Dienst gescheitert) | `systemctl status xibosignage-xorg xibosignage-kiosk`, Dienste starten sich bei Fehlern neu (`Restart`) |
 | Bild erscheint erst nach etwa 30 Sekunden | Startmodus `getty` statt `systemd` | `xibo_kiosk_start_mode: systemd` ([Startablauf](#startablauf-vom-boot-bis-zum-ersten-bild)) |
-| `mount fehlgeschlagen: …` (Sync-Log) | NFS-Server `192.168.178.97` oder Pfad nicht erreichbar | `showmount -e 192.168.178.97`, NAS prüfen ([NAS-Speicher](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#fehlerbehebung)) |
+| `mount fehlgeschlagen: …` (Sync-Log) | NFS-Server `192.168.178.97` oder Pfad nicht erreichbar, bei reinem Tailscale-Zugang ggf. fehlendes Subnetz-Routing | `showmount -e 192.168.178.97`, NAS prüfen ([NAS-Speicher](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#fehlerbehebung)), `tailscale status` ([50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-2-keine-neuen-bilder-falsches-routing-zum-nas)) |
+| `xrandr: Configure crtc 0 failed`, Bild bleibt verzerrt/im Notfallmodus | Bildschirm liefert kein EDID, vc4-KMS verweigert den erzwungenen Modus | `xibo_kiosk_edid_force: true` setzen, Abschnitt „Bildschirmformat“ |
+| Ein Bild wird nach wenigen hundert ms übersprungen statt die volle Anzeigedauer zu laufen | Bild wurde aus dem Cache gelöscht, während der Browser noch ein älteres Manifest hielt | sollte mit `xibo_kiosk_orphan_grace_seconds` (Default 30 s) nicht mehr vorkommen, [50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-3-slides-werden-manchmal-sofort-übersprungen) |
 | `Quelle nicht erreichbar, behalte Cache` | NAS offline oder Netzproblem | kein Fehler: das Display zeigt den Cache weiter |
 | `Quelle nicht lesbar: …` | Rechte oder Mount-Zustand | `findmnt /mnt/xibosignage-display`, Export prüfen |
 | `Quelle ohne Bilder, behalte Cache` | n8n-Workflow hat keine Bilder abgelegt | [Xibo Signage](../../capulus-core/3-apps-workloads/300e0-xibosignage.md#fehlerbehebung), n8n-Workflow „xibosignage: Playlist → Display“ |
