@@ -70,7 +70,35 @@ Kiosk-Modus per `file://`. Ablauf und Betrieb: [300e8](../3-apps-workloads/300e8
   damit der Browser-Cache greift und trotzdem geänderte Dateien erkennt.
 - **Chromium-Profil unter `/dev/shm`.** Es wird bei jedem Start gelöscht und neu angelegt. Das verhindert den Dialog „nicht korrekt beendet“
   nach Stromausfall und schont die SD-Karte. Ein Neustart-Loop im Start-Skript ersetzt `Restart=always` der früheren Unit.
-- **Bildschirmformat wird erkannt, nicht angenommen.** Verzerrte Bilder entstehen, wenn der Bildschirm nicht im nativen Modus läuft (Notfallmodus 1024×768 auf einem 16:9-Panel nach fehlendem EDID beim Boot), die Seite selbst verzerrt dank `object-fit: contain` nie. `xibosignage-display-mode.sh` setzt per `xrandr` den bevorzugten Modus und prüft dauerhaft nach, weil der Bildschirm nach dem Pi eingeschaltet werden kann. Die erkannte Größe liegt in `/dev/shm/xibosignage-screen` und ist die Zielgröße des Sync, begrenzt durch `xibo_kiosk_image_max_*`. Ändert sie sich, werden die Bilder aus den Originalen auf dem NAS neu erzeugt (`media/.target`), nie aus bereits skalierten Kopien. Markiert `xrandr` keinen Modus als bevorzugt (bei der Infotafel: X wählte 1152×864, der Kernel nannte 1920×1080), gilt der erste Kernel-Modus aus `/sys/class/drm`. Liefert der Bildschirm kein EDID (`xrandr` zeigt `0mm x 0mm` und nur Notfallmodi), kennt der Pi das Format nicht: dann `xibo_kiosk_display_mode` pro Host setzen.
+- **Bildschirmformat wird erzwungen, nicht mehr erkannt.** Früher suchte `xibosignage-display-mode.sh` den vom EDID
+  gemeldeten bevorzugten Modus und fiel sonst auf den ersten Kernel-Modus zurück. Die Infotafel liefert aber **dauerhaft
+  kein EDID** (`xrandr` zeigt `0mm x 0mm`, nur die vier VESA-Notfallmodi bis 65 MHz), die Erkennung lief dort also ohnehin
+  nie auf etwas anderes als den Fallback hinaus. Das Skript setzt seitdem beim Start immer direkt `xibo_kiosk_display_mode`
+  (Default `1920x1080`), ohne Scan und ohne Timeout/Fallback-Logik. Die erzwungene Größe liegt in
+  `/dev/shm/xibosignage-screen` und ist die Zielgröße des Sync, begrenzt durch `xibo_kiosk_image_max_*`. Ändert sie sich,
+  werden die Bilder aus den Originalen auf dem NAS neu erzeugt (`media/.target`), nie aus bereits skalierten Kopien.
+  Das reicht aber nicht allein: Ohne EDID validiert der vc4-KMS-Treiber (`dtoverlay=vc4-kms-v3d`) jede Mode-Konfiguration
+  nur gegen seine eingebaute Notfallliste und lehnt `1920x1080` mit `Configure crtc 0 failed` ab, auch mit `cvt`/`--addmode`
+  erzeugter Modeline. `xibo_kiosk_edid_force` löst das, indem es dem Treiber per Kernel-Parameter `drm.edid_firmware=`
+  eine synthetische, aber spezifikationskonforme EDID-Datei vorlegt ([`scripts/generate-edid.py`](https://github.com/pkr-lab/capulus-ansible/blob/main/scripts/generate-edid.py),
+  validiert mit `edid-decode -c`) — der Treiber hält sie für ein echtes Display und akzeptiert den Modus. Zwei scheinbar
+  näherliegende Wege greifen bei Full-KMS nicht mehr und wurden verworfen: der Kernel-Parameter `video=…e` erzwingt nur den
+  Connector-Status, keinen gültigen Modus; `hdmi_group`/`hdmi_mode`/`hdmi_ignore_edid` in `config.txt` werden von der
+  GPU-Firmware bei `dtoverlay=vc4-kms-v3d` gar nicht mehr ausgewertet (`vcgencmd get_config hdmi_mode` → `unknown`). Details
+  und die Diagnose-Befehle: [50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-1-falsches-bildformat).
+- **NAS-Erreichbarkeit hängt von Tailscale-Subnetzrouting ab, sobald der Pi nicht mehr im selben LAN steht.** Das NAS
+  (`ugreen-nas`) hat selbst keinen Tailscale-Knoten; erreichbar ist es nur über die vom `homeserver` annoncierte
+  Subnetzroute `192.168.178.0/24`. Ein reiner Tailscale-Host muss dafür `tailscale_accept_routes: true` setzen (Rollen-Default
+  `false`) — die Route selbst im Tailnet genehmigt zu haben reicht nicht, wenn der Client sie nicht akzeptiert. Ohne eigenen
+  Tailscale-Knoten auf dem NAS ist der `homeserver` damit ein unsichtbarer Single Point of Failure für jeden rein per
+  Tailscale angebundenen Host, siehe [50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-2-keine-neuen-bilder-falsches-routing-zum-nas).
+- **Gelöschte Bilder brauchen eine Gnadenfrist vor dem physischen Löschen.** Der NAS-Workflow vergibt bei jeder Änderung
+  einen neuen Dateinamen (Versions-Suffix) und der Sync entfernte den alten Namen bisher sofort. `slideshow.js` hält sein
+  Manifest aber bis zu `xibo_kiosk_manifest_reload_seconds` (10 s) im Speicher, unabhängig vom Sync-Takt (30 s) — zeigte die
+  Rotation in diesem Fenster noch auf den gerade gelöschten Namen, schlug das Laden mit 404 fehl und das Bild wurde komplett
+  übersprungen statt die konfigurierte Dauer zu laufen. `xibo_kiosk_orphan_grace_seconds` (Default 30 s, persistiert in
+  `media/.orphans.json`) trennt die beiden Schritte: Referenz sofort aus `manifest.js` entfernen, Datei selbst erst nach der
+  Gnadenfrist physisch löschen.
 - **Pixel-Seitenverhältnis.** Die Infotafel meldet `798mm x 334mm` (21:9), der Pi 3 B+ gibt höchstens 1920×1080 aus. Der Monitor streckt das Bild dann, und die Pixel sind nicht quadratisch. Die Seite gleicht das per `?par=<k>` und `scaleX(1/k)` aus (Faktor aus EDID-Größe und Modus, nur außerhalb 0,92 bis 1,08). `xibo_kiosk_pixel_aspect: off` schaltet es ab, falls der Monitor Balken statt Strecken zeigt. Der Faktor wird nur beim Start berechnet, ein später gewechselter Modus ändert ihn nicht.
 - **Skalierung statt WebP.** Bilder über der Zielgröße skaliert der Sync mit ImageMagick (`nice 19`, Speicherlimit). Eine WebP-Umwandlung
   würde den Pi 3 B+ stärker belasten, als sie nützt, und der n8n-Workflow liefert die Bilder ohnehin schon in dieser Größe.

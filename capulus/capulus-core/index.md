@@ -354,6 +354,7 @@ Pläne und Analysen. Ein Doc trägt in seiner Statuszeile, wie weit es umgesetzt
 | [NAS-Platte rot, homeserver unerreichbar](5-incidents/50000-nas-disk-red-homeserver-unreachable.md) | Vorfall vom 02.09.2026: Hypothese und Prüfschritte |
 | [PROD-VM startet nicht mehr, Basis-Image ausgetauscht](5-incidents/50010-prod-vm-basis-image-ersetzt.md) | Vorfall vom 23.09.2026: Ursache, Behebung und Lehren |
 | [Pi-hole-Update legt DNS und Tunnel lahm](5-incidents/50020-pihole-update-dns-deadlock.md) | Vorfall vom 05.10.2026: DNS-Deadlock beim Image-Pull, Notfall-Ablauf und Umstellung auf RollingUpdate |
+| [Infotafel: altes Bildformat, keine neuen Bilder, Slides zu schnell übersprungen](5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md) | Vorfall vom 22.10.2026: fehlendes EDID, Tailscale-Routing zum NAS, Race Condition beim Bilder-Sync |
 
 ### Hintergründe (`6-hintergruende/`)
 
