@@ -8,7 +8,7 @@ Code: [modules/tailscale.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/
 
 ## Überblick
 
-`cubi tailscale` liest `tailscale status --json` und zeigt alle Geräte als Tabelle. Die Tabelle lädt alle 15 Sekunden neu. Hintergrund zum Tailnet im Homelab: [Tailscale](../capulus-core/c-netzwerk-dns/c0010-tailscale.md) und [Tailscale auf den Hosts](../capulus-ansible/rollen/tailscale.md).
+`cubi tailscale` liest `tailscale status --json` und zeigt alle Geräte als Tabelle. Die Tabelle lädt alle 15 Sekunden neu. Hintergrund zum Tailnet im Homelab: [Tailscale](../capulus/capulus-core/c-netzwerk-dns/c0010-tailscale.md) und [Tailscale auf den Hosts](../capulus/capulus-ansible/rollen/tailscale.md).
 
 | Spalte | Quelle |
 |---|---|
@@ -60,7 +60,7 @@ flowchart TD
 | `… (Status: NeedsLogin)` | Anmeldung fehlt oder abgelaufen | `cubi login` → Tailscale → `tailscale login`, siehe [Login](login.md) |
 | `… (Status: unbekannt)` | `BackendState` fehlt in der Ausgabe | `tailscale status --json` manuell prüfen, Tailscale-Version prüfen |
 | `Tailscale-Status nicht lesbar` | die Ausgabe von `tailscale status --json` ist kein JSON (zum Beispiel Fehlertext) | Befehl direkt ausführen und die Fehlermeldung lesen, meist fehlen Rechte oder `tailscaled` läuft nicht |
-| `tailscale ist nicht installiert oder nicht im PATH` | Client fehlt | [Tailscale](../capulus-core/c-netzwerk-dns/c0010-tailscale.md) bzw. Paket installieren |
+| `tailscale ist nicht installiert oder nicht im PATH` | Client fehlt | [Tailscale](../capulus/capulus-core/c-netzwerk-dns/c0010-tailscale.md) bzw. Paket installieren |
 | `Zeitüberschreitung bei: tailscale status --json` | `tailscaled` antwortet nicht binnen 15 Sekunden | `systemctl status tailscaled`, `journalctl -u tailscaled` |
 | Gerät steht auf `offline · 3d` | Gerät lange nicht erreichbar | Gerät prüfen, auf dem Gerät `tailscale status` |
 | `up`/`down` meldet Fehlercode und Root-Hinweis | fehlende Rechte | `sudo tailscale up` außerhalb von cubi, oder einmalig `sudo tailscale set --operator=$USER` |
@@ -70,6 +70,6 @@ Checkliste „Tailscale-Bereich funktioniert nicht“:
 1. `tailscale status` in der Shell: gleiche Meldung?
 2. `systemctl status tailscaled`: läuft der Dienst?
 3. `cubi login`: Zeile Tailscale grün (`verbunden`)?
-4. Verbindung zu einem Host scheitert trotz `online`: ACLs im Tailnet und Hostname in `~/.ssh/config` prüfen, siehe [Tailscale](../capulus-core/c-netzwerk-dns/c0010-tailscale.md).
+4. Verbindung zu einem Host scheitert trotz `online`: ACLs im Tailnet und Hostname in `~/.ssh/config` prüfen, siehe [Tailscale](../capulus/capulus-core/c-netzwerk-dns/c0010-tailscale.md).
 
 Allgemeines: [Debugging und Fehlersuche](debugging.md).

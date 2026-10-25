@@ -1,6 +1,6 @@
 # git-pull-push (Bash)
 
-Bash-Skript, das ein Git-Repository aktualisiert und bei einer neuen Version in ein Zielverzeichnis kopiert und dort einen Befehl ausführt (zum Beispiel `docker compose up -d`). Gedacht für Server, die von Git deployen sollen, ohne dass ein Dienst auf dem Server selbst Git-Zugriff von außen braucht. Das Skript ersetzt keinen GitOps-Controller. Das GitOps-Verfahren des Homelabs steht bei [ArgoCD](../capulus-core/b-kubernetes-gitops/b0010-argocd.md).
+Bash-Skript, das ein Git-Repository aktualisiert und bei einer neuen Version in ein Zielverzeichnis kopiert und dort einen Befehl ausführt (zum Beispiel `docker compose up -d`). Gedacht für Server, die von Git deployen sollen, ohne dass ein Dienst auf dem Server selbst Git-Zugriff von außen braucht. Das Skript ersetzt keinen GitOps-Controller. Das GitOps-Verfahren des Homelabs steht bei [ArgoCD](../capulus/capulus-core/b-kubernetes-gitops/b0010-argocd.md).
 
 Code: `bash/git-pull-push/git-pull-push.sh` und `README.md` im Repo [pkr-lab/PowerShell](https://github.com/pkr-lab/PowerShell). Stand der Prüfung (2026-10-21): Die Dateien liegen im lokalen Arbeitsverzeichnis, aber noch nicht im Git-Index. TODO: prüfen, ob sie committet wurden und in welchem Pfad.
 

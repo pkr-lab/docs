@@ -4,7 +4,7 @@ Code: [pkr-lab/PowerShell](https://github.com/pkr-lab/PowerShell), vor allem [Lo
 
 Hinweis zur Ablage: Im lokalen Arbeitsverzeichnis (`~/gitlab/powershell-bash/scripte`) liegen die Skripte inzwischen unter `powershell/` und das neue Skript unter `bash/git-pull-push/`. Im Git-Index von `pkr-lab/PowerShell` stehen sie noch im Wurzelverzeichnis (Stand der Prüfung 2026-10-21, die Umstellung war nicht committet). Die Dateipfade dieser Doku folgen der bisherigen Struktur, TODO: prüfen, ob sie nach dem Commit der Umstellung mit dem Präfix `powershell/` zu aktualisieren sind.
 
-Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
+Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus/capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
 
 ---
 

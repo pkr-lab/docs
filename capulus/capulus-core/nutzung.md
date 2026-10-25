@@ -86,7 +86,7 @@ kubectl -n monitoring get secret grafana-admin \
 
 ## Tokens rotieren
 
-`scripts/token-watch.py` meldet täglich ablaufende oder zu alte Tokens. Rotationsanleitungen stehen im Feld `rotation.runbook` des Registers; das Terminal-Werkzeug [cubi](../cubi/index.md) zeigt Alter und Ablauf an und führt durch die Rotation.
+`scripts/token-watch.py` meldet täglich ablaufende oder zu alte Tokens. Rotationsanleitungen stehen im Feld `rotation.runbook` des Registers; das Terminal-Werkzeug [cubi](../../cubi/index.md) zeigt Alter und Ablauf an und führt durch die Rotation.
 
 ---
 

@@ -75,9 +75,9 @@ Alle Code-Pfade beziehen sich auf [pkr-lab/cubi](https://github.com/pkr-lab/cubi
 
 ### Beziehung zu anderen Repos
 
-- [capulus-core](../capulus-core/index.md): `cubi tokens` liest `ops/token-register.yaml` und führt `scripts/check-token-register.py` aus dem Checkout aus. `cubi argocd`, `autosync`, `scale` und `feature-testing` ändern die ArgoCD-Applications des Clusters, die dort per GitOps definiert sind ([ArgoCD](../capulus-core/b-kubernetes-gitops/b0010-argocd.md)).
+- [capulus-core](../capulus/capulus-core/index.md): `cubi tokens` liest `ops/token-register.yaml` und führt `scripts/check-token-register.py` aus dem Checkout aus. `cubi argocd`, `autosync`, `scale` und `feature-testing` ändern die ArgoCD-Applications des Clusters, die dort per GitOps definiert sind ([ArgoCD](../capulus/capulus-core/b-kubernetes-gitops/b0010-argocd.md)).
 - [pkr-lab-docs](../README.md): Runbooks mit dem Präfix `pkr-lab-docs:` im Token-Register öffnet `cubi tokens` aus dem Checkout dieses Repos.
-- [capulus-ansible](../capulus-ansible/index.md): Die SSH-Ziele in `connect` entsprechen den dort provisionierten Hosts.
+- [capulus-ansible](../capulus/capulus-ansible/index.md): Die SSH-Ziele in `connect` entsprechen den dort provisionierten Hosts.
 
 ### Terminal-Verhalten
 

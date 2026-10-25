@@ -38,7 +38,7 @@ Spalten: Workflow, Titel, Branch, Event, Status, Alter. Status ist `conclusion` 
 | Neu starten | `gh run rerun <id>` nach Rückfrage |
 | Link anzeigen | URL zum Lauf |
 
-Was die Workflows in den Repos tun: [CI-Workflows und Skripte](../capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md).
+Was die Workflows in den Repos tun: [CI-Workflows und Skripte](../capulus/capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md).
 
 ### Pull Requests
 

@@ -8,7 +8,7 @@ Code: [modules/kube.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/modul
 
 ## Überblick
 
-`cubi kubernetes` (`k8s`, `kubectl`) arbeitet mit dem aktuellen `kubectl`-Kontext und -Namespace. Den Cluster der Homelab-Umgebung beschreibt [k3s](../capulus-core/b-kubernetes-gitops/b0000-k3s.md).
+`cubi kubernetes` (`k8s`, `kubectl`) arbeitet mit dem aktuellen `kubectl`-Kontext und -Namespace. Den Cluster der Homelab-Umgebung beschreibt [k3s](../capulus/capulus-core/b-kubernetes-gitops/b0000-k3s.md).
 
 | Eintrag | Befehl | Inhalt |
 |---|---|---|
@@ -49,7 +49,7 @@ Die Zusammenfassung zählt „N Pods · M mit Auffälligkeiten“ (rot oder gelb
 
 ## Nodes
 
-Spalten: Node, Status (`Ready` grün, `NotReady` rot), Rollen (aus `node-role.kubernetes.io/*`), Version, interne IP, Alter. Enter zeigt `kubectl describe node`. Zum Cluster-Aufbau siehe [k3s](../capulus-core/b-kubernetes-gitops/b0000-k3s.md) und [Cluster Power Manager](../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md) (Worker werden nachts heruntergefahren, `NotReady` ist dann erwartbar).
+Spalten: Node, Status (`Ready` grün, `NotReady` rot), Rollen (aus `node-role.kubernetes.io/*`), Version, interne IP, Alter. Enter zeigt `kubectl describe node`. Zum Cluster-Aufbau siehe [k3s](../capulus/capulus-core/b-kubernetes-gitops/b0000-k3s.md) und [Cluster Power Manager](../capulus/capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md) (Worker werden nachts heruntergefahren, `NotReady` ist dann erwartbar).
 
 ---
 
@@ -79,7 +79,7 @@ Typische Pod-Fehlerbilder aus der Statusspalte:
 | `CrashLoopBackOff` | Container startet und beendet sich | *Logs* (bei Neustarts: `kubectl logs --previous`), *Describe* → Exit-Code |
 | `ImagePullBackOff` / `ErrImagePull` | Image oder Tag fehlt, Registry nicht erreichbar | *Describe* → Events, Image-Name und Pull-Secret prüfen |
 | `Pending` | keine passende Node, PVC nicht gebunden | *Describe* → Events (`FailedScheduling`), Node-Status im Bereich Nodes prüfen |
-| `OOMKilled` | Speicherlimit überschritten | Limits im Chart, siehe [HPA und Ressourcen](../capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md) |
+| `OOMKilled` | Speicherlimit überschritten | Limits im Chart, siehe [HPA und Ressourcen](../capulus/capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md) |
 | `Init:Error` | Init-Container fehlgeschlagen | `kubectl logs <pod> -c <init-container>` |
 
 Checkliste „Pod läuft nicht“:
@@ -88,6 +88,6 @@ Checkliste „Pod läuft nicht“:
 2. Pod-Menü → *Describe*, unten bei Events.
 3. *Logs*, bei Neustart zusätzlich `--previous`.
 4. *Warnungen*: gibt es clusterweit Events?
-5. Zum Dienst gehörende Doku, zum Beispiel [Dienste-Übersicht in capulus-core](../capulus-core/index.md).
+5. Zum Dienst gehörende Doku, zum Beispiel [Dienste-Übersicht in capulus-core](../capulus/capulus-core/index.md).
 
 Allgemeines: [Debugging und Fehlersuche](debugging.md).

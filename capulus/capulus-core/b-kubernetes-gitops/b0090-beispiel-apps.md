@@ -32,7 +32,7 @@ kubectl set env deployment/demo-app MESSAGE="Hier stand etwas anderes" -n demo-a
 # ArgoCD zeigt OutOfSync, nach einigen Sekunden setzt Self-Heal zurück
 ```
 
-Danach in ArgoCD (oder per [cubi](../../cubi/argocd.md)) beobachten, wie die App wieder `Synced` wird. Die Hinweise nach der Installation stehen in `templates/NOTES.txt` des Charts. Auf ENTW greift Self-Heal wie in [b0050](b0050-entw-argocd.md) beschrieben.
+Danach in ArgoCD (oder per [cubi](../../../cubi/argocd.md)) beobachten, wie die App wieder `Synced` wird. Die Hinweise nach der Installation stehen in `templates/NOTES.txt` des Charts. Auf ENTW greift Self-Heal wie in [b0050](b0050-entw-argocd.md) beschrieben.
 
 ---
 
@@ -51,7 +51,7 @@ curl -k https://whoami.dev.homeserver        # bzw. whoami.prod.homeserver
 | Zertifikatswarnung | Root-CA nicht installiert | [Internes TLS](../d-sicherheit/d0040-internal-tls.md) |
 | `404 page not found` | Ingress fehlt oder Host falsch | `kubectl get ingress -A`, [Traefik-Konfiguration](b0080-traefik-config.md#fehlersuche) |
 | `demo-app` ändert den Text nicht nach `values.yaml`-Änderung | Pod nicht neu gestartet oder ArgoCD noch nicht synchron | ArgoCD-Sync abwarten, `kubectl rollout restart deployment/demo-app -n demo-app` |
-| App bleibt `OutOfSync` nach manuellem Eingriff | Auto-Sync oder Self-Heal ist aus (zum Beispiel durch `cubi autosync`) | [cubi: ArgoCD-Features](../../cubi/argocd-features.md), Auto-Sync wieder aktivieren |
+| App bleibt `OutOfSync` nach manuellem Eingriff | Auto-Sync oder Self-Heal ist aus (zum Beispiel durch `cubi autosync`) | [cubi: ArgoCD-Features](../../../cubi/argocd-features.md), Auto-Sync wieder aktivieren |
 | `example-whoami`: HPA zeigt `<unknown>` | Metrics-Server liefert keine Werte | [HPA](b0040-hpa-autoscaling.md#verifizieren) |
 | ENTW-App erscheint nicht in ArgoCD | Ordner nicht auf dem Branch `entw` | [b0050](b0050-entw-argocd.md) |
 | Promotion überträgt `demo-app`-Änderung nicht | nur Versionsfelder (`image.tag`) werden übertragen, keine `message` | [f00b0](../f-cicd-automatisierung/f00b0-promotion-chain.md) |

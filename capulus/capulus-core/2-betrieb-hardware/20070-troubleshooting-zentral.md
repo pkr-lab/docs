@@ -11,11 +11,11 @@ Vor dem Suchen in einzelnen Docs lohnt dieser Ablauf. Er grenzt die Ebene ein, a
 | Schritt | Frage | Befehl oder Ort |
 |---|---|---|
 | 1 | Läuft der Cluster, und sind die Nodes bereit? | `kubectl get nodes` (Zugriff je Cluster: [a0010](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)), [k3s: Fehlersuche](../b-kubernetes-gitops/b0000-k3s.md#fehlersuche) |
-| 2 | Ist ArgoCD grün? Welche App ist rot? | `cubi argocd` ([cubi: ArgoCD](../../cubi/argocd.md)) oder `kubectl -n argocd get applications` |
-| 3 | Läuft der Pod? | `cubi kubernetes` ([cubi: Kubernetes](../../cubi/kubernetes.md)), `kubectl -n <ns> get pods`, `describe`, `logs` |
+| 2 | Ist ArgoCD grün? Welche App ist rot? | `cubi argocd` ([cubi: ArgoCD](../../../cubi/argocd.md)) oder `kubectl -n argocd get applications` |
+| 3 | Läuft der Pod? | `cubi kubernetes` ([cubi: Kubernetes](../../../cubi/kubernetes.md)), `kubectl -n <ns> get pods`, `describe`, `logs` |
 | 4 | Ist der Name auflösbar und der Port erreichbar? | `dig +short <host>`, `curl -vk https://<host>/`, [DNS](../c-netzwerk-dns/c0000-dns-architecture.md#fehlersuche), [Ports](../c-netzwerk-dns/c0030-port-uebersicht.md#fehlersuche) |
 | 5 | Stimmen Zertifikat und Secrets? | [Internes TLS](../d-sicherheit/d0040-internal-tls.md#fehlersuche), [Sealed Secrets](../b-kubernetes-gitops/b0070-sealed-secrets.md#fehlersuche) |
-| 6 | Hat sich vor kurzem etwas geändert? | letzte Merges und Promotions: `cubi github` ([GitHub](../../cubi/github.md)), [Promotion-Kette](../f-cicd-automatisierung/f00b0-promotion-chain.md#fehlersuche) |
+| 6 | Hat sich vor kurzem etwas geändert? | letzte Merges und Promotions: `cubi github` ([GitHub](../../../cubi/github.md)), [Promotion-Kette](../f-cicd-automatisierung/f00b0-promotion-chain.md#fehlersuche) |
 | 7 | Hilft ein Blick in Logs und Alarme? | VictoriaLogs und Grafana ([Logging](../3-apps-workloads/300j0-logging.md#fehlerbehebung)), ntfy-Alarme ([ntfy](../1-benachrichtigungen/10010-ntfy.md)) |
 
 Nützliche Dauerbefehle (im Cluster mit dem Problem):
@@ -39,8 +39,8 @@ kubectl -n argocd get applications.argoproj.io | grep -v 'Synced.*Healthy'
 | `kubectl` verbindet nicht | k3s aus, falscher Kontext, kubeconfig | [k3s](../b-kubernetes-gitops/b0000-k3s.md#fehlersuche) |
 | Worker `NotReady` oder fehlt | Worker ist aus (nachts gewollt), Netz, `k3s-agent` | [k3s](../b-kubernetes-gitops/b0000-k3s.md#fehlersuche), [Cluster Power Manager](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md#fehlerbehebung), [Nightly Update](../../capulus-ansible/2-betrieb-hardware/20030-nightly-worker-update.md#fehlerbehebung) |
 | Neue App erscheint nicht in ArgoCD | Ordner, ApplicationSet, AppProject | [ArgoCD](../b-kubernetes-gitops/b0010-argocd.md#fehlersuche), [AppProjects](../b-kubernetes-gitops/b0020-argocd-projects.md#fehlersuche) |
-| App `OutOfSync`, `Degraded`, `Unknown` | Manifeste, Controller-Änderungen, Pod-Fehler | [ArgoCD](../b-kubernetes-gitops/b0010-argocd.md#fehlersuche), [cubi: ArgoCD](../../cubi/argocd.md#debugging-und-fehlersuche) |
-| Änderung wird zurückgesetzt | Self-Heal, ApplicationSet, übergeordnete App | [cubi: Features](../../cubi/argocd-features.md#debugging-und-fehlersuche) |
+| App `OutOfSync`, `Degraded`, `Unknown` | Manifeste, Controller-Änderungen, Pod-Fehler | [ArgoCD](../b-kubernetes-gitops/b0010-argocd.md#fehlersuche), [cubi: ArgoCD](../../../cubi/argocd.md#debugging-und-fehlersuche) |
+| Änderung wird zurückgesetzt | Self-Heal, ApplicationSet, übergeordnete App | [cubi: Features](../../../cubi/argocd-features.md#debugging-und-fehlersuche) |
 | PROD-Apps fehlen oder Cluster `prod` nicht erreichbar | Cluster-Registrierung im Hub | [PROD im TECH-Hub](../komponenten/bootstrap-prod.md#fehlersuche) |
 | App-Umzug nach PROD hakt | Kopier-Job, Daten, DNS | [App-Umzug](../komponenten/bootstrap-prod-migrations.md#fehlersuche) |
 | ENTW-App oder ENTW-ArgoCD | eigene Instanz, Branch `entw` | [ENTW-ArgoCD](../b-kubernetes-gitops/b0050-entw-argocd.md#troubleshooting) |
@@ -80,13 +80,13 @@ kubectl -n argocd get applications.argoproj.io | grep -v 'Synced.*Healthy'
 | Kein PR aus ENTW | Promotion, CI auf `entw`, Konflikt | [ENTW-Promotion](../f-cicd-automatisierung/f0080-entw-promotion.md#fehlersuche) |
 | Versionen wandern nicht von ENTW nach TECH und PROD | Gate, ArgoCD-Token, Tailnet | [Promotion-Kette](../f-cicd-automatisierung/f00b0-promotion-chain.md#fehlersuche), [Tailscale-Runner](../f-cicd-automatisierung/f00a0-tailscale-runner-poc.md#troubleshooting) |
 | Image wird nicht gebaut oder nicht ausgerollt | Pfadfilter, Registry, Bump-PR | [Images bauen](../f-cicd-automatisierung/f0060-build-images.md#fehlersuche) |
-| Kein Release, Changelog fehlt | Commit-Format, Rechte | [Release-Automatisierung](../f-cicd-automatisierung/f0030-release-automation.md#troubleshooting), [github-workflows](../../github-workflows/index.md) |
+| Kein Release, Changelog fehlt | Commit-Format, Rechte | [Release-Automatisierung](../f-cicd-automatisierung/f0030-release-automation.md#troubleshooting), [github-workflows](../../../github-workflows/index.md) |
 | Renovate-PRs fehlen | Zeitplan, Token | [Renovate](../f-cicd-automatisierung/f0020-renovate.md#troubleshooting) |
 | GitLab-Spiegel veraltet | Mirror-Token | [GitLab-Mirror](../f-cicd-automatisierung/f0050-gitlab-mirror.md#troubleshooting) |
 | Neue Version eines Fremdprojekts wird nicht gemeldet | Release-Watcher | [GitHub Release Watcher](../f-cicd-automatisierung/f0040-github-release-watcher.md#troubleshooting) |
 | Argo-Workflow-Lauf scheitert | Artefaktspeicher, Rechte | [Argo Workflows](../f-cicd-automatisierung/f0000-argo-workflows.md#4-troubleshooting), [MinIO](../3-apps-workloads/300p0-minio.md#fehlersuche) |
 | Security-Issue oder CodeQL-Befund | Alerts | [CodeQL und Dependabot](../d-sicherheit/d0080-codeql-dependabot.md#troubleshooting) |
-| Token läuft ab, Rotation | Token-Register | [Secrets-Rotation](../d-sicherheit/d0060-secrets-rotation.md#fehlersuche), [cubi: Tokens](../../cubi/tokens.md#debugging-und-fehlersuche) |
+| Token läuft ab, Rotation | Token-Register | [Secrets-Rotation](../d-sicherheit/d0060-secrets-rotation.md#fehlersuche), [cubi: Tokens](../../../cubi/tokens.md#debugging-und-fehlersuche) |
 | Docs im Wiki nicht aktuell | wiki-docs-sync | [wiki-sync](../wiki-sync.md#fehlersuche) |
 
 ### Apps und Dienste
@@ -139,20 +139,20 @@ kubectl -n argocd get applications.argoproj.io | grep -v 'Synced.*Healthy'
 
 | Projekt | Detailseite |
 |---|---|
-| [cubi](../../cubi/index.md) | [Debugging und Fehlersuche](../../cubi/debugging.md) |
+| [cubi](../../../cubi/index.md) | [Debugging und Fehlersuche](../../../cubi/debugging.md) |
 | [capulus-ios](../../capulus-ios/index.md) | [Debugging und Fehlersuche](../../capulus-ios/debugging.md) |
-| [EDV-Kretzer (Website)](../../EDV-Kretzer/index.md) | [Debugging und Fehlersuche](../../EDV-Kretzer/debugging.md) |
-| [ui-terminal-config](../../ui-terminal-config/index.md) | [Debugging und Fehlersuche](../../ui-terminal-config/debugging.md) |
-| [DocFlowEngine](../../DocFlowEngine/index.md) | [Debugging und Fehlersuche](../../DocFlowEngine/debugging.md) |
-| [PowerShell-Skripte](../../PowerShell/index.md) | [Debugging und Fehlersuche](../../PowerShell/debugging.md), [git-pull-push](../../PowerShell/bash-git-pull-push.md#debugging-und-fehlersuche) |
-| [github-workflows](../../github-workflows/index.md) | [Nutzung](../../github-workflows/nutzung.md) |
+| [EDV-Kretzer (Website)](../../../EDV-Kretzer/index.md) | [Debugging und Fehlersuche](../../../EDV-Kretzer/debugging.md) |
+| [ui-terminal-config](../../../ui-terminal-config/index.md) | [Debugging und Fehlersuche](../../../ui-terminal-config/debugging.md) |
+| [DocFlowEngine](../../../DocFlowEngine/index.md) | [Debugging und Fehlersuche](../../../DocFlowEngine/debugging.md) |
+| [PowerShell-Skripte](../../../PowerShell/index.md) | [Debugging und Fehlersuche](../../../PowerShell/debugging.md), [git-pull-push](../../../PowerShell/bash-git-pull-push.md#debugging-und-fehlersuche) |
+| [github-workflows](../../../github-workflows/index.md) | [Nutzung](../../../github-workflows/nutzung.md) |
 
 ---
 
 ## Vorgehen bei Vorfällen
 
 1. **Eingrenzen**: Welche Ebene? (Netz, DNS, Ingress, Pod, Daten, Secret, Abhängigkeit). Von außen nach innen prüfen.
-2. **Nichts zerstören**: erst lesen (`get`, `describe`, `logs`), dann ändern. Bei GitOps-Apps Änderungen über Git machen, weil Self-Heal manuelle Änderungen zurücksetzt. Für Tests Auto-Sync kontrolliert abschalten ([cubi: Auto-Sync](../../cubi/argocd-features.md)).
+2. **Nichts zerstören**: erst lesen (`get`, `describe`, `logs`), dann ändern. Bei GitOps-Apps Änderungen über Git machen, weil Self-Heal manuelle Änderungen zurücksetzt. Für Tests Auto-Sync kontrolliert abschalten ([cubi: Auto-Sync](../../../cubi/argocd-features.md)).
 3. **Dokumentieren**: bei größeren Vorfällen einen Bericht nach Typ C ([TEMPLATE](../TEMPLATE.md)) unter [5-incidents](../5-incidents/50000-nas-disk-red-homeserver-unreachable.md) bzw. für Sicherheitsvorfälle unter `7-security-incidents/` anlegen.
 4. **Regel ableiten**: Erkenntnisse gehören als Begründung in die Hintergründe ([60000](../6-hintergruende/60000-uebersicht.md)).
 

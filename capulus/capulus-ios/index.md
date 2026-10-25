@@ -27,7 +27,7 @@ flowchart LR
 | power-agent (Host-Dienst) | [capulus-ansible](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/power_agent) | [Rolle power_agent](../capulus-ansible/rollen/power_agent.md) |
 | WoL-Agent auf dem Banana Pi | [capulus-ansible](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/banana_pi_kiosk) | [Vereinsheim-Alarmmonitor](../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md), [Rolle banana_pi_kiosk](../capulus-ansible/rollen/banana_pi_kiosk.md) |
 | Root-CA | `Resources/homeserver-root-ca.pem` (Kopie von `pki/homeserver-root-ca.pem` in capulus-core) | [Internes TLS](../capulus-core/d-sicherheit/d0040-internal-tls.md) |
-| Design | Farben und Glas-Karten aus der Website | [EDV-Kretzer](../EDV-Kretzer/index.md) |
+| Design | Farben und Glas-Karten aus der Website | [EDV-Kretzer](../../EDV-Kretzer/index.md) |
 
 ---
 

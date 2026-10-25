@@ -486,7 +486,7 @@ kubectl -n argocd logs deploy/argocd-repo-server --tail=100
 kubectl -n argocd logs deploy/argocd-applicationset-controller --tail=100
 ```
 
-Mit [cubi](../../cubi/argocd.md) (`cubi argocd`) sieht man dieselben Daten als Tabelle, inklusive Problem-Filter, Diff und Refresh.
+Mit [cubi](../../../cubi/argocd.md) (`cubi argocd`) sieht man dieselben Daten als Tabelle, inklusive Problem-Filter, Diff und Refresh.
 
 | Symptom | Ursache | Lösung |
 |---|---|---|
@@ -496,12 +496,12 @@ Mit [cubi](../../cubi/argocd.md) (`cubi argocd`) sieht man dieselben Daten als T
 | Sync-Fehler `project … is not permitted to deploy to namespace …` | Namespace fehlt im AppProject | Liste `argocd_platform_apps` / `argocd_workloads_apps` bzw. `argocd/bootstrap-prod/appproject.yaml` ergänzen, [AppProjects](b0020-argocd-projects.md) |
 | Sync-Fehler `resource … is not permitted in project …` | clusterweiter Ressourcentyp fehlt in `clusterResourceWhitelist` (PROD) | Typ im Projekt `prod` ergänzen |
 | Sync-Fehler `one or more objects failed to apply` mit `Invalid value` | Schemafehler in den Manifesten | `kubectl apply --dry-run=server` bzw. CI-Job `kubeconform` ([f0070](../f-cicd-automatisierung/f0070-ci-lint.md)) |
-| App `Progressing` bleibt hängen | Pod startet nicht | [Kubernetes](../../cubi/kubernetes.md) bzw. `kubectl -n <ns> describe pod`, Logs |
+| App `Progressing` bleibt hängen | Pod startet nicht | [Kubernetes](../../../cubi/kubernetes.md) bzw. `kubectl -n <ns> describe pod`, Logs |
 | App `Degraded` | Ressource unhealthy (Deployment ohne verfügbare Replikas, Job fehlgeschlagen) | betroffene Ressource in der Application-Detailansicht |
 | SealedSecret-App dauerhaft `OutOfSync` | `/status` des SealedSecret | im ApplicationSet per `ignoreDifferences` ausgenommen. Fehlt der Eintrag, ergänzen |
-| App wird sofort wieder auf Git zurückgesetzt | `selfHeal: true` | gewollt. Für Tests Auto-Sync abschalten ([cubi autosync](../../cubi/argocd-features.md)) |
+| App wird sofort wieder auf Git zurückgesetzt | `selfHeal: true` | gewollt. Für Tests Auto-Sync abschalten ([cubi autosync](../../../cubi/argocd-features.md)) |
 | `argocd login` scheitert mit `connection reset`/gRPC-Fehlern | Traefik reicht gRPC nicht durch | `--grpc-web` verwenden ([CLI-Nutzung](#cli-nutzung)) |
-| `argocd`-Befehl: `Unauthenticated` / `token is expired` | Login abgelaufen | `cubi login` oder `argocd login`, [Login](../../cubi/login.md) |
+| `argocd`-Befehl: `Unauthenticated` / `token is expired` | Login abgelaufen | `cubi login` oder `argocd login`, [Login](../../../cubi/login.md) |
 | Webhook löst keinen sofortigen Sync aus | Webhook nicht eingerichtet, Secret falsch | [Notifications & Webhooks](#notifications--webhooks); ohne Webhook dauert der Abgleich etwa 3 Minuten |
 | `repository not found` / Authentifizierungsfehler beim Repo | Zugangsdaten abgelaufen | Repo-Credentials erneuern ([Repository-Konfiguration](#repository-konfiguration)), Token-Register |
 | PROD-Apps fehlen | ApplicationSets `home-server-apps-prod`/`-prod-charts`, Cluster `prod` im Hub nicht registriert oder nicht erreichbar | `kubectl -n argocd get secret -l argocd.argoproj.io/secret-type=cluster`, [bootstrap-prod](../komponenten/bootstrap-prod.md) |

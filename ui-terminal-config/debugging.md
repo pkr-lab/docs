@@ -2,7 +2,7 @@
 
 Code: [install.sh](https://github.com/pkr-lab/ui-terminal-config/blob/main/install.sh), [starship-toml-template](https://github.com/pkr-lab/ui-terminal-config/blob/main/starship-toml-template)
 
-Das Projekt hat kein Log und keinen Dienst. Alle Ausgaben stehen im Terminal, `install.sh` kennzeichnet sie mit `[OK]`, `[SKIP]`, `[INFO]` und `[ERROR]`. Zum genauen Nachverfolgen hilft `bash -x ./install.sh` (zeigt jeden Befehl). Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
+Das Projekt hat kein Log und keinen Dienst. Alle Ausgaben stehen im Terminal, `install.sh` kennzeichnet sie mit `[OK]`, `[SKIP]`, `[INFO]` und `[ERROR]`. Zum genauen Nachverfolgen hilft `bash -x ./install.sh` (zeigt jeden Befehl). Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus/capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
 
 ---
 

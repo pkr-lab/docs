@@ -94,12 +94,12 @@ bereits existierender Zammad-User sein (siehe Hinweis in
 | Symptom | Ursache | Lösung |
 |---|---|---|
 | CI-Job `token register` schlägt fehl | Register unvollständig, Rotation überfällig, SealedSecret ohne Eintrag | Meldungen: [f00c0: Token-Register](../f-cicd-automatisierung/f00c0-skripte-und-workflows-referenz.md#token-register) |
-| `token-watch` legt ein Issue `Token laeuft ab: …` an | Ablauf in höchstens 60 Tagen | Token rotieren, Datum eintragen ([cubi tokens](../../cubi/tokens.md)) |
+| `token-watch` legt ein Issue `Token laeuft ab: …` an | Ablauf in höchstens 60 Tagen | Token rotieren, Datum eintragen ([cubi tokens](../../../cubi/tokens.md)) |
 | `token-watch`-Lauf ist rot | Token läuft in weniger als 7 Tagen ab | sofort rotieren |
 | Dienst nach Rotation ohne Anmeldung (401/403) | altes Token widerrufen, bevor alle Verbraucher umgestellt waren | Überlappungsregeln beachten: neues Token anlegen, umstellen, prüfen, dann altes widerrufen |
 | SealedSecret lässt sich nach der Rotation nicht entschlüsseln | falscher Cluster oder Name | [Sealed Secrets: Fehlersuche](../b-kubernetes-gitops/b0070-sealed-secrets.md#fehlersuche) |
 | Shutdown-Code in der iOS-App geht nicht mehr | ArgoCD-Admin-Passwort rotiert, `carplay-api-shutdown-code` nicht nachgezogen | [carplay-api: Ersteinrichtung](../3-apps-workloads/300d0-carplay-api.md#ersteinrichtung) Schritt 4 |
 | Rotationsskript meldet einen Fehler | Voraussetzungen fehlen | [f00c0: Skripte](../f-cicd-automatisierung/f00c0-skripte-und-workflows-referenz.md#skripte-zum-versiegeln-und-für-tokens) |
-| `cubi tokens` kann nicht rotieren (`Im Register fehlt rotation.command`) | `scripted`-Einträge ohne Befehl | [cubi: Tokens](../../cubi/tokens.md#bekannte-einschränkung-scripted-ohne-rotationcommand) |
+| `cubi tokens` kann nicht rotieren (`Im Register fehlt rotation.command`) | `scripted`-Einträge ohne Befehl | [cubi: Tokens](../../../cubi/tokens.md#bekannte-einschränkung-scripted-ohne-rotationcommand) |
 
 Allgemeine Fehlersuche: [zentrale Fehlersuche](../2-betrieb-hardware/20070-troubleshooting-zentral.md).

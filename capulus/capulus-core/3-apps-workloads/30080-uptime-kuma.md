@@ -139,7 +139,7 @@ curl -sI -H 'Origin: https://www.edv-kretzer.de' https://status-prod.pke-lab.de/
 |---|---|---|
 | Pod `Pending` oder Neustart-Schleife | PVC (2 GiB), Node-Zuordnung (`kubernetes.io/hostname: homeserver`) | `kubectl -n uptime-kuma describe pod,pvc` |
 | Oberfläche nicht erreichbar | Ingress, DNS, VPN | `kubectl -n uptime-kuma get ingress`, [DNS](../c-netzwerk-dns/c0000-dns-architecture.md#fehlersuche) |
-| Status-Page der Website zeigt „Status gerade nicht abrufbar“ | CORS-Header fehlen oder falsche Ursprünge, falscher Slug, Status-Page ohne Monitore | Header per `curl` wie oben prüfen, `ingressPublic.corsOrigins`, Slug `homelab`, [EDV-Kretzer: Status-Widget](../../EDV-Kretzer/komponenten.md#status-widget-jsupdatesjs) |
+| Status-Page der Website zeigt „Status gerade nicht abrufbar“ | CORS-Header fehlen oder falsche Ursprünge, falscher Slug, Status-Page ohne Monitore | Header per `curl` wie oben prüfen, `ingressPublic.corsOrigins`, Slug `homelab`, [EDV-Kretzer: Status-Widget](../../../EDV-Kretzer/komponenten.md#status-widget-jsupdatesjs) |
 | ntfy-Benachrichtigungen kommen nicht | Notification mit falscher URL/Token | Abschnitt „Notifications einrichten“, [ntfy](../1-benachrichtigungen/10010-ntfy.md#authentifizierung-und-zugangsdaten) |
 | Monitor zeigt `down`, Dienst läuft | Monitor erreicht den Dienst nicht (NetworkPolicy, falsche URL, Zertifikat) | URL aus dem Pod testen, [Internes TLS](../d-sicherheit/d0040-internal-tls.md) |
 | carplay-api zeigt keine Monitore | Status-Page `homeserver`/Slug stimmt nicht mit `config.uptimeKuma.slug` überein oder Monitore nicht auf der Page | [carplay-api: Fehlerbehebung](300d0-carplay-api.md#fehlerbehebung) |

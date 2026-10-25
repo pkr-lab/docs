@@ -223,7 +223,7 @@ kubectl -n kube-system get pods -l k8s-app=metrics-server
 | HPA skaliert nicht hoch | Auslastung unter dem Schwellenwert, `maxReplicas` erreicht, Node ohne Platz | `describe hpa`, Events, Node-Kapazität |
 | HPA skaliert nicht herunter | Stabilisierungsfenster (zum Beispiel 300 s bei `kubeseal-webgui`), Last schwankt | warten, `behavior.scaleDown` prüfen |
 | Replikazahl springt zurück (ArgoCD gegen HPA) | `replicas` steht noch im Template oder in `values` (statt `null`/weggelassen) | Muster aus [Voraussetzungen](#zwei-technische-voraussetzungen-die-überall-gleich-gelöst-wurden), `ignoreDifferences` im ApplicationSet |
-| Pods nach `cubi scale` auf 0 kommen nicht zurück | HPA bei 0 Replikas inaktiv, Auto-Sync war an | [cubi: Pods wiederherstellen](../../cubi/argocd-features.md#pods-skalieren-und-wiederherstellen) |
+| Pods nach `cubi scale` auf 0 kommen nicht zurück | HPA bei 0 Replikas inaktiv, Auto-Sync war an | [cubi: Pods wiederherstellen](../../../cubi/argocd-features.md#pods-skalieren-und-wiederherstellen) |
 | `FailedGetResourceMetric` in den Events | Pods noch nicht bereit oder Metrik fehlt | einige Minuten warten, metrics-server prüfen |
 | `OOMKilled` trotz HPA | ein einzelner Request braucht mehr Speicher als das Limit | Limit erhöhen, ein HPA hilft nur gegen viele gleichzeitige Anfragen (siehe Kurzfassung) |
 | Pods `Pending` nach Hochskalieren | keine freien Ressourcen oder Node-Selektor | Node-Auslastung, Worker eingeschaltet? ([Cluster Power Manager](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)) |

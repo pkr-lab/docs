@@ -295,7 +295,7 @@ kubectl get applicationset <name> -n argocd -o jsonpath='{.spec.ignoreApplicatio
 
 Ist cubi mitten in einem Vorgang abgebrochen worden, kann ein Eintrag `<app>.sync`/`<app>.scale` stehen bleiben, obwohl der Cluster schon zurückgestellt ist. Ein erneutes *Aktivieren* oder *Wiederherstellen* räumt ihn auf. Bleiben Regeln in `ignoreApplicationDifferences` stehen (zum Beispiel nach Abbruch), entfernt man sie mit `kubectl edit applicationset <name> -n argocd`.
 
-Auf ApplicationSets, die per Git oder `kubectl apply` neu eingespielt werden, verschwinden die von cubi gesetzten Regeln wieder. Auto-Sync gilt dann aus dem Template, siehe [ArgoCD](../capulus-core/b-kubernetes-gitops/b0010-argocd.md).
+Auf ApplicationSets, die per Git oder `kubectl apply` neu eingespielt werden, verschwinden die von cubi gesetzten Regeln wieder. Auto-Sync gilt dann aus dem Template, siehe [ArgoCD](../capulus/capulus-core/b-kubernetes-gitops/b0010-argocd.md).
 
 ### Checkliste „Feature wirkt nicht“
 
@@ -303,7 +303,7 @@ Auf ApplicationSets, die per Git oder `kubectl apply` neu eingespielt werden, ve
 2. `kubectl config current-context`: richtiger Cluster?
 3. Kam am Ende `✔ Änderung hält`? Wenn `⚠`: Owner der App klären (`kubectl get application <app> -n argocd -o jsonpath='{.metadata.ownerReferences}'`).
 4. Auto-Sync: `kubectl get application <app> -n argocd -o jsonpath='{.spec.syncPolicy}'`.
-5. Scale: `kubectl get deploy,sts -n <ns>`, stimmt die Replikazahl? HPA gesetzt? ([HPA](../capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md))
+5. Scale: `kubectl get deploy,sts -n <ns>`, stimmt die Replikazahl? HPA gesetzt? ([HPA](../capulus/capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md))
 6. Branch-Test: `argocd app get <app>` (oder [ArgoCD-Ansicht](argocd.md)): zeigt `Target` den Feature-Branch? Ist er gepusht?
 
 Allgemeines: [Debugging und Fehlersuche](debugging.md).

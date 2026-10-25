@@ -44,6 +44,6 @@ Warnungen (kein Fehler) gibt es bei Titeln über 80 Zeichen und Descriptions unt
 | Sitemap vollständig | `grep -c '<loc>' sitemap.xml` (derzeit 11) | neue Seite in `sitemap.xml` und `sitemap.html` eintragen ([Nutzung](nutzung.md)) |
 | Meta-Angaben je Seite | `<title>`, `description`, Canonical, Open Graph | Open Graph fehlt bewusst auf Impressum, Datenschutz und Sitemap |
 | Seite wird nicht indexiert | Suchmaschinen-Werkzeug des Anbieters | `robots.txt` und `<meta name="robots">` prüfen |
-| Alte Seite im Index | `lastmod` fehlt in der Sitemap | [Phase 5](phase-5-strukturvorschlag.md) |
+| Alte Seite im Index | `lastmod` fehlt in der Sitemap | [Phase 5](phase-5-ausbau.md) |
 
 Allgemeines: [Debugging und Fehlersuche](debugging.md).

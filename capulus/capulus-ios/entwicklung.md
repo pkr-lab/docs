@@ -56,7 +56,7 @@ Workflows unter `.github/workflows/`:
 |---|---|---|
 | `ci.yml` | PR und Push auf `main` | Job **build** (macOS): `brew install xcodegen`, `xcodegen generate`, `xcodebuild build … CODE_SIGNING_ALLOWED=NO`. Job **ca-checksum**: `Resources/homeserver-root-ca.pem` ist byte-identisch mit `pki/homeserver-root-ca.pem` in capulus-core (`main`). Job **gitleaks**: Secret-Scan über die ganze Historie (`.gitleaks.toml`) |
 | `codeql.yml` | PR, Push, wöchentlich Montag 03:41 UTC | CodeQL für `swift` (Autobuild nach `xcodegen generate`) und `actions` |
-| `commitlint.yml` | PR | Conventional Commits, [wiederverwendbarer Workflow](../github-workflows/index.md) |
+| `commitlint.yml` | PR | Conventional Commits, [wiederverwendbarer Workflow](../../github-workflows/index.md) |
 | `release.yml` | Push auf `main` | semantic-release über den zentralen Workflow, siehe [Releases](releases.md) |
 
 Renovate (`renovate.json`) läuft montags, pinnt GitHub-Actions auf Digests und wartet drei Tage nach Veröffentlichung (`minimumReleaseAge`). Die Rolle von Renovate im Gesamtsystem: [Renovate](../capulus-core/f-cicd-automatisierung/f0020-renovate.md), CodeQL und Dependabot: [CodeQL und Dependabot](../capulus-core/d-sicherheit/d0080-codeql-dependabot.md).

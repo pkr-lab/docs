@@ -1,6 +1,6 @@
 # Release-Automatisierung — Release bei jedem Merge auf `main`
 
-Jeder Push auf `main` (also jeder gemergte Pull Request) löst automatisch einen [semantic-release](https://semantic-release.gitbook.io/)-Lauf aus, der — falls die Commits seit dem letzten Tag das rechtfertigen — eine neue Versionsnummer vergibt, `CHANGELOG.md` fortschreibt, einen Git-Tag `vX.Y.Z` setzt und ein GitHub-Release mit Release Notes veröffentlicht. Der Ablauf ist für alle Repos von pkr-lab derselbe und liegt zentral im Repo `pkr-lab/.github` ([github-workflows](../../github-workflows/index.md)); capulus-core ruft ihn nur auf.
+Jeder Push auf `main` (also jeder gemergte Pull Request) löst automatisch einen [semantic-release](https://semantic-release.gitbook.io/)-Lauf aus, der — falls die Commits seit dem letzten Tag das rechtfertigen — eine neue Versionsnummer vergibt, `CHANGELOG.md` fortschreibt, einen Git-Tag `vX.Y.Z` setzt und ein GitHub-Release mit Release Notes veröffentlicht. Der Ablauf ist für alle Repos von pkr-lab derselbe und liegt zentral im Repo `pkr-lab/.github` ([github-workflows](../../../github-workflows/index.md)); capulus-core ruft ihn nur auf.
 
 ---
 
@@ -56,5 +56,5 @@ Aufrufer: [`.github/workflows/release.yml`](https://github.com/pkr-lab/capulus-c
 | Kein Release trotz `feat:`-Commit | Präfix exakt Conventional-Commits-Syntax (`feat: ...`, nicht `Feat:` oder `feature:`); der Commit muss nach dem letzten Tag liegen |
 | Workflow schlägt mit 403/permission-Fehler fehl | Der Aufrufer braucht `contents: write`, `issues: write`, `pull-requests: write`, `packages: write`; zusätzlich darf `main` den CHANGELOG-Commit annehmen |
 | Mehrere Commits, aber nur ein Release | Erwartetes Verhalten: semantic-release fasst alle Commits seit dem letzten Tag zusammen |
-| Fehler bei den Preset-Paketen | siehe [Fehlersuche in github-workflows](../../github-workflows/nutzung.md#fehlersuche) |
+| Fehler bei den Preset-Paketen | siehe [Fehlersuche in github-workflows](../../../github-workflows/nutzung.md#fehlersuche) |
 | Workflow-Lauf ansehen | GitHub-Repo → **Actions** → **Release** |

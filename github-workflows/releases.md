@@ -10,4 +10,4 @@ Die Aufrufer in den anderen Repos verweisen auf den Commit-SHA eines Release-Tag
 | Fehlerbehebung | `fix` | Patch |
 | geänderte oder entfernte Eingabe | `feat!` | Major, alle Aufrufer anpassen |
 
-Beschreibung des Ablaufs allgemein: [Releases in capulus-core](../capulus-core/releases.md).
+Beschreibung des Ablaufs allgemein: [Releases in capulus-core](../capulus/capulus-core/releases.md).
