@@ -57,9 +57,9 @@ flowchart LR
 - [Debugging und Fehlersuche](debugging.md)
 - [Releases](releases.md)
 - [SEO](seo.md)
-- [Phase 5: Strukturvorschlag](phase-5-strukturvorschlag.md)
+- [Phase 5: Ausbau](phase-5-ausbau.md)
 
 
 ## Fehlersuche
 
-Fehlerbilder, Logs und Checkliste: [Debugging und Fehlersuche](debugging.md). Komponentenweise: [Komponenten](komponenten.md#debugging-und-fehlersuche), [Automatisierung](automatisierung.md#debugging-und-fehlersuche). Zentral: [zentrale Fehlersuche](../capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
+Fehlerbilder, Logs und Checkliste: [Debugging und Fehlersuche](debugging.md). Komponentenweise: [Komponenten](komponenten.md#debugging-und-fehlersuche), [Automatisierung](automatisierung.md#debugging-und-fehlersuche). Zentral: [zentrale Fehlersuche](../capulus/capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).

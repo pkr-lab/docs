@@ -8,9 +8,9 @@ Die Profilseite ist die Einstiegsseite zu den Projekten:
 
 | Projekt | Doku |
 |---|---|
-| capulus-core | [capulus-core](../capulus-core/index.md) |
-| capulus-ansible | [capulus-ansible](../capulus-ansible/index.md) |
-| capulus-ios | [capulus-ios](../capulus-ios/index.md) |
+| capulus-core | [capulus-core](../capulus/capulus-core/index.md) |
+| capulus-ansible | [capulus-ansible](../capulus/capulus-ansible/index.md) |
+| capulus-ios | [capulus-ios](../capulus/capulus-ios/index.md) |
 | cubi | [cubi](../cubi/index.md) |
 | ui-terminal-config | [ui-terminal-config](../ui-terminal-config/index.md) |
 | DocFlowEngine | [DocFlowEngine](../DocFlowEngine/index.md) |

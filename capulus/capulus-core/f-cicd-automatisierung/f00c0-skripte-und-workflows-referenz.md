@@ -77,7 +77,7 @@ Voraussetzung für alle `seal-*`-Skripte: `kubeseal` und ein `kubectl`-Kontext a
 | `<id>: rotation.mode fehlt oder unbekannt` / `rotation.runbook fehlt` | Rotationsangaben fehlen | ergänzen |
 | `<id>: issued ist kein Datum (YYYY-MM-DD): '<wert>'` | falsches Format | `"JJJJ-MM-TT"` in Anführungszeichen |
 | `<id>: max_age_days fehlt` / `muss eine positive Zahl sein` | Pflichtfeld | ergänzen |
-| `<id>: Rotation ueberfaellig (issued <d>, max_age_days <n>)` | Frist verstrichen | rotieren, [Secrets-Rotation](../d-sicherheit/d0060-secrets-rotation.md), mit [cubi tokens](../../cubi/tokens.md) eintragen |
+| `<id>: Rotation ueberfaellig (issued <d>, max_age_days <n>)` | Frist verstrichen | rotieren, [Secrets-Rotation](../d-sicherheit/d0060-secrets-rotation.md), mit [cubi tokens](../../../cubi/tokens.md) eintragen |
 | `<id>: abgelaufen am <d>` | `expires` in der Vergangenheit | rotieren und Datum erneuern |
 | `<id>: unbekannter live_check` / `live_check github-pat verlangt live_check_env` / `live_check tailscale-device verlangt live_check_ref` | `live_check` falsch konfiguriert | Felder ergänzen |
 | `<id>: id mehrfach vergeben` | doppelter Eintrag | umbenennen |
@@ -148,7 +148,7 @@ Der Ablauf (ENTW → `main` → PROD) und die Gates stehen in [f0080](f0080-entw
 |---|---|---|---|---|
 | `ci.yml` | PR und Push auf `main`, manuell, `workflow_call` | Jobs: `lint` (yamllint, helm lint), `manifest-validate` (helm template, kubeconform), `go-check`, `isc-news-bot`, `token-register`, `secret-scan` (gitleaks). Bestandteil des Rulesets „main: PR + CI“ | `GITHUB_TOKEN` | Linter-Fehler, Schemafehler im Chart, `go test` rot, Register-Fehler, Secret im Diff ([f0070](f0070-ci-lint.md)) |
 | `commitlint.yml` | PR | Conventional Commits | – | Commit-Nachricht im falschen Format |
-| `release.yml` | Push auf `main` | semantic-release über den zentralen Workflow ([f0030](f0030-release-automation.md)) | siehe [github-workflows](../../github-workflows/index.md) | Commit-Typen ohne Release, Rechte |
+| `release.yml` | Push auf `main` | semantic-release über den zentralen Workflow ([f0030](f0030-release-automation.md)) | siehe [github-workflows](../../../github-workflows/index.md) | Commit-Typen ohne Release, Rechte |
 | `codeql.yml` | Push, PR, wöchentlich Montag 03:41 UTC | CodeQL-Analyse ([d0080](../d-sicherheit/d0080-codeql-dependabot.md)) | – | Build-Fehler im Autobuild |
 | `security-issues.yml` | täglich 06:35 UTC | `security-issues.py` | `github.token` | siehe Meldungen oben |
 | `image-scan.yml` | wöchentlich Montag 05:30 UTC | Trivy über alle Chart-Images (`scan-cluster-images.sh --charts --summary`) | – | neue Funde mit Fix |
@@ -168,7 +168,7 @@ Der Ablauf (ENTW → `main` → PROD) und die Gates stehen in [f0080](f0080-entw
 
 1. **Lauf öffnen:** GitHub → Actions → Workflow → fehlgeschlagener Schritt. Die Fehlerzeile steht meist am Ende des Schritts.
 2. **Welcher Typ?** CI-Job (lint, kubeconform, go, register, gitleaks) → lokal nachstellen (`make lint`, `python3 scripts/check-token-register.py`, siehe [Nutzung](../nutzung.md#lokale-prüfungen-vor-dem-commit)).
-3. **Secrets:** Fehlermeldung nennt ein Secret (`… fehlt`)? Unter Settings → Secrets prüfen, ob es existiert und nicht abgelaufen ist (Ablauf im [Token-Register](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml), Bedienung mit [cubi tokens](../../cubi/tokens.md)).
+3. **Secrets:** Fehlermeldung nennt ein Secret (`… fehlt`)? Unter Settings → Secrets prüfen, ob es existiert und nicht abgelaufen ist (Ablauf im [Token-Register](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml), Bedienung mit [cubi tokens](../../../cubi/tokens.md)).
 4. **Promotion-Kette hängt:** offene Issues mit Label `entw-promotion` oder `token-expiry` ansehen, dann `gh workflow run promote-chain.yml -f plan_only=true` und die Zusammenfassung lesen.
 5. **Skript von Hand:** mit `DRY_RUN=1` (soweit unterstützt) und `bash -x scripts/<skript>.sh`. Das richtige `kubectl`-Context prüfen (`kubectl config current-context`), die meisten Skripte setzen TECH voraus.
 6. **Stand auf `main` geschützt?** Direkte Pushes sind durch das Ruleset blockiert ([f0090](f0090-branch-schutz-main.md)).

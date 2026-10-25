@@ -92,18 +92,18 @@ Felder von `apps.json`: [Konfiguration](konfiguration.md#dataappsjson).
 
 ## Status-Widget (`js/updates.js`)
 
-Zeigt den Live-Status der öffentlichen Dienste aus der **öffentlichen Status-Page** von Uptime Kuma ([Uptime Kuma](../capulus-core/3-apps-workloads/30080-uptime-kuma.md)). Es werden nur Daten angezeigt, kein Link und kein iframe zum Dienst.
+Zeigt den Live-Status der öffentlichen Dienste aus der **öffentlichen Status-Page** von Uptime Kuma ([Uptime Kuma](../capulus/capulus-core/3-apps-workloads/30080-uptime-kuma.md)). Es werden nur Daten angezeigt, kein Link und kein iframe zum Dienst.
 
 - Zwei Abrufe parallel: `<basis>/api/status-page/<slug>` (Gruppen und Monitore) und `<basis>/api/status-page/heartbeat/<slug>` (Heartbeats, Uptime). Der Slug ist `homelab`. Die Basis-URL steht Base64-kodiert in `updates.js`, das ist nur Verschleierung gegen beiläufiges Auffinden, kein Schutz.
 - Der Status je Monitor ist der letzte Heartbeat: `1` Online, `0` Down, `2` „Prüfung läuft“, `3` Wartung, sonst „Unbekannt“. Die Uptime der letzten 24 Stunden steht als Prozentwert daneben.
 - Die Zusammenfassung zeigt „Alle N Dienste erreichbar“ oder „X von N Diensten aktuell nicht erreichbar“. `pending` zählt hier **nicht** als Ausfall.
-- Der Browser ruft die Status-Page von der Website aus ab. Das funktioniert nur, weil der Uptime-Kuma-Ingress CORS-Header für die Website setzt ([Uptime Kuma: CORS](../capulus-core/3-apps-workloads/30080-uptime-kuma.md)). Fehlt der Header, bleibt das Widget auf „Status gerade nicht abrufbar.“
+- Der Browser ruft die Status-Page von der Website aus ab. Das funktioniert nur, weil der Uptime-Kuma-Ingress CORS-Header für die Website setzt ([Uptime Kuma: CORS](../capulus/capulus-core/3-apps-workloads/30080-uptime-kuma.md)). Fehlt der Header, bleibt das Widget auf „Status gerade nicht abrufbar.“
 
 ---
 
 ## Zammad-Chat und Kontaktformular
 
-Beides wird aus dem Zammad-Ticketsystem eingebunden ([Zammad](../capulus-core/3-apps-workloads/30000-zammad.md)). Die Einbindung steht **inline am Ende der HTML-Seiten**, nicht in `main.js`:
+Beides wird aus dem Zammad-Ticketsystem eingebunden ([Zammad](../capulus/capulus-core/3-apps-workloads/30000-zammad.md)). Die Einbindung steht **inline am Ende der HTML-Seiten**, nicht in `main.js`:
 
 - **Chat:** Skript `…/assets/chat/chat.min.js` plus jQuery 3.6.0 (von `code.jquery.com`). `new ZammadChat({chatId: 1, show: false, flat: true, …})`. Der Chat öffnet über den schwebenden Knopf `.open-zammad-chat` (`chat-fab`).
 - **Formular:** nur auf `kontakt.html`. Skript `…/assets/form/form.js`, `$('#zammad-feedback-form').ZammadForm({modal: true, noCSS: true, attachmentSupport: true, …})`. Ein `MutationObserver` ergänzt einen Schließen-Button, sperrt das Scrollen, solange das Modal offen ist, und schließt mit Escape.
@@ -123,12 +123,12 @@ Der Zammad-Host ist ein Cluster-Dienst im TECH-Bereich. Fällt er aus, bleiben C
 | Katalog kaputt nach JSON-Änderung | JSON-Syntaxfehler | `python3 -m json.tool data/apps.json` |
 | HTML aus `apps.json` wird ausgeführt | Felder ohne Escaping | keine Tags und Sonderzeichen unmaskiert in `apps.json` schreiben |
 | Verlauf zeigt alte Releases | `releases.yml` lief nicht oder schlug fehl | Actions → „Release-Verlauf“ prüfen, [Automatisierung](automatisierung.md#debugging-und-fehlersuche) |
-| „Status gerade nicht abrufbar.“ | Status-Page nicht erreichbar, Slug falsch oder CORS-Header fehlt | Entwicklertools → Konsole und Netzwerk; Ursachen siehe oben; [Uptime Kuma](../capulus-core/3-apps-workloads/30080-uptime-kuma.md) |
+| „Status gerade nicht abrufbar.“ | Status-Page nicht erreichbar, Slug falsch oder CORS-Header fehlt | Entwicklertools → Konsole und Netzwerk; Ursachen siehe oben; [Uptime Kuma](../capulus/capulus-core/3-apps-workloads/30080-uptime-kuma.md) |
 | „Noch keine öffentliche Status-Page konfiguriert.“ | Status-Page `homelab` enthält keine Monitore | Monitore in Uptime Kuma auf die Page legen |
 | Alle Monitore „Unbekannt“ | Heartbeats leer (neuer Monitor) oder Heartbeat-Abruf lieferte keine Liste | kurz warten, `…/api/status-page/heartbeat/homelab` prüfen |
 | Banner erscheint nicht trotz `active: true` | `until` liegt in der Vergangenheit, JSON ungültig, Datei nicht deployt | `data/status.json` im Repo und auf dem Server prüfen, Deployment-Lauf prüfen |
 | Banner bleibt nach Wartungsende | `active` noch `true` und `until` leer | Workflow „Status-Hinweis“ mit `aktiv` aus starten |
-| Chat-Knopf ohne Wirkung | jQuery oder Zammad-Skript nicht geladen (Zammad-Host down, Adblocker) | Konsole prüfen, [Zammad](../capulus-core/3-apps-workloads/30000-zammad.md) |
+| Chat-Knopf ohne Wirkung | jQuery oder Zammad-Skript nicht geladen (Zammad-Host down, Adblocker) | Konsole prüfen, [Zammad](../capulus/capulus-core/3-apps-workloads/30000-zammad.md) |
 | Kontaktformular öffnet nicht | `form.js` nicht geladen oder JavaScript aus | Konsole, E-Mail-Weg aus dem Hinweis |
 | Info-Banner erscheint bei jedem Besuch | `localStorage` blockiert (Privatmodus) | erwartet |
 | Inhalte bleiben unsichtbar | `IntersectionObserver` löst nicht aus | nach 2,5 Sekunden Fallback, sonst Konsole prüfen |

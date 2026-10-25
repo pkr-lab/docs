@@ -269,4 +269,4 @@ Die Zusammenfassung des Laufs (`GITHUB_STEP_SUMMARY`) zeigt je App, ob das Gate 
 | `kubectl`-Smoke-Check gegen `SMOKE_IP_*` schlägt fehl | Adresse falsch oder Dienst nicht erreichbar | `SMOKE_IP_ENTW` und `SMOKE_IP_TECH` prüfen |
 | Doppelte oder veraltete PRs | Läufe stündlich, PR-Branch wird aktualisiert | offene PRs der Promotion ansehen, überholte schließen |
 
-Mit [cubi](../../cubi/argocd.md) lassen sich ArgoCD-Zustand und Branch-Stände ansehen. Allgemeine Fehlersuche: [zentrale Fehlersuche](../2-betrieb-hardware/20070-troubleshooting-zentral.md).
+Mit [cubi](../../../cubi/argocd.md) lassen sich ArgoCD-Zustand und Branch-Stände ansehen. Allgemeine Fehlersuche: [zentrale Fehlersuche](../2-betrieb-hardware/20070-troubleshooting-zentral.md).

@@ -1,6 +1,6 @@
 # Debugging und Fehlersuche
 
-Zentrale Seite für die Website. Die Fehlerbilder der einzelnen Teile stehen bei den Komponenten ([Komponenten](komponenten.md#debugging-und-fehlersuche)) und bei der Automatisierung ([Automatisierung](automatisierung.md#debugging-und-fehlersuche)). Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
+Zentrale Seite für die Website. Die Fehlerbilder der einzelnen Teile stehen bei den Komponenten ([Komponenten](komponenten.md#debugging-und-fehlersuche)) und bei der Automatisierung ([Automatisierung](automatisierung.md#debugging-und-fehlersuche)). Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus/capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
 
 ---
 
@@ -11,7 +11,7 @@ Zentrale Seite für die Website. Die Fehlerbilder der einzelnen Teile stehen bei
 | JavaScript-Fehler, fehlgeschlagene Abrufe | Entwicklertools des Browsers: Konsole und Netzwerk (F12). `apps.js` schreibt Ladefehler zusätzlich mit `console.error` |
 | Deployment, Release-Verlauf, Status-Hinweis | GitHub → Repo EDV-Kretzer → Actions |
 | Auslieferung auf dem Webserver | netcup-Kundenbereich bzw. Plesk, Zugriff per SSH auf das Hosting |
-| Zammad, Status-Page | Cluster-Dienste, siehe [Zammad](../capulus-core/3-apps-workloads/30000-zammad.md) und [Uptime Kuma](../capulus-core/3-apps-workloads/30080-uptime-kuma.md) |
+| Zammad, Status-Page | Cluster-Dienste, siehe [Zammad](../capulus/capulus-core/3-apps-workloads/30000-zammad.md) und [Uptime Kuma](../capulus/capulus-core/3-apps-workloads/30080-uptime-kuma.md) |
 
 Die Website selbst schreibt keine Logs. Es gibt keinen Debug-Modus und kein Log-Level, nur die Konsole des Browsers.
 
@@ -49,7 +49,7 @@ Die Seite muss über einen Webserver geöffnet werden, weil `fetch` auf `file://
 | Alles leer, nur Rahmen | Seite per `file://` geöffnet | Webserver starten |
 | Katalog, Verlauf oder Banner fehlen auf dem Server, lokal ok | Deployment nicht gelaufen oder fehlgeschlagen | Actions prüfen, [Installation](installation.md#deployment-auf-netcup) |
 | Neue Seite fehlt in Navigation oder Sitemap | nicht eingetragen | [Nutzung](nutzung.md#inhalte-pflegen), [SEO](seo.md) |
-| Chat und Formular fehlen | Zammad nicht erreichbar oder Skripte blockiert | Konsole, [Zammad](../capulus-core/3-apps-workloads/30000-zammad.md) |
+| Chat und Formular fehlen | Zammad nicht erreichbar oder Skripte blockiert | Konsole, [Zammad](../capulus/capulus-core/3-apps-workloads/30000-zammad.md) |
 | Status-Widget leer | Status-Page, Slug oder CORS | [Komponenten](komponenten.md#status-widget-jsupdatesjs) |
 | `.github/` oder `automation/` im Browser abrufbar | liegen im Docroot (Deployment checkt das ganze Repo aus) | bei Bedarf per `.htaccess` sperren, siehe [Installation](installation.md#stolperstellen) |
 | Suchmaschine zeigt veraltete Seiten | Sitemap ohne `lastmod`, keine Aktualisierung | [SEO](seo.md) |

@@ -4,7 +4,7 @@ Tabelle aller ArgoCD-Applications mit Sync- und Health-Status, Filter, Sync, Dif
 
 Code: [modules/argocd.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/modules/argocd.py), [argocd_apps.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/argocd_apps.py), [argocd_config.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/argocd_config.py)
 
-Die Änderungs-Features (Auto-Sync, Feature-Testing, Pods skalieren) stehen in [ArgoCD-Features](argocd-features.md). Wie ArgoCD im Homelab aufgebaut ist: [ArgoCD](../capulus-core/b-kubernetes-gitops/b0010-argocd.md), [AppProjects](../capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md).
+Die Änderungs-Features (Auto-Sync, Feature-Testing, Pods skalieren) stehen in [ArgoCD-Features](argocd-features.md). Wie ArgoCD im Homelab aufgebaut ist: [ArgoCD](../capulus/capulus-core/b-kubernetes-gitops/b0010-argocd.md), [AppProjects](../capulus/capulus-core/b-kubernetes-gitops/b0020-argocd-projects.md).
 
 ---
 
@@ -98,8 +98,8 @@ flowchart TD
 | `FATA[…] rpc error … Unauthenticated` | Token abgelaufen | [Login](login.md) |
 | `FATA[…] … connection refused` | falscher Server oder `plaintext`/`insecure` falsch | `server`, `plaintext`, `insecure` in der Config |
 | `Keine Einträge` in der Tabelle | Filter aktiv, oder keine Apps im Namespace | `f` → Alle Apps |
-| App steht dauerhaft auf `Unknown` | Repo nicht erreichbar oder Manifest-Fehler | *Details* → Bedingungen; *Hard Refresh*; [ArgoCD](../capulus-core/b-kubernetes-gitops/b0010-argocd.md) |
-| App `OutOfSync`, Sync ändert nichts | `ignoreDifferences` oder selfHeal-Konflikt | *Diff*, siehe [ArgoCD](../capulus-core/b-kubernetes-gitops/b0010-argocd.md) |
+| App steht dauerhaft auf `Unknown` | Repo nicht erreichbar oder Manifest-Fehler | *Details* → Bedingungen; *Hard Refresh*; [ArgoCD](../capulus/capulus-core/b-kubernetes-gitops/b0010-argocd.md) |
+| App `OutOfSync`, Sync ändert nichts | `ignoreDifferences` oder selfHeal-Konflikt | *Diff*, siehe [ArgoCD](../capulus/capulus-core/b-kubernetes-gitops/b0010-argocd.md) |
 | App `Degraded` | Ressource unhealthy (zum Beispiel Pod crasht) | *Details* → Betroffene Ressourcen, danach [Kubernetes](kubernetes.md) → Pods, Logs |
 
 Checkliste „App ist nicht grün“:
@@ -108,6 +108,6 @@ Checkliste „App ist nicht grün“:
 2. *Hard Refresh*, dann *Diff*: was unterscheidet Git und Cluster?
 3. Bei `Degraded`: `cubi kubernetes`, Pod-Status, *Describe*, *Logs*.
 4. Bei `Progressing` länger als einige Minuten: Pod `Pending` (Node, PVC) oder Image nicht ziehbar.
-5. Passende Fachdoku: [Dienste-Übersicht](../capulus-core/index.md).
+5. Passende Fachdoku: [Dienste-Übersicht](../capulus/capulus-core/index.md).
 
 Allgemeines: [Debugging und Fehlersuche](debugging.md).

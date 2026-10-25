@@ -1,6 +1,6 @@
 # Releases
 
-Releases entstehen automatisch aus den Commit-Nachrichten. Der Prozess ist in allen Repos von pkr-lab gleich und läuft über die wiederverwendbaren Workflows im Repo [pkr-lab/.github](https://github.com/pkr-lab/.github), beschrieben unter [github-workflows](../github-workflows/index.md).
+Releases entstehen automatisch aus den Commit-Nachrichten. Der Prozess ist in allen Repos von pkr-lab gleich und läuft über die wiederverwendbaren Workflows im Repo [pkr-lab/.github](https://github.com/pkr-lab/.github), beschrieben unter [github-workflows](../../github-workflows/index.md).
 
 ## Ablauf
 

@@ -48,7 +48,7 @@ Siehe [Konfiguration](konfiguration.md), Schlüssel `connect.<gruppe>[]` mit `na
 | `Ungültiger Eintrag in connect.<gruppe>: name und ssh sind Pflicht` | Eintrag ohne `name` oder `ssh` | beide Felder setzen |
 | `ssh ist nicht installiert oder nicht im PATH` | OpenSSH-Client fehlt | `sudo apt install openssh-client` |
 | `ssh: Could not resolve hostname …` (aus ssh, nach dem Wechsel in die Shell) | Alias fehlt in `~/.ssh/config` oder Name nicht auflösbar | `ssh -G <alias>` ausführen, Host-Eintrag ergänzen |
-| `Permission denied (publickey)` | Schlüssel nicht hinterlegt | `IdentityFile` im Host-Eintrag prüfen, Schlüssel auf dem Ziel hinterlegen, siehe [SSH-Härtung](../capulus-ansible/rollen/ssh_hardening.md) |
+| `Permission denied (publickey)` | Schlüssel nicht hinterlegt | `IdentityFile` im Host-Eintrag prüfen, Schlüssel auf dem Ziel hinterlegen, siehe [SSH-Härtung](../capulus/capulus-ansible/rollen/ssh_hardening.md) |
 | Hinweis hinter dem Eintrag fehlt | `ssh -G` schlug fehl oder dauerte über 5 Sekunden | harmlos; `ssh -G <alias>` manuell prüfen |
 
 Checkliste „Connect funktioniert nicht“:
@@ -56,6 +56,6 @@ Checkliste „Connect funktioniert nicht“:
 1. `ssh <alias>` direkt in der Shell: klappt es dort nicht, liegt es nicht an cubi.
 2. `ssh -G <alias>`: stimmen `hostname`, `user`, `identityfile`?
 3. Bei Tailnet-Hosts: `tailscale status`, ist das Gerät online? Siehe [Tailscale](tailscale.md).
-4. Host im lokalen Netz: Erreichbarkeit mit `ping`, DNS siehe [DNS-Architektur](../capulus-core/c-netzwerk-dns/c0000-dns-architecture.md).
+4. Host im lokalen Netz: Erreichbarkeit mit `ping`, DNS siehe [DNS-Architektur](../capulus/capulus-core/c-netzwerk-dns/c0000-dns-architecture.md).
 
 Allgemeines: [Debugging und Fehlersuche](debugging.md).

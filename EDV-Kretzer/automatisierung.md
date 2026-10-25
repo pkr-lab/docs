@@ -86,7 +86,7 @@ Bei `aktiv=false` setzt der Workflow `areas`, `since` und `until` zurück. Hat s
 
 ## n8n-Workflows
 
-Beide Dateien liegen als JSON-Export in `automation/` und werden manuell in n8n importiert ([n8n](../capulus-core/3-apps-workloads/30070-n8n.md)).
+Beide Dateien liegen als JSON-Export in `automation/` und werden manuell in n8n importiert ([n8n](../capulus/capulus-core/3-apps-workloads/30070-n8n.md)).
 
 ### „EDV-Kretzer – Status-Hinweis schalten“
 

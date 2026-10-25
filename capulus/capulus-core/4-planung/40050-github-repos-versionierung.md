@@ -1,6 +1,6 @@
 # Planung: Versionierung für alle GitHub-Repos
 
-> **Status:** Umgesetzt am 2026-10-18. Alle Repos nutzen die zentralen Workflows aus `pkr-lab/.github` ([github-workflows](../../github-workflows/index.md)); die Konfiguration wird dort erzeugt und nicht mehr aus capulus-core kopiert. Der Text unten ist die ursprüngliche Planung.
+> **Status:** Umgesetzt am 2026-10-18. Alle Repos nutzen die zentralen Workflows aus `pkr-lab/.github` ([github-workflows](../../../github-workflows/index.md)); die Konfiguration wird dort erzeugt und nicht mehr aus capulus-core kopiert. Der Text unten ist die ursprüngliche Planung.
 
 Ziel: Nicht nur `capulus-core`, sondern **alle** eigenen GitHub-Repos sollen
 nachvollziehbare Versionen (Git-Tags + Changelog) bekommen — bisher ist das
@@ -135,7 +135,7 @@ Ein-Personen-Repos (wie hier) reicht oft schon die Selbstdisziplin, die
 
 - [f0030-release-automation.md](../f-cicd-automatisierung/f0030-release-automation.md) — die hier
   als Vorlage genutzte, bereits produktive Implementierung
-- [Konfiguration der zentralen Workflows](../../github-workflows/konfiguration.md) — erzeugte semantic-release-Konfiguration; die frühere `.releaserc.json` in capulus-core entfällt
+- [Konfiguration der zentralen Workflows](../../../github-workflows/konfiguration.md) — erzeugte semantic-release-Konfiguration; die frühere `.releaserc.json` in capulus-core entfällt
 - [.github/workflows/release.yml](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/release.yml) —
   zu kopierender Workflow
 - [Conventional Commits](https://www.conventionalcommits.org/)

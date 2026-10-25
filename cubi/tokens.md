@@ -10,7 +10,7 @@ Code: [modules/tokens.py](https://github.com/pkr-lab/cubi/blob/main/src/cubi/mod
 
 `cubi tokens` (`token`) liest `ops/token-register.yaml` aus dem capulus-core-Checkout (`tokens.repo`, siehe [Konfiguration](konfiguration.md)) und listet jedes Token mit Alter und Fälligkeit, das dringendste zuerst. Das Register enthält **keine** Werte, nur Metadaten: Wo das Secret liegt, wann es ausgestellt wurde, wann es abläuft, wie es rotiert wird und was passiert, wenn es in falsche Hände gerät (`blast_radius`).
 
-Zum Register selbst und zur Überwachung im Betrieb: [CI-Lint (Register-Prüfung)](../capulus-core/f-cicd-automatisierung/f0070-ci-lint.md), [CI-Workflows und Skripte (token-watch)](../capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md) und die [Secrets-Rotation-Checkliste](../capulus-core/d-sicherheit/d0060-secrets-rotation.md). cubi ist das Bedienwerkzeug dafür: Es zeigt, was fällig ist, und führt durch die Rotation. Die tägliche Überwachung übernimmt der Workflow `token-watch.yml`.
+Zum Register selbst und zur Überwachung im Betrieb: [CI-Lint (Register-Prüfung)](../capulus/capulus-core/f-cicd-automatisierung/f0070-ci-lint.md), [CI-Workflows und Skripte (token-watch)](../capulus/capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md) und die [Secrets-Rotation-Checkliste](../capulus/capulus-core/d-sicherheit/d0060-secrets-rotation.md). cubi ist das Bedienwerkzeug dafür: Es zeigt, was fällig ist, und führt durch die Rotation. Die tägliche Überwachung übernimmt der Workflow `token-watch.yml`.
 
 ### Tabelle
 
@@ -137,7 +137,7 @@ Checkliste „Tokens-Bereich funktioniert nicht“:
 
 1. `ls <tokens.repo>/ops/token-register.yaml`: existiert die Datei?
 2. `python3 scripts/check-token-register.py` im Checkout: sind Struktur und Daten gültig?
-3. Zeigt die Tabelle Daten, aber die Rotation scheitert: Skript direkt ausführen, Voraussetzungen siehe [Secrets-Rotation](../capulus-core/d-sicherheit/d0060-secrets-rotation.md).
+3. Zeigt die Tabelle Daten, aber die Rotation scheitert: Skript direkt ausführen, Voraussetzungen siehe [Secrets-Rotation](../capulus/capulus-core/d-sicherheit/d0060-secrets-rotation.md).
 4. Nach der Rotation: `git diff ops/token-register.yaml` im Checkout, nur `issued`/`expires` dürfen sich ändern.
 
 Allgemeines: [Debugging und Fehlersuche](debugging.md).

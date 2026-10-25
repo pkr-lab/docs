@@ -1,6 +1,6 @@
 # Debugging und Fehlersuche
 
-Zentrale Seite für cubi. Fehler, die nur einen Bereich betreffen, stehen auf der Seite des Bereichs ([ArgoCD](argocd.md), [ArgoCD-Features](argocd-features.md), [Connect](connect.md), [Tailscale](tailscale.md), [GitHub](github.md), [Kubernetes](kubernetes.md), [Helm](helm.md), [Tokens](tokens.md), [Login](login.md)). Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
+Zentrale Seite für cubi. Fehler, die nur einen Bereich betreffen, stehen auf der Seite des Bereichs ([ArgoCD](argocd.md), [ArgoCD-Features](argocd-features.md), [Connect](connect.md), [Tailscale](tailscale.md), [GitHub](github.md), [Kubernetes](kubernetes.md), [Helm](helm.md), [Tokens](tokens.md), [Login](login.md)). Das projektübergreifende Kapitel ist die [zentrale Fehlersuche](../capulus/capulus-core/2-betrieb-hardware/20070-troubleshooting-zentral.md).
 
 ---
 
@@ -67,13 +67,13 @@ Timeouts: Standard 30 Sekunden, `ssh -G` 5 Sekunden, Statusabfragen für Login u
 
 | Symptom | Ursache | Lösung |
 |---|---|---|
-| `cubi tokens` findet das Register nicht | `tokens.repo` zeigt nicht auf [capulus-core](../capulus-core/index.md) | Pfad in der Config setzen |
+| `cubi tokens` findet das Register nicht | `tokens.repo` zeigt nicht auf [capulus-core](../capulus/capulus-core/index.md) | Pfad in der Config setzen |
 | `cubi tokens`: Runbook-Link öffnet nichts | Runbook mit Präfix `pkr-lab-docs:` und `tokens.docs_repo` falsch | Pfad zum Checkout dieses Repos setzen |
 | Rotieren bricht mit `Im Register fehlt rotation.command` ab | `scripted`-Einträge im Register ohne `command` | siehe [Tokens](tokens.md#bekannte-einschränkung-scripted-ohne-rotationcommand) |
-| Branch aus *Feature-Testing* wird nach Minuten wieder zurückgesetzt | App gehört einem ApplicationSet oder einer App-of-Apps, die [Root-Applicationset](../capulus-core/6-hintergruende/60030-argocd-und-bootstrap.md) setzt den Wert zurück | Warnung der Nachkontrolle beachten; dauerhaft in der Quelle ändern |
+| Branch aus *Feature-Testing* wird nach Minuten wieder zurückgesetzt | App gehört einem ApplicationSet oder einer App-of-Apps, die [Root-Applicationset](../capulus/capulus-core/6-hintergruende/60030-argocd-und-bootstrap.md) setzt den Wert zurück | Warnung der Nachkontrolle beachten; dauerhaft in der Quelle ändern |
 | Auto-Sync ist nach einem Neu-Einspielen der ApplicationSets wieder an | die von cubi gesetzten Regeln `ignoreApplicationDifferences` stehen nur im Cluster | nach dem Test erneut ausführen oder dauerhaft im Git ändern |
-| Pods einer App kommen nach *Pods skalieren* wieder hoch | Auto-Sync war an und wurde nicht abgeschaltet (Eingriff von außen) oder ein HPA greift | [HPA](../capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md), Nachkontrolle lesen |
-| `cubi connect` kennt einen neuen Host nicht | Host fehlt in `targets.yaml` oder in `~/.ssh/config` | beides ergänzen, siehe [Konfiguration](konfiguration.md); Hosts selbst: [capulus-ansible](../capulus-ansible/index.md) |
+| Pods einer App kommen nach *Pods skalieren* wieder hoch | Auto-Sync war an und wurde nicht abgeschaltet (Eingriff von außen) oder ein HPA greift | [HPA](../capulus/capulus-core/b-kubernetes-gitops/b0040-hpa-autoscaling.md), Nachkontrolle lesen |
+| `cubi connect` kennt einen neuen Host nicht | Host fehlt in `targets.yaml` oder in `~/.ssh/config` | beides ergänzen, siehe [Konfiguration](konfiguration.md); Hosts selbst: [capulus-ansible](../capulus/capulus-ansible/index.md) |
 
 ---
 

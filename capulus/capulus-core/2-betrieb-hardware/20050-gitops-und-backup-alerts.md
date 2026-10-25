@@ -83,7 +83,7 @@ kubectl get jobs -A --sort-by=.metadata.creationTimestamp | tail
 | Kein Alarm, obwohl eine App `Degraded` ist | Alert (`severity: critical`) ist im Alertmanager nicht geroutet oder `ntfy-bridge` scheitert | [ntfy-bridge](../1-benachrichtigungen/10030-ntfy-bridge.md#fehlersuche), [Monitoring](../6-hintergruende/60060-monitoring-und-alerting.md) |
 | Alarme mit `severity: warning` kommen nicht an | seit dem Entfernen von Gotify nicht mehr zugestellt | gewollt, Hinweis oben im Dokument |
 | `ArgoMetricsMissing` feuert nach dem Ausrollen | vmagent hat den Scrape noch nicht übernommen | einige Minuten warten |
-| `ArgoAppOutOfSync` nach manuellem Eingriff | Auto-Sync aus, zum Beispiel durch `cubi autosync` oder `cubi scale` | [cubi](../../cubi/argocd-features.md), Auto-Sync wieder aktivieren |
+| `ArgoAppOutOfSync` nach manuellem Eingriff | Auto-Sync aus, zum Beispiel durch `cubi autosync` oder `cubi scale` | [cubi](../../../cubi/argocd-features.md), Auto-Sync wieder aktivieren |
 | `BackupJobStale` | Backup-CronJob nicht erfolgreich in 30 h | Job-Pod und Logs prüfen, [NAS-Backup](20010-nas-backup.md) |
 | `CronJobStale` für ausgesetzte Jobs | nur aktive CronJobs werden erfasst | prüfen, ob `suspend: true` gesetzt ist |
 | Backup-Lauf „erfolgreich“, aber leerer Dump | die Regeln prüfen nur, ob der Job endet | Skript des Backups und Größe der Dump-Datei prüfen |
