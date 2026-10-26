@@ -63,11 +63,12 @@ Beides in den Passwortmanager legen und sichern (ohne `ca.key` müssen alle iPad
    1. `capulus-ansible`: Namespace `mdm` in `argocd_workloads_apps`, `argocd_network_policy_refined_namespaces` und der Freigabe `n8n` ↔ `mdm` in `argocd_network_policy_extra_ingress`.
    2. `capulus-core`: Chart, Workflows, `argocd/bootstrap/projects.yaml` (erlaubt den Namespace im AppProject `tech`, von `make render-bootstrap` erzeugt), `build-images.yml`, Token-Register, n8n-Umgebung.
    3. `pkr-lab-docs`: diese Docs.
-4. **Netzwerkrichtlinien aus Ansible anwenden**, damit n8n und `mdm` sich erreichen (`tier-default-ingress` in `mdm`, Freigabe `mdm` → `n8n`):
+4. **Ansible anwenden, zweimal.** Der AppProject `tech` und die `tier-default-ingress`-Policies kommen **nicht** von ArgoCD, sondern aus der Rolle `argocd` in `capulus-ansible` (fragt das Vault-Passwort):
    ```bash
    make argocd
    ```
-   im Repo `capulus-ansible` (fragt das Vault-Passwort).
+   - **Vor** dem Sync der Application: Ohne diesen Lauf kennt der AppProject `tech` den Namespace `mdm` nicht, die Application steht dann auf `Unknown` mit `InvalidSpecError: … do not match any of the allowed destinations in project 'tech'` und es entsteht nichts.
+   - **Nach** dem ersten Sync (der Namespace `mdm` existiert jetzt): ein zweiter Lauf, denn die Netzwerkrichtlinien legt Ansible nur für bereits vorhandene Namespaces an. Erst danach erreichen sich n8n und `mdm`.
 5. **SCEP-Image** abwarten (siehe unten). Bis der Bump-PR gemergt ist, hängt nur `mdm-scep` in `ImagePullBackOff`, alles andere läuft.
 6. **Prüfen:**
    ```bash
@@ -129,6 +130,6 @@ Die Datenbank wird nur bei einem **leeren** Volume initialisiert (Rollen, Schema
 | `mdm-scep` in `ImagePullBackOff` | Bump-PR des Images noch offen oder GHCR-Paket privat |
 | `mdm-depsyncer` in `Init:0/1` | normal, bis der DEP-Token hochgeladen ist (Log des Init-Containers: `kubectl -n mdm logs deploy/mdm-depsyncer -c wait-for-dep-token`) |
 | Pods `CreateContainerConfigError` | SealedSecret fehlt oder wurde für einen anderen Controller versiegelt: `kubectl -n mdm get sealedsecret,secret` |
-| ArgoCD: Namespace `mdm` nicht erlaubt | `argocd/bootstrap/projects.yaml` noch nicht synchronisiert, erneut synchronisieren |
-| n8n erreicht NanoMDM nicht | `make argocd` (tier-default-ingress mit Freigabe für n8n) noch nicht gelaufen |
+| ArgoCD: Application `mdm` `Unknown`, `InvalidSpecError … allowed destinations in project 'tech'` | `make argocd` in `capulus-ansible` ist noch nicht gelaufen (der AppProject wird von Ansible angewendet, nicht von ArgoCD) |
+| n8n erreicht NanoMDM nicht | zweiter `make argocd`-Lauf nach dem Anlegen des Namespace fehlt (tier-default-ingress mit Freigabe für n8n) |
 | Datenbank-Init schlägt fehl | `kubectl -n mdm logs deploy/mdm-postgres`. Nach dem Beheben das Volume `mdm-postgres-data` leeren lassen (nur bei leerer Installation) |
