@@ -127,6 +127,25 @@ Der Backup-Pfad wurde mit restic und `pg_restore -l` geprüft. Ein vollständige
 
 ---
 
+## Nachricht an die iPads einrichten
+
+Eine freie Mitteilung auf den iPads läuft über ntfy ([300u0, Workflow 8](300u0-mdm-automatisierung.md#8-nachricht-an-ipads)). Einmalig vorbereiten:
+
+1. Eigenen ntfy-Benutzer mit minimalen Rechten anlegen. Der bestehende Benutzer `reader` darf alle `Home-Lab*`-Topics lesen und ist für die iPads zu weit gefasst:
+   ```bash
+   kubectl -n ntfy exec -it deploy/ntfy -- ntfy user add ipad
+   kubectl -n ntfy exec deploy/ntfy -- ntfy access ipad Home-Lab-iPad read-only
+   ```
+   Das Passwort in den Passwortmanager legen. `publisher` darf schon auf `Home-Lab*` schreiben, dafür ist nichts weiter nötig. Zugangsdaten und Rotation allgemein: [10010](../1-benachrichtigungen/10010-ntfy.md#authentifizierung-und-zugangsdaten).
+2. Auf jedem iPad die App **ntfy** aus dem App Store installieren.
+3. In der App: Einstellungen → Benutzer verwalten → Benutzer `ipad` mit dem Passwort für `https://ntfy-tech.pke-lab.de` hinzufügen.
+4. Thema abonnieren: Server `https://ntfy-tech.pke-lab.de`, Thema `Home-Lab-iPad`. Mitteilungen für die App erlauben.
+5. Mitteilungen testen: Formular `https://n8n.prod.homeserver/form/mdm-nachricht`.
+
+Die App muss auf dem iPad installiert und das Thema abonniert sein, damit eine Mitteilung ankommt. Eine Verteilung der App per MDM ist nicht eingerichtet (sie bräuchte Lizenzen über Apple Business).
+
+---
+
 ## Updates
 
 | Was | Vorgehen |
