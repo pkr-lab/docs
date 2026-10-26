@@ -1,6 +1,6 @@
 # MDM — Automatisierung mit n8n
 
-Die zehn Workflows, die den MDM-Stack betreiben. Sie liegen als JSON in `argocd/apps/tech/n8n/workflows/mdm-*.json` und laufen in der bestehenden n8n-Instanz ([30070](30070-n8n.md)). Überblick: [300r0](300r0-mdm.md).
+Die zwölf Workflows, die den MDM-Stack betreiben. Sie liegen als JSON in `argocd/apps/tech/n8n/workflows/mdm-*.json` und laufen in der bestehenden n8n-Instanz ([30070](30070-n8n.md)). Überblick: [300r0](300r0-mdm.md).
 
 > **Cluster:** TECH · n8n im Namespace `n8n` · Zugriff auf NanoMDM, NanoDEP und PostgreSQL im Namespace `mdm` über die Cluster-Dienste (NetworkPolicy und `tier-default-ingress` erlauben genau das).
 
@@ -17,8 +17,9 @@ Die zehn Workflows, die den MDM-Stack betreiben. Sie liegen als JSON in `argocd/
 | `MDM Automation DB` | Postgres | Benutzer `mdmauto` auf der Datenbank `nanomdm` (nur Schema `automation` und gesperrte Lesespalten) | 1, 2, 3, 4, 6 |
 | `MDM Formulare` | Basic Auth | Benutzer `mdm-admin`, Passwort `form-password` (zufällig, nur lokal in `credentials.env`) | 2, 4 (Formulare) |
 | `ntfy-publisher` | Header Auth | bereits vorhanden, schreibt auf Topics `Home-Lab*` ([10010](../1-benachrichtigungen/10010-ntfy.md)) | alle |
+| `Netcup Automation` | IMAP | bereits vorhanden, Zugang zum Postfach mit dem Ordner `Ausbildung-Ipads` (derselbe wie bei „Instagram-Post per Mail“) | 12 |
 | `Zammad EDV-Kretzer` | Zammad Basic Auth | bereits vorhanden | 3 |
-| `Apple Apps Token` | Header Auth | Name `Authorization`, Wert `Bearer <Server-Token aus Apple Business, Apps und Bücher>`. Von Hand in n8n anlegen, nicht im Repo | 10 |
+| `Apple Apps Token` | Header Auth | Name `Authorization`, Wert `Bearer <Server-Token aus Apple Business, Apps und Bücher>`. Von Hand in n8n anlegen, nicht im Repo | 10, 12 |
 
 Alle Meldungen gehen an das ntfy-Topic **`Home-Lab-MDM`** (in der ntfy-App abonnieren). Die URLs der Dienste stehen je Workflow im Code-Node `Konfiguration`.
 
@@ -195,7 +196,8 @@ Datei `mdm-app-installieren.json` · Formular `https://n8n.prod.homeserver/form/
 | | |
 |---|---|
 | Zweck | Installiert freigegebene Apps ohne Apple-ID auf dem iPad und hält die Liste der erlaubten Apps aktuell. Auf beaufsichtigten iPads sind nur diese Apps sichtbar |
-| Katalog | Tabelle `automation.app_catalog` (App-Store-ID, Name, Bundle-ID). Start: ntfy `1625396347`, DLRG Trainer `1659881569`, Microsoft Teams `1113153706` |
+| Katalog | Tabelle `automation.app_catalog` (App-Store-ID, Name, Bundle-ID, `config`). Start: ntfy `1625396347`, DLRG Trainer `1659881569`, Microsoft Teams `1113153706`, Bitwarden `1137397744` |
+| App-Konfiguration | Die Spalte `config` (JSON) wird als Managed App Configuration im `InstallApplication`-Befehl (`Configuration`) mitgesendet. Bitwarden bekommt `baseEnvironmentUrl = https://vault-tech.pke-lab.de` (Bitwarden-Doku, Abschnitt Mobile-Apps; der Wert braucht das Präfix `https://`). Ändern: `UPDATE automation.app_catalog SET config = … WHERE adam_id = …`, danach im Formular die App erneut installieren. Prüfen: MDM-Befehl `ManagedApplicationConfiguration` mit der Bundle-ID. Passwörter oder Benutzernamen lassen sich so nicht eintragen, nur das, was die App als Konfigurationsschlüssel kennt |
 | Auslöser | Formular: App aus der Liste, „Alle Apps der Liste“ oder „Andere App“ (App-Store-ID oder Link), optional Seriennummer |
 | Neue App | Der Workflow fragt Name, Bundle-ID und Preis bei der iTunes-Lookup-API ab (öffentlich, ohne Anmeldung), lehnt bezahlte und iPad-untaugliche Apps ab und nimmt die App in den Katalog auf. Eine neue App muss vorher in Apple Business unter „Apps und Bücher“ abgerufen sein |
 | Ablauf | Lizenz gerätegebunden zuweisen (`POST https://vpp.itunes.apple.com/mdm/v2/assets/associate`), je Gerät und App `InstallApplication` (`PurchaseMethod 1`) einreihen, danach die Erlaubt-Liste aus Systemapps und Katalog neu berechnen. Hat sie sich geändert, geht das Profil `app-allowlist` (`com.apple.applicationaccess`, `allowListedAppBundleIDs`) an alle iPads |
@@ -211,3 +213,52 @@ Wichtig:
 - Die Aufrufe der Lizenz-API sind nach Dritt-Quellen gebaut und noch nicht mit einem echten Token getestet. Bei Abweichungen im Antwortformat den Node `Lizenz zuweisen` anpassen.
 
 Fehlerfälle: Token ungültig oder Lizenz fehlt → Meldung mit HTTP-Status, die Befehle werden trotzdem eingereiht und scheitern am Gerät. Unbekannte oder bezahlte App → Hinweis im Formular, nichts geändert. Kein angemeldetes iPad → „Nichts installiert“.
+
+---
+
+## 11. Hintergrundbild ändern
+
+Datei `mdm-hintergrund-aendern.json` · Formular `https://n8n.prod.homeserver/form/mdm-hintergrund` (Basic Auth `MDM Formulare`).
+
+| | |
+|---|---|
+| Zweck | Setzt das Hintergrundbild (Sperr- und Home-Bildschirm) auf allen iPads und verhindert, dass Nutzer es ändern |
+| Startbild | `profiles/ipad-wallpaper.png` (2048 × 2732, DLRG Andernach). Bei leerer Datenbank wird es in `automation.profile_state` (Zeile `wallpaper`) übernommen |
+| Neue Geräte | Das Bild und die Sperre (`wallpaper`, `wallpaper-lock`) gehen über Workflow 1 automatisch an jedes neu angemeldete iPad |
+| Auslöser | Formular mit Dateiupload (PNG oder JPG, bis 4 MB, empfohlen 2048 × 2732) |
+| Ablauf | Bild prüfen (Dateikennung), Base64 in `params.IMAGE_B64` speichern, Version erhöhen, für alle Geräte beanspruchen, `Settings`-Befehl mit `Item Wallpaper`, `Where 3` einreihen. Das Profil `wallpaper-lock` (`com.apple.applicationaccess`, `allowWallpaperModification = false`) wird mitgesendet |
+| Reihenfolge | Der Bild-Befehl wird vor der Sperre eingereiht (sortiert nach `kind`), damit die Sperre ihn nicht verhindert |
+| Credentials | `MDM Formulare`, `MDM NanoMDM API`, `MDM Automation DB`, `ntfy-publisher` |
+
+Wichtig:
+- **Nur beaufsichtigte iPads.** `Settings`/`Wallpaper` und `allowWallpaperModification` verlangen Aufsicht (Apple).
+- Der `Settings`-Befehl wirkt **einmalig** („the user may still change the settings later“). Erst die Einschränkung macht das Bild unveränderlich. Auf der Home-Seite zählt iPadOS ab 17 beim ersten Setzen beide Bildschirme.
+- Der Bild-Befehl liegt als `kind = 'wallpaper'` in `automation.profile_state` (Spalte `kind`: `profile` oder `wallpaper`). Der gemeinsame Befehlsbauer der Workflows 1, 2, 10 und 11 baut für `wallpaper` einen `Settings`-Befehl statt `InstallProfile`.
+
+---
+
+## 12. Auftrag per Mail
+
+Datei `mdm-auftrag-per-mail.json` · IMAP-Ordner `Ausbildung-Ipads`.
+
+| | |
+|---|---|
+| Zweck | Eine Mail ändert das Hintergrundbild, sendet eine Push-Mitteilung, sperrt iPads mit Nachricht und installiert Apps auf einem, mehreren oder allen iPads. Die Wege entsprechen den Workflows 8, 9, 10 und 11, nur dass die Eingabe aus einer Mail kommt und das Ziel wählbar ist |
+| Auslöser | Ungelesene Mail im Ordner `Ausbildung-Ipads` von den Absendern aus `sender` (Node `Konfiguration`, zusätzlich im IMAP-Filter des Triggers). Der Betreff spielt keine Rolle |
+| Eingabe | Genau ein JSON-Anhang, dazu optional ein Bild (PNG oder JPG, bis 4 MB). Felder: `ipads` (Pflicht), `push`, `sperrbildschirm` (Sperren mit Nachricht), `app`, optional `hintergrund: false` zum Ignorieren des Bildes. Mindestens eine Aktion nötig, unbekannte Felder lehnt der Workflow ab, damit sich Tippfehler nicht still verlieren |
+| Ziel | `ipads` ist eine Liste aus `kleines-becken`, `grosses-becken`, `vorstands-tisch`, einer Seriennummer oder `"alle"`. Schreibweise (Groß-/Kleinschreibung, Umlaute, Leerzeichen statt Bindestrich) wird normalisiert. Namen und Seriennummern stehen im Node `Konfiguration` (`ipads`), solange dort `CHANGE-ME-…` steht, lehnt der Workflow das iPad ab |
+| Hintergrund | Bild als Anhang. Bei `alle` wie Workflow 11: Bild in `profile_state` (Zeile `wallpaper`) speichern, Version erhöhen, für alle Geräte beanspruchen. Bei einzelnen iPads geht der `Settings`-Befehl direkt an diese Geräte, `profile_state` bleibt unverändert |
+| Sperren | `sperrbildschirm` als Text oder `{nachricht, telefon}` (Nachricht 1 bis 300 Zeichen, Telefonnummer optional). Sendet wie Workflow 9 den MDM-Befehl `DeviceLock`: Das iPad sperrt sich sofort und zeigt die Nachricht auf dem Sperrbildschirm, entsperrt wird mit dem Code des iPads. Der Befehl geht als letzter ein, nach Bild und App. Der dauerhafte Footer-Text (Workflow 2) lässt sich per Mail nicht ändern |
+| Push | `push` als Text oder `{nachricht, titel, dringlichkeit}` (`normal`, `hoch`, `dringend`). Läuft über ntfy-JSON-Publish wie Workflow 8 |
+| App | `app` als Katalogname, App-Store-ID oder App-Store-Link. Ablauf wie Workflow 10 (Lizenz zuweisen, `InstallApplication`, Erlaubt-Liste neu berechnen); eine neue ID wird über die iTunes-Lookup-API geprüft und in den Katalog aufgenommen. Eine App je Mail |
+| Ergebnis | ntfy-Meldung auf `Home-Lab-MDM` mit Zählung je Aktion. Fehler (Absender, JSON, Ziel, Bild) ebenfalls dort, mit hoher Priorität |
+| Credentials | `Netcup Automation`, `MDM NanoMDM API`, `MDM Automation DB`, `Apple Apps Token`, `ntfy-publisher` |
+
+Wichtig:
+- **ntfy adressiert kein einzelnes iPad.** Ohne `ntfyTopic` im Eintrag des iPads geht die Mitteilung an `Home-Lab-iPad`, also an alle iPads, mit dem iPad-Namen im Titel. Für Mitteilungen nur an ein iPad bekommt es ein eigenes Topic: in dessen ntfy-App abonnieren, Leserecht für den Benutzer `ipad` und Schreibrecht für `ntfy-publisher` einrichten, dann `ntfyTopic` setzen.
+- **Die Erlaubt-Liste gilt immer für alle iPads**, auch wenn die App nur auf einem installiert wird (Workflow 10 verhält sich genauso).
+- Ein einzelnes iPad mit eigenem Bild oder Text wird beim nächsten Ändern für `alle` (Formular oder Mail) überschrieben.
+- Kommen mehrere Mails gleichzeitig an, verarbeitet der Workflow nur die erste. Für die übrigen kommt eine ntfy-Fehlermeldung mit der Bitte, erneut zu senden.
+- Wirkt wie die Formulare nur auf beaufsichtigten iPads.
+
+Fehlerfälle (jeweils ohne Änderung): Absender nicht erlaubt, kein oder unlesbarer JSON-Anhang, unbekanntes Feld oder iPad, fehlende Seriennummer im Workflow, Bild kein PNG/JPG oder größer als 4 MB, Text zu lang, keine Aktion. Ein gewähltes iPad ohne Anmeldung wird übersprungen und gemeldet, ist keines angemeldet, passiert nichts. App unbekannt, bezahlt oder in Apple Business nicht abgerufen → Meldung, die übrigen Aktionen laufen weiter.
