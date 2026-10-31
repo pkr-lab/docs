@@ -41,6 +41,7 @@ Hostnamens zu einem Tier folgt dem Charakter der App, **nicht** dem Ordner, in d
 |---|---|---|---|
 | Vaultwarden | `argocd/apps/tech/vaultwarden` | **tech** | Passwort-Manager, Credential-Quelle auch für andere Dienste, kein Endnutzer-Produkt im eigentlichen Sinn |
 | Zammad | `argocd/apps/tech/zammad` | **tech** | Ticket-/Support-System, das auch interne Automatisierung (z. B. `github-release-watcher`) anspricht, Betriebs-Tooling |
+| ticket-gate | `argocd/apps/tech/ticket-gate` | **tech** | Vorschaltdienst für Zammad, gehört zum Ticketsystem |
 | n8n, alamos-apager, alamos-relay, carplay-api, mediamtx, uptime-kuma, pacman | `argocd/apps/tech/<app>` | **prod** | Apps mit Nutzerkreis, die (noch) im TECH-Cluster laufen. Ihr Name trägt `prod`, ihr Cluster ist TECH |
 
 ---
@@ -150,6 +151,7 @@ Aktuell tragen diese Apps zusätzlich einen `*-pke-lab.de`-Host:
 | Grafana | `grafana-tech.pke-lab.de` | tech | TECH |
 | ntfy | `ntfy-tech.pke-lab.de` | tech | TECH |
 | Zammad | `support-tech.pke-lab.de` (abweichendes Label!) | tech | TECH |
+| ticket-gate | `ticket-gate-tech.pke-lab.de` (nur die API des Kontaktformulars, [300r0](../3-apps-workloads/300r0-ticket-gate.md)) | tech | TECH |
 | Vaultwarden | `vault-tech.pke-lab.de` | tech | TECH |
 | MediaMTX | `stream-prod.pke-lab.de` | prod | TECH |
 | Uptime Kuma (Status-Seite) | `status-prod.pke-lab.de` | prod | TECH |

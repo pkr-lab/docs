@@ -331,6 +331,7 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [kubeseal-webgui](3-apps-workloads/300o0-kubeseal-webgui.md) | TECH | Secrets im Browser versiegeln (Zertifikat des TECH-Controllers) |
 | [MinIO](3-apps-workloads/300p0-minio.md) | TECH | S3-Speicher für Argo Workflows (Bucket `argo-artifacts`) |
 | [Monitoring](3-apps-workloads/300q0-monitoring.md) | TECH | VictoriaMetrics, Grafana, Alertmanager, Regeln, Fehlersuche |
+| [ticket-gate](3-apps-workloads/300r0-ticket-gate.md) | TECH | E-Mail-Bestätigung (6-stelliger Code) vor dem Ticketformular der Website, legt das Ticket erst danach in Zammad an |
 | [MDM für iPads](3-apps-workloads/300r0-mdm.md) | TECH | Eigener Apple-MDM-Server (NanoMDM, NanoDEP, SCEP) mit n8n-Automatisierung: Überblick, [Installation](3-apps-workloads/300s0-mdm-installation.md), [Apple-Setup](3-apps-workloads/300t0-mdm-apple-setup.md), [Automatisierung](3-apps-workloads/300u0-mdm-automatisierung.md), [Betrieb](3-apps-workloads/300v0-mdm-betrieb.md), [Sicherheit](3-apps-workloads/300w0-mdm-sicherheit.md) |
 
 ### Planung (`4-planung/`)
