@@ -22,6 +22,7 @@
 | [`nightly_worker_wake`](nightly_worker_wake.md) | homeserver | 01:00-Timer: Worker wecken, Update anstoßen, wieder herunterfahren |
 | [`node_exporter`](node_exporter.md) | prod-vm, entw-vm, Banana Pi, Kiosks | Host-Metriken für Nicht-k3s-Hosts bzw. VMs |
 | [`ntfy_publisher`](ntfy_publisher.md) | alle Knoten und Kiosks | Meldungen der Watchdogs und Host-Skripte per HTTPS an ntfy, mit Root-CA und Publisher-Token |
+| [`infotafel_poweroff`](infotafel_poweroff.md) | Infotafel (`xibo_displays`) | Erlaubt n8n, den Pi per SSH (forced command) herunterzufahren |
 | [`power_agent`](power_agent.md) | homeserver | HTTP-API für Helligkeit, Wake und Shutdown aus der iOS-App |
 | [`resource_watchdog`](resource_watchdog.md) | alle Knoten und Kiosks | Selbst-Abschaltung bei Dauerlast |
 | [`semaphore_bootstrap`](semaphore_bootstrap.md) | homeserver | Projekte, Inventories, Templates und Zeitpläne in Semaphore per REST-API |

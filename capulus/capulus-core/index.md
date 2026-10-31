@@ -332,6 +332,7 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [MinIO](3-apps-workloads/300p0-minio.md) | TECH | S3-Speicher für Argo Workflows (Bucket `argo-artifacts`) |
 | [Monitoring](3-apps-workloads/300q0-monitoring.md) | TECH | VictoriaMetrics, Grafana, Alertmanager, Regeln, Fehlersuche |
 | [ticket-gate](3-apps-workloads/300r0-ticket-gate.md) | TECH | E-Mail-Bestätigung (6-stelliger Code) vor dem Ticketformular der Website, legt das Ticket erst danach in Zammad an |
+| [MDM für iPads](3-apps-workloads/300r0-mdm.md) | TECH | Eigener Apple-MDM-Server (NanoMDM, NanoDEP, SCEP) mit n8n-Automatisierung: Überblick, [Installation](3-apps-workloads/300s0-mdm-installation.md), [Apple-Setup](3-apps-workloads/300t0-mdm-apple-setup.md), [Automatisierung](3-apps-workloads/300u0-mdm-automatisierung.md), [Betrieb](3-apps-workloads/300v0-mdm-betrieb.md), [Sicherheit](3-apps-workloads/300w0-mdm-sicherheit.md) |
 
 ### Planung (`4-planung/`)
 
@@ -376,6 +377,7 @@ Einstieg und Zuordnung von Dateien zu Docs: **[capulus-core/6-hintergruende/6000
 | [CI-Workflows, Skripte und Lint](6-hintergruende/600a0-ci-workflows-und-skripte.md) | Workflows, Promotions- und Sync-Skripte, Ruleset, Dependabot/Renovate, Lint-Konfiguration |
 | [Nachprüfung nach der Repo-Aufspaltung](6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md) | Befunde, Fixes, Testmatrix, Renovate und Rulesets, offene Entscheidungen |
 | [capulus-operator](6-hintergruende/600c0-capulus-operator.md) | Entscheidungen, Backup-Controller, Alerts, Chart und CI |
+| [MDM](6-hintergruende/600d0-mdm.md) | Cloudflare und Geräte-Authentifizierung, SCEP-Image, Datenbank, NanoMDM-/NanoDEP-Fallstricke, n8n-Workflows |
 
 Komponenten-Seiten (früher Ordner-READMEs): [ENTW-Ordner](komponenten/entw-apps.md) (ENTW-Ordner),
 [PROD im Hub](komponenten/bootstrap-prod.md) (PROD im Hub anbinden, Umzug mit Daten),

@@ -3,7 +3,7 @@
 Begründungen zu `argocd/apps/tech/*/values.yaml`, zu den Chart-Templates und den Dockerfiles der TECH-Apps. Bedienung der Apps steht in
 den Docs unter `3-apps-workloads/`. Themen mit eigenem Doc: Monitoring in [60060](60060-monitoring-und-alerting.md), lldap in
 [60070](60070-lldap.md), carplay-api in [60080](60080-carplay-api-und-ios-app.md), pacman in
-[60090](60090-pacman-schulungsobjekt.md). PROD-Apps stehen in [60050](60050-helm-charts-prod.md).
+[60090](60090-pacman-schulungsobjekt.md), der MDM-Stack in [600d0](600d0-mdm.md). PROD-Apps stehen in [60050](60050-helm-charts-prod.md).
 
 ---
 
