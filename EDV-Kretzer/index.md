@@ -17,7 +17,7 @@ Reines HTML, CSS und etwas JavaScript, ohne Build-Schritt und ohne Framework. Di
 | `mediamtx-drohnenstream.html` | Anleitung: Drohnen-Livestream per MediaMTX zum ELW |
 | `app.html` | Die eigene iOS-App fürs Homelab mit Screenshots |
 | `updates.html` | Verlauf der letzten zehn Releases aller capulus-Repos aus `data/releases.json` und Live-Status der Dienste |
-| `ueber-mich.html`, `kontakt.html` | Vorstellung und Kontaktformular (Zammad) |
+| `ueber-mich.html`, `kontakt.html` | Vorstellung und Kontaktformular (E-Mail-Bestätigung über ticket-gate, Tickets in Zammad) |
 | `sitemap.html`, `sitemap.xml`, `robots.txt` | Seitenübersicht und Hinweise für Suchmaschinen |
 | `impressum.html`, `datenschutz.html` | rechtliche Seiten |
 
@@ -52,7 +52,7 @@ flowchart LR
 - [Installation](installation.md)
 - [Konfiguration](konfiguration.md)
 - [Nutzung](nutzung.md)
-- [Komponenten](komponenten.md): JavaScript, Status-Banner, Zammad-Chat und -Formular, Katalog, Changelog, Status-Widget
+- [Komponenten](komponenten.md): JavaScript, Status-Banner, Kontaktformular mit E-Mail-Bestätigung, Katalog, Changelog, Status-Widget
 - [Automatisierung](automatisierung.md): Deployment, Release-Verlauf, Status-Hinweis, n8n
 - [Debugging und Fehlersuche](debugging.md)
 - [Releases](releases.md)

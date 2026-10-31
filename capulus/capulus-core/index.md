@@ -331,6 +331,7 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [kubeseal-webgui](3-apps-workloads/300o0-kubeseal-webgui.md) | TECH | Secrets im Browser versiegeln (Zertifikat des TECH-Controllers) |
 | [MinIO](3-apps-workloads/300p0-minio.md) | TECH | S3-Speicher für Argo Workflows (Bucket `argo-artifacts`) |
 | [Monitoring](3-apps-workloads/300q0-monitoring.md) | TECH | VictoriaMetrics, Grafana, Alertmanager, Regeln, Fehlersuche |
+| [ticket-gate](3-apps-workloads/300r0-ticket-gate.md) | TECH | E-Mail-Bestätigung (6-stelliger Code) vor dem Ticketformular der Website, legt das Ticket erst danach in Zammad an |
 
 ### Planung (`4-planung/`)
 

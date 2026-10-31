@@ -21,6 +21,8 @@ Die Deployment-Konfiguration liegt unter `argocd/apps/tech/zammad/`.
 | Persistenz        | StorageClass `nas` (UGREEN NAS, NFS) | —         |
 | Auto-Updates      | Renovate (patch + minor)          | —           |
 
+Das Kontaktformular der Website legt Tickets nicht mehr direkt an, sondern über [ticket-gate](300r0-ticket-gate.md) (E-Mail-Bestätigung per Code). Dafür sind `/api/v1/form_submit` und `/api/v1/form_config` auf dem öffentlichen Host gesperrt, die Kanäle *Formular* und *Chat* sind in der Administration deaktiviert, und ein Agent-Benutzer mit API-Token dient ticket-gate zum Anlegen der Tickets.
+
 PostgreSQL und Redis laufen mit `storageClassName: nas` (siehe
 [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — keine NodeAffinity mehr
 nötig, die PVCs sind von jedem Node aus erreichbar. Da Zammad Attachments

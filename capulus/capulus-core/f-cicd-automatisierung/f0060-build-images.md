@@ -2,7 +2,7 @@
 
 [`.github/workflows/build-images.yml`](https://github.com/pkr-lab/capulus-core/blob/main/.github/workflows/build-images.yml)
 baut und pusht die drei selbst gebauten Workload-Images —
-[`pacman`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/pacman), [`carplay-api`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/carplay-api), [`isc-news-bot`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/isc-news-bot),
+[`pacman`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/pacman), [`carplay-api`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/carplay-api), [`ticket-gate`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/ticket-gate), [`isc-news-bot`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/isc-news-bot),
 [`alert-caller`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/alert-caller) (nur `Dockerfile`, das Skript kommt per ConfigMap) und [`n8n`](https://github.com/pkr-lab/capulus-core/tree/main/argocd/apps/tech/n8n) (dessen `image/Dockerfile`) —
 automatisch nach GHCR, sobald der jeweilige Build-Kontext auf `main`
 geändert wird. Vorher musste dafür manuell ein Kaniko-Build in Argo Workflows

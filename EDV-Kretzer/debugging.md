@@ -37,7 +37,7 @@ Die Seite muss über einen Webserver geöffnet werden, weil `fetch` auf `file://
 3. **Stand auf dem Server:** Wurde der letzte Commit deployt? Actions → „Deploy to netcup“ grün? Der Lauf zeigt den ausgecheckten Commit nicht. Vergleich per Dateiänderung (`Last-Modified`).
 4. **JSON gültig?** `python3 -m json.tool` auf die Datei. Ein Komma zu viel legt Katalog oder Verlauf lahm.
 5. **Cache:** Strg+F5. `status.json` wird nie gecacht, `apps.json` und `releases.json` folgen den Browser-Standards.
-6. **Externe Dienste:** Zammad (Chat, Formular) und Uptime Kuma (Status-Widget) laufen im Cluster. Sind sie aus, fehlen nur diese Teile ([Komponenten](komponenten.md)).
+6. **Externe Dienste:** ticket-gate (Formular, legt Tickets in Zammad an) und Uptime Kuma (Status-Widget) laufen im Cluster. Sind sie aus, fehlen nur diese Teile ([Komponenten](komponenten.md)).
 7. **Automatisierung:** Release-Verlauf bleibt alt oder Status-Hinweis erscheint nicht? → [Automatisierung](automatisierung.md#debugging-und-fehlersuche).
 
 ---
@@ -49,7 +49,7 @@ Die Seite muss über einen Webserver geöffnet werden, weil `fetch` auf `file://
 | Alles leer, nur Rahmen | Seite per `file://` geöffnet | Webserver starten |
 | Katalog, Verlauf oder Banner fehlen auf dem Server, lokal ok | Deployment nicht gelaufen oder fehlgeschlagen | Actions prüfen, [Installation](installation.md#deployment-auf-netcup) |
 | Neue Seite fehlt in Navigation oder Sitemap | nicht eingetragen | [Nutzung](nutzung.md#inhalte-pflegen), [SEO](seo.md) |
-| Chat und Formular fehlen | Zammad nicht erreichbar oder Skripte blockiert | Konsole, [Zammad](../capulus/capulus-core/3-apps-workloads/30000-zammad.md) |
+| Formular meldet „Keine Verbindung“ oder `origin_not_allowed` | ticket-gate nicht erreichbar oder Origin nicht erlaubt | Konsole (Netzwerk), [ticket-gate: Fehlersuche](../capulus/capulus-core/3-apps-workloads/300r0-ticket-gate.md#fehlersuche) |
 | Status-Widget leer | Status-Page, Slug oder CORS | [Komponenten](komponenten.md#status-widget-jsupdatesjs) |
 | `.github/` oder `automation/` im Browser abrufbar | liegen im Docroot (Deployment checkt das ganze Repo aus) | bei Bedarf per `.htaccess` sperren, siehe [Installation](installation.md#stolperstellen) |
 | Suchmaschine zeigt veraltete Seiten | Sitemap ohne `lastmod`, keine Aktualisierung | [SEO](seo.md) |

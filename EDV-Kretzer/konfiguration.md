@@ -53,7 +53,15 @@ Die letzten zehn Releases aller capulus-Repos (jedes Repo aus `data/projects.jso
 
 ## Kontaktformular
 
-`kontakt.html` öffnet ein Zammad-Formular. Die Einbindung steht inline in `kontakt.html` (nicht in `js/main.js`), siehe [Komponenten](komponenten.md#zammad-chat-und-kontaktformular). Alternativ steht die E-Mail-Adresse im Impressum.
+`kontakt.html` zeigt ein eigenes Formular mit E-Mail-Bestätigung (`js/kontakt-verifizierung.js`). Der Ablauf und die API stehen in [Komponenten](komponenten.md#kontaktformular-mit-e-mail-bestätigung), die Server-Seite in [ticket-gate](../capulus/capulus-core/3-apps-workloads/300r0-ticket-gate.md).
+
+| Einstellung | Wo | Bedeutung |
+|---|---|---|
+| `API_BASE` | `js/kontakt-verifizierung.js` (Base64) | Adresse von ticket-gate, aktuell `https://ticket-gate-tech.pke-lab.de` |
+| erlaubte Origins | `ALLOWED_ORIGINS` in ticket-gate | die Website-Hosts (`www.edv-kretzer.de`, `edv-kretzer.de`); lokale Tests von `localhost` aus brauchen einen Eintrag |
+| Gültigkeit und Limits | `config:` in ticket-gate | 10 min Code, 5 Versuche, 30 min Token, 1 Mail pro 60 s |
+
+Alternativ steht die E-Mail-Adresse im Impressum.
 
 ## n8n-Automatisierung
 
@@ -71,4 +79,4 @@ Die letzten zehn Releases aller capulus-Repos (jedes Repo aus `data/projects.jso
 | Release-Verlauf alt | `releases.yml` lief nicht oder `releases.json` nicht deployt | [Automatisierung: Fehlersuche](automatisierung.md#debugging-und-fehlersuche) |
 | Status-Widget leer | Slug `homelab` oder CORS | [Komponenten: Fehlersuche](komponenten.md#debugging-und-fehlersuche) |
 | Banner erscheint nicht | `data/status.json`, `until` | [Komponenten](komponenten.md#status-hinweis-banner) |
-| Kontaktformular fehlt | Zammad-Skripte nicht geladen | [Komponenten](komponenten.md#zammad-chat-und-kontaktformular) |
+| Kontaktformular fehlt | JavaScript aus oder `js/kontakt-verifizierung.js` nicht geladen | [Komponenten](komponenten.md#kontaktformular-mit-e-mail-bestätigung) |

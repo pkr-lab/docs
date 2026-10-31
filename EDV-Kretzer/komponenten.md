@@ -1,6 +1,6 @@
 # Komponenten
 
-Alle dynamischen Teile der Website. Die Seite besteht sonst aus statischem HTML. Es gibt weder Build-Schritt noch Framework, die einzigen Abhängigkeiten zur Laufzeit sind jQuery und die Zammad-Skripte.
+Alle dynamischen Teile der Website. Die Seite besteht sonst aus statischem HTML. Es gibt weder Build-Schritt noch Framework, es gibt keine Abhängigkeiten zur Laufzeit. Das Kontaktformular spricht über `fetch` mit ticket-gate.
 
 Code: [js/](https://github.com/pkr-lab/EDV-Kretzer/tree/main/js), [data/](https://github.com/pkr-lab/EDV-Kretzer/tree/main/data), HTML-Seiten im [Repo-Root](https://github.com/pkr-lab/EDV-Kretzer)
 
@@ -15,8 +15,7 @@ Code: [js/](https://github.com/pkr-lab/EDV-Kretzer/tree/main/js), [data/](https:
 | Anwendungskatalog | `js/apps.js` | `anwendungen.html` | `data/apps.json` |
 | Release-Verlauf | `js/updates.js` | `updates.html` | `data/releases.json` |
 | Status-Widget | `js/updates.js` | `updates.html` | öffentliche Uptime-Kuma-Status-Page |
-| Zammad-Chat | inline am Seitenende | alle 11 Seiten | Zammad (Host `support-tech`) |
-| Kontaktformular | inline in `kontakt.html` | `kontakt.html` | Zammad |
+| Kontaktformular mit E-Mail-Bestätigung | `js/kontakt-verifizierung.js` | `kontakt.html` | ticket-gate (Host `ticket-gate-tech`) |
 | Stylesheet | `css/style.css`, `css/animations.css` | alle | – |
 
 Die Seiten, die `js/apps.js` und `js/updates.js` einbinden, sind genau `anwendungen.html` und `updates.html`. Beide Skripte beenden sich selbst, wenn ihr Zielelement fehlt.
@@ -101,16 +100,23 @@ Zeigt den Live-Status der öffentlichen Dienste aus der **öffentlichen Status-P
 
 ---
 
-## Zammad-Chat und Kontaktformular
+## Kontaktformular mit E-Mail-Bestätigung
 
-Beides wird aus dem Zammad-Ticketsystem eingebunden ([Zammad](../capulus/capulus-core/3-apps-workloads/30000-zammad.md)). Die Einbindung steht **inline am Ende der HTML-Seiten**, nicht in `main.js`:
+`kontakt.html` enthält drei Formulare, `js/kontakt-verifizierung.js` blendet sie nacheinander ein (ES5, kein Framework, nur `fetch`). Das Skript zeigt nur an, **die gesamte Prüfung macht ticket-gate** ([Server-Doku](../capulus/capulus-core/3-apps-workloads/300r0-ticket-gate.md)).
 
-- **Chat:** Skript `…/assets/chat/chat.min.js` plus jQuery 3.6.0 (von `code.jquery.com`). `new ZammadChat({chatId: 1, show: false, flat: true, …})`. Der Chat öffnet über den schwebenden Knopf `.open-zammad-chat` (`chat-fab`).
-- **Formular:** nur auf `kontakt.html`. Skript `…/assets/form/form.js`, `$('#zammad-feedback-form').ZammadForm({modal: true, noCSS: true, attachmentSupport: true, …})`. Ein `MutationObserver` ergänzt einen Schließen-Button, sperrt das Scrollen, solange das Modal offen ist, und schließt mit Escape.
+| Schritt | Elemente | Aufruf |
+|---|---|---|
+| 1. E-Mail | `#v-email`, „Code senden“ | `POST /v1/session` (beim ersten Mal), `POST /v1/verify/request` |
+| 2. Code | `#v-code` (`inputmode="numeric"`, `autocomplete="one-time-code"`), „Code prüfen“, „Code erneut senden (60 s)“ mit Countdown | `POST /v1/verify/confirm` |
+| 3. Ticket | Name (optional), Betreff, Nachricht, Zustimmung zur Datenschutzerklärung | `POST /v1/tickets` |
+
+- Der Session- und der Verifikations-Token liegen nur im Speicher der Seite (kein `localStorage`, keine Cookies). Ein Neuladen beginnt von vorn.
+- Die Fehlertexte stehen in `MESSAGES` im Skript (falscher Code mit Restversuchen, abgelaufen, gesperrt, Rate-Limit mit Wartezeit, Sitzung abgelaufen). Ausgegeben wird nur per `textContent`.
+- Der Countdown für „erneut senden“ kommt vom Server (`resend_after`), bei einem Limit aus `retry_after`.
 - **Vorbelegung:** `kontakt.html?interesse=<Text>` oder `?app=<Text>` trägt den Text als Betreff ein (`Anfrage: <Text>`) und zeigt eine Notiz.
-- Mit deaktiviertem JavaScript erscheint ein Hinweis mit der E-Mail-Adresse.
-
-Der Zammad-Host ist ein Cluster-Dienst im TECH-Bereich. Fällt er aus, bleiben Chat und Formular aus, der Rest der Website läuft weiter.
+- Mit deaktiviertem JavaScript bleibt das Formular verborgen und ein Hinweis mit der E-Mail-Adresse erscheint.
+- Anhänge unterstützt das Formular nicht (das frühere Zammad-Widget konnte sie).
+- Fällt ticket-gate aus, zeigt das Formular „Keine Verbindung zum Server“, der Rest der Seite läuft weiter.
 
 ---
 
@@ -128,8 +134,7 @@ Der Zammad-Host ist ein Cluster-Dienst im TECH-Bereich. Fällt er aus, bleiben C
 | Alle Monitore „Unbekannt“ | Heartbeats leer (neuer Monitor) oder Heartbeat-Abruf lieferte keine Liste | kurz warten, `…/api/status-page/heartbeat/homelab` prüfen |
 | Banner erscheint nicht trotz `active: true` | `until` liegt in der Vergangenheit, JSON ungültig, Datei nicht deployt | `data/status.json` im Repo und auf dem Server prüfen, Deployment-Lauf prüfen |
 | Banner bleibt nach Wartungsende | `active` noch `true` und `until` leer | Workflow „Status-Hinweis“ mit `aktiv` aus starten |
-| Chat-Knopf ohne Wirkung | jQuery oder Zammad-Skript nicht geladen (Zammad-Host down, Adblocker) | Konsole prüfen, [Zammad](../capulus/capulus-core/3-apps-workloads/30000-zammad.md) |
-| Kontaktformular öffnet nicht | `form.js` nicht geladen oder JavaScript aus | Konsole, E-Mail-Weg aus dem Hinweis |
+| Kontaktformular bleibt unsichtbar oder meldet „Keine Verbindung“ | JavaScript aus, ticket-gate nicht erreichbar, Origin nicht erlaubt | Konsole, E-Mail-Weg aus dem Hinweis, [ticket-gate: Fehlersuche](../capulus/capulus-core/3-apps-workloads/300r0-ticket-gate.md#fehlersuche) |
 | Info-Banner erscheint bei jedem Besuch | `localStorage` blockiert (Privatmodus) | erwartet |
 | Inhalte bleiben unsichtbar | `IntersectionObserver` löst nicht aus | nach 2,5 Sekunden Fallback, sonst Konsole prüfen |
 
