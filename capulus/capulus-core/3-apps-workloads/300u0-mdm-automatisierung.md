@@ -185,6 +185,8 @@ Datei `mdm-ipads-sperren.json` · Formular `https://n8n.prod.homeserver/form/mdm
 
 Fehlerfälle: falsche Bestätigung, ungültige Zeichen oder zu lange Nachricht → Hinweis im Formular, nichts gesperrt. Unbekannte Seriennummer oder noch kein angemeldetes iPad → „Nichts gesperrt“.
 
+**Festtext:** Jede Sperrbildschirm-Nachricht beginnt automatisch mit „Das iPad ist nicht verloren gegangen, es gibt nur eine dringende Mitteilung:“, egal über welchen Weg sie kommt (Formular `mdm-sperren`, Auftrag per Mail oder Formular). Er steht als Konstante `lockPrefix` im Node `Befehle bauen` der Workflows 9 und 12; die Längenprüfung (300 Zeichen) gilt nur für den eigenen Text.
+
 Unterschied zu den anderen Wegen: Der Lock-Screen-Text (Workflow 2) ist ein dauerhafter, kleiner Hinweis und sperrt nicht. Die Mitteilung (Workflow 8) ist eine einmalige Benachrichtigung über ntfy. Dieser Workflow sperrt das iPad wirklich.
 
 ---
@@ -196,7 +198,8 @@ Datei `mdm-app-installieren.json` · Formular `https://n8n.prod.homeserver/form/
 | | |
 |---|---|
 | Zweck | Installiert freigegebene Apps ohne Apple-ID auf dem iPad und hält die Liste der erlaubten Apps aktuell. Auf beaufsichtigten iPads sind nur diese Apps sichtbar |
-| Katalog | Tabelle `automation.app_catalog` (App-Store-ID, Name, Bundle-ID, `config`). Start: ntfy `1625396347`, DLRG Trainer `1659881569`, Microsoft Teams `1113153706`, Bitwarden `1137397744` |
+| Katalog | Tabelle `automation.app_catalog` (App-Store-ID, Name, Bundle-ID, `config`). Start: ntfy `1625396347`, DLRG Trainer `1659881569`, Microsoft Teams `1113153706`, Bitwarden `1137397744`. `enabled = true` heißt: in der Erlaubt-Liste. Wählt jemand eine deaktivierte Katalog-App im Formular (oder per Mail), setzt der Workflow sie auf `enabled = true`, bevor er installiert und die Erlaubt-Liste neu berechnet |
+| iPads | Die Gruppen des Dropdowns (`Kleines Becken`, …) und ihre Seriennummern liest der Node `iPads lesen` aus `automation.ipad_group` und `automation.ipad` ([Pflege](300v0-mdm-betrieb.md#ipad-liste-pflegen)). Eine Gruppe ohne iPad lehnt das Formular ab |
 | App-Konfiguration | Die Spalte `config` (JSON) wird als Managed App Configuration im `InstallApplication`-Befehl (`Configuration`) mitgesendet. Bitwarden bekommt `baseEnvironmentUrl = https://vault-tech.pke-lab.de` (Bitwarden-Doku, Abschnitt Mobile-Apps; der Wert braucht das Präfix `https://`). Ändern: `UPDATE automation.app_catalog SET config = … WHERE adam_id = …`, danach im Formular die App erneut installieren. Prüfen: MDM-Befehl `ManagedApplicationConfiguration` mit der Bundle-ID. Passwörter oder Benutzernamen lassen sich so nicht eintragen, nur das, was die App als Konfigurationsschlüssel kennt |
 | Auslöser | Formular: App aus der Liste, „Alle Apps der Liste“ oder „Andere App“ (App-Store-ID oder Link), optional Seriennummer |
 | Neue App | Der Workflow fragt Name, Bundle-ID und Preis bei der iTunes-Lookup-API ab (öffentlich, ohne Anmeldung), lehnt bezahlte und iPad-untaugliche Apps ab und nimmt die App in den Katalog auf. Eine neue App muss vorher in Apple Business unter „Apps und Bücher“ abgerufen sein |
@@ -237,28 +240,51 @@ Wichtig:
 
 ---
 
-## 12. Auftrag per Mail
+## 12. Auftrag per Mail oder Formular
 
-Datei `mdm-auftrag-per-mail.json` · IMAP-Ordner `Ausbildung-Ipads`.
+Datei `mdm-auftrag-per-mail.json` · IMAP-Ordner `Ausbildung-Ipads` und Formular `https://n8n.prod.homeserver/form/mdm-auftrag`.
 
 | | |
 |---|---|
-| Zweck | Eine Mail ändert das Hintergrundbild, sendet eine Push-Mitteilung, sperrt iPads mit Nachricht und installiert Apps auf einem, mehreren oder allen iPads. Die Wege entsprechen den Workflows 8, 9, 10 und 11, nur dass die Eingabe aus einer Mail kommt und das Ziel wählbar ist |
+| Zweck | Eine Mail oder das Formular ändert das Hintergrundbild, sendet eine Push-Mitteilung, sperrt iPads mit Nachricht und installiert Apps auf einem, mehreren oder allen iPads. Die Wege entsprechen den Workflows 8, 9, 10 und 11, nur dass die Eingabe aus einer Mail oder dem Formular kommt und das Ziel wählbar ist |
 | Auslöser | Ungelesene Mail im Ordner `Ausbildung-Ipads` von den Absendern aus `sender` (Node `Konfiguration`, zusätzlich im IMAP-Filter des Triggers). Der Betreff spielt keine Rolle |
-| Eingabe | Genau ein JSON-Anhang, dazu optional ein Bild (PNG oder JPG, bis 4 MB). Felder: `ipads` (Pflicht), `push`, `sperrbildschirm` (Sperren mit Nachricht), `app`, optional `hintergrund: false` zum Ignorieren des Bildes. Mindestens eine Aktion nötig, unbekannte Felder lehnt der Workflow ab, damit sich Tippfehler nicht still verlieren |
-| Ziel | `ipads` ist eine Liste aus `kleines-becken`, `grosses-becken`, `vorstands-tisch`, einer Seriennummer oder `"alle"`. Schreibweise (Groß-/Kleinschreibung, Umlaute, Leerzeichen statt Bindestrich) wird normalisiert. Namen und Seriennummern stehen im Node `Konfiguration` (`ipads`), solange dort `CHANGE-ME-…` steht, lehnt der Workflow das iPad ab |
+| Auslöser Formular | Formular `mdm-auftrag` hinter Basic Auth (Credential `MDM Formulare`, wie die anderen Formulare). Felder: iPads (Checkboxen `Alle iPads` und die Gruppen `Kleines Becken`, `Grosses Becken`, `Vorstands-Tisch`), Einzelne iPads (Checkboxen mit den Namen aus `automation.ipad`), Seriennummern (kommagetrennt), Hintergrundbild (Upload), Push-Nachricht, -Titel und -Dringlichkeit, Sperrbildschirm-Nachricht und -Telefon, App installieren (Dropdown mit den Katalog-Apps) und Andere App (App-Store-ID oder Link, nicht zusammen mit dem Dropdown). Alles außer der Auswahl ist optional, mindestens eine Aktion nötig. Das Formular erzeugt denselben Plan wie die Mail, ab dem Node `Auftrag lesen` laufen beide Wege gemeinsam. Das Ergebnis erscheint zusätzlich als Antwortseite |
+| Eingabe Mail | Genau ein JSON-Anhang, dazu optional ein Bild (PNG oder JPG, bis 4 MB). Felder: `ipads` (Pflicht), `push`, `sperrbildschirm` (Sperren mit Nachricht), `app`, optional `hintergrund: false` zum Ignorieren des Bildes. Mindestens eine Aktion nötig, unbekannte Felder lehnt der Workflow ab, damit sich Tippfehler nicht still verlieren |
+| Ziel | `ipads` ist eine Liste aus Gruppenschlüsseln oder -namen (`kleines-becken`, `grosses-becken`, `vorstands-tisch`), iPad-Namen (`automation.ipad.name`), einer Seriennummer oder `"alle"`. Schreibweise (Groß-/Kleinschreibung, Umlaute, Leerzeichen statt Bindestrich) wird normalisiert. Gruppen und Seriennummern stehen in der Datenbank (`automation.ipad_group`, `automation.ipad`, Pflege: [300v0](300v0-mdm-betrieb.md#ipad-liste-pflegen)); der Node `iPads lesen` holt sie bei jedem Lauf. Eine Gruppe ohne iPad lehnt der Workflow ab |
 | Hintergrund | Bild als Anhang. Bei `alle` wie Workflow 11: Bild in `profile_state` (Zeile `wallpaper`) speichern, Version erhöhen, für alle Geräte beanspruchen. Bei einzelnen iPads geht der `Settings`-Befehl direkt an diese Geräte, `profile_state` bleibt unverändert |
 | Sperren | `sperrbildschirm` als Text oder `{nachricht, telefon}` (Nachricht 1 bis 300 Zeichen, Telefonnummer optional). Sendet wie Workflow 9 den MDM-Befehl `DeviceLock`: Das iPad sperrt sich sofort und zeigt die Nachricht auf dem Sperrbildschirm, entsperrt wird mit dem Code des iPads. Der Befehl geht als letzter ein, nach Bild und App. Der dauerhafte Footer-Text (Workflow 2) lässt sich per Mail nicht ändern |
 | Push | `push` als Text oder `{nachricht, titel, dringlichkeit}` (`normal`, `hoch`, `dringend`). Läuft über ntfy-JSON-Publish wie Workflow 8 |
-| App | `app` als Katalogname, App-Store-ID oder App-Store-Link. Ablauf wie Workflow 10 (Lizenz zuweisen, `InstallApplication`, Erlaubt-Liste neu berechnen); eine neue ID wird über die iTunes-Lookup-API geprüft und in den Katalog aufgenommen. Eine App je Mail |
+| App | `app` als Katalogname, App-Store-ID oder App-Store-Link. Der Name darf Groß-/Kleinschreibung ignorieren und ein eindeutiger Teil ab vier Zeichen genügt (`Authenticator` findet `Microsoft Authenticator`, `Microsoft` ist mehrdeutig und wird abgelehnt). Ablauf wie Workflow 10 (Lizenz zuweisen, `InstallApplication`, Erlaubt-Liste neu berechnen); eine neue ID wird über die iTunes-Lookup-API geprüft und in den Katalog aufgenommen. Eine App je Mail |
 | Ergebnis | ntfy-Meldung auf `Home-Lab-MDM` mit Zählung je Aktion. Fehler (Absender, JSON, Ziel, Bild) ebenfalls dort, mit hoher Priorität |
-| Credentials | `Netcup Automation`, `MDM NanoMDM API`, `MDM Automation DB`, `Apple Apps Token`, `ntfy-publisher` |
+| Credentials | `Netcup Automation`, `MDM Formulare`, `MDM NanoMDM API`, `MDM Automation DB`, `Apple Apps Token`, `ntfy-publisher` |
 
 Wichtig:
-- **ntfy adressiert kein einzelnes iPad.** Ohne `ntfyTopic` im Eintrag des iPads geht die Mitteilung an `Home-Lab-iPad`, also an alle iPads, mit dem iPad-Namen im Titel. Für Mitteilungen nur an ein iPad bekommt es ein eigenes Topic: in dessen ntfy-App abonnieren, Leserecht für den Benutzer `ipad` und Schreibrecht für `ntfy-publisher` einrichten, dann `ntfyTopic` setzen.
+- **ntfy adressiert kein einzelnes iPad.** Ohne `ntfy_topic` an der Gruppe geht die Mitteilung an `Home-Lab-iPad`, also an alle iPads, mit dem Gruppennamen im Titel. Für Mitteilungen nur an eine Gruppe bekommt sie ein eigenes Topic: in der ntfy-App dieser iPads abonnieren, Leserecht für den Benutzer `ipad` und Schreibrecht für `ntfy-publisher` einrichten, dann `UPDATE automation.ipad_group SET ntfy_topic = '…' WHERE key = '…'`.
+- **Neue Gruppe oder neuer iPad-Name:** Neben dem Datenbankeintrag braucht das Formular eine Checkbox-Option mit demselben Namen (Node `Formular Auftrag`, Workflow 10 zusätzlich im Dropdown `iPads`). Per Mail genügt der Datenbankeintrag.
 - **Die Erlaubt-Liste gilt immer für alle iPads**, auch wenn die App nur auf einem installiert wird (Workflow 10 verhält sich genauso).
 - Ein einzelnes iPad mit eigenem Bild oder Text wird beim nächsten Ändern für `alle` (Formular oder Mail) überschrieben.
 - Kommen mehrere Mails gleichzeitig an, verarbeitet der Workflow nur die erste. Für die übrigen kommt eine ntfy-Fehlermeldung mit der Bitte, erneut zu senden.
 - Wirkt wie die Formulare nur auf beaufsichtigten iPads.
 
-Fehlerfälle (jeweils ohne Änderung): Absender nicht erlaubt, kein oder unlesbarer JSON-Anhang, unbekanntes Feld oder iPad, fehlende Seriennummer im Workflow, Bild kein PNG/JPG oder größer als 4 MB, Text zu lang, keine Aktion. Ein gewähltes iPad ohne Anmeldung wird übersprungen und gemeldet, ist keines angemeldet, passiert nichts. App unbekannt, bezahlt oder in Apple Business nicht abgerufen → Meldung, die übrigen Aktionen laufen weiter.
+Fehlerfälle (jeweils ohne Änderung): Absender nicht erlaubt, kein oder unlesbarer JSON-Anhang, unbekanntes Feld oder iPad, Gruppe ohne iPad in der Datenbank, iPad-Liste nicht lesbar, Bild kein PNG/JPG oder größer als 4 MB, Text zu lang, keine Aktion. Ein gewähltes iPad ohne Anmeldung wird übersprungen und gemeldet, ist keines angemeldet, passiert nichts. App unbekannt, bezahlt oder in Apple Business nicht abgerufen → Meldung, die übrigen Aktionen laufen weiter.
+
+---
+
+## 13. iPads herunterfahren
+
+Datei `mdm-ipads-herunterfahren.json` · Zeitplan jeden Donnerstag 19:30 Uhr (`30 19 * * 4`, Zeitzone Europe/Berlin).
+
+| | |
+|---|---|
+| Zweck | Fährt alle angemeldeten iPads automatisch herunter |
+| Auslöser | Zeitplan `Donnerstag 19:30`. Kein Formular, kein manueller Weg |
+| Ablauf | Alle aktiven Geräte-Enrollments aus der Datenbank lesen (wie „alle iPads“), je Gerät den MDM-Befehl `ShutDownDevice` über `PUT /v1/enqueue/<id>` bei NanoMDM einreihen, Ergebnis auswerten |
+| Ergebnis | ntfy auf `Home-Lab-MDM`: „n von m iPad(s) erhalten den Befehl“. Scheitert der Push oder das Einreihen, Meldung mit hoher Priorität. Ist kein iPad angemeldet, kommt ebenfalls eine Meldung |
+| Credentials | `MDM Automation DB`, `MDM NanoMDM API`, `ntfy-publisher` |
+
+Wichtig:
+- **Internet nötig:** Der Befehl erreicht das iPad nur über APNs und eine Verbindung zum MDM-Server. Das iPad braucht zum Zeitpunkt des Befehls WLAN oder Mobilfunk.
+- **Nur beaufsichtigte iPads** führen `ShutDownDevice` aus.
+- **Kein Einschalten per MDM:** Ein heruntergefahrenes iPad muss am Gerät mit der Einschalttaste gestartet werden.
+- **Offline oder bereits aus:** Der Befehl bleibt in der NanoMDM-Warteschlange und läuft, sobald das iPad wieder online ist. Ein iPad, das am Donnerstag aus war, kann sich deshalb nach dem nächsten Einschalten selbst wieder ausschalten.
+- Zeit ändern: Ausdruck im Node `Donnerstag 19:30` anpassen. Abschalten: Workflow in n8n deaktivieren.
