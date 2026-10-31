@@ -146,6 +146,58 @@ Die App muss auf dem iPad installiert und das Thema abonniert sein, damit eine M
 
 ---
 
+## iPad-Liste pflegen
+
+Welche iPads es gibt und zu welcher Gruppe sie gehören, steht in der Datenbank `nanomdm`, nicht in den Workflows: `automation.ipad_group` (Schlüssel, Name, optionales ntfy-Topic) und `automation.ipad` (Seriennummer, Anzeigename, Gruppe, `enabled`). Hat ein iPad einen Namen (`name`, zum Beispiel `Seepferdchen`), ist es zusätzlich einzeln wählbar. Die Workflows 10 und 12 lesen die Tabellen bei jedem Lauf. „Alle iPads“ meint weiter alle in NanoMDM angemeldeten Geräte, unabhängig von dieser Liste.
+
+```bash
+kubectl -n mdm exec deploy/mdm-postgres -- psql -U postgres -d nanomdm -c "select g.name as gruppe, i.serial_number, i.name, i.enabled from automation.ipad_group g left join automation.ipad i on i.group_key = g.key order by 1, 2"
+kubectl -n mdm exec deploy/mdm-postgres -- psql -U postgres -d nanomdm -c "insert into automation.ipad (serial_number, name, group_key) values ('SERIENNUMMER', 'Anzeigename', 'vorstands-tisch')"
+kubectl -n mdm exec deploy/mdm-postgres -- psql -U postgres -d nanomdm -c "update automation.ipad set group_key = 'grosses-becken' where serial_number = 'SERIENNUMMER'"
+kubectl -n mdm exec deploy/mdm-postgres -- psql -U postgres -d nanomdm -c "update automation.ipad set enabled = false where serial_number = 'SERIENNUMMER'"
+```
+
+Eine neue Gruppe oder ein neuer iPad-Name braucht einen Eintrag in der Datenbank und eine Option mit demselben Namen im Formular ([300u0, Workflow 12](300u0-mdm-automatisierung.md#12-auftrag-per-mail-oder-formular)).
+
+**Einmalig auf einer bestehenden Datenbank:** Das Init-Skript legt die Tabellen nur bei leerem Volume an. Auf der laufenden Datenbank einmal einspielen, bevor die geänderten Workflows importiert werden:
+
+```bash
+kubectl -n mdm exec -i deploy/mdm-postgres -- psql -U postgres -d nanomdm -v ON_ERROR_STOP=1 <<'EOSQL'
+CREATE TABLE IF NOT EXISTS automation.ipad_group (
+    key        text PRIMARY KEY,
+    name       text NOT NULL UNIQUE,
+    ntfy_topic text NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS automation.ipad (
+    serial_number text PRIMARY KEY,
+    name          text NOT NULL DEFAULT '',
+    group_key     text REFERENCES automation.ipad_group (key) ON UPDATE CASCADE ON DELETE SET NULL,
+    enabled       boolean NOT NULL DEFAULT true,
+    added_at      timestamptz NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON automation.ipad_group, automation.ipad TO mdmauto;
+INSERT INTO automation.ipad_group (key, name)
+VALUES ('kleines-becken', 'Kleines Becken'),
+       ('grosses-becken', 'Grosses Becken'),
+       ('vorstands-tisch', 'Vorstands-Tisch')
+ON CONFLICT DO NOTHING;
+INSERT INTO automation.ipad (serial_number, name, group_key)
+VALUES ('FVQ99FKFPX', 'Kleines Becken Gruppe 1', 'kleines-becken'),
+       ('JXF7J61RWP', 'Kleines Becken Gruppe 2', 'kleines-becken'),
+       ('DYD6FXG02W', 'Seepferdchen', 'grosses-becken'),
+       ('GCFG7XT6XJ', 'Bronze', 'grosses-becken'),
+       ('JLXJ6KPYVP', 'Silber', 'grosses-becken'),
+       ('DN4LTQ402C', 'Gold', 'grosses-becken'),
+       ('D2LTC9DDJW', 'Juniorretter', 'grosses-becken'),
+       ('DT7HGM9FPG', 'Vorstands-Tisch', 'vorstands-tisch')
+ON CONFLICT DO NOTHING;
+EOSQL
+```
+
+Das Backup (`nanomdm.dump`) enthält die Tabellen mit, ein Restore bringt die Liste zurück.
+
+---
+
 ## Updates
 
 | Was | Vorgehen |
