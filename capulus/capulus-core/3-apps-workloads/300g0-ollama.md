@@ -1,269 +1,434 @@
-# Ollama — lokales LLM, nur bei Bedarf hochgefahren
+# Ollama — LLM auf dem Desktop-PC, per Wake-on-LAN geweckt
 
-> **Cluster:** TECH · Ordner `argocd/apps/tech/ollama/` · Zugang: nur clusterintern, kein Ingress. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
+> **Ort:** Desktop-PC `ollama-pc` (RTX 3080 Ti, 12 GB VRAM, 64 GB RAM, Ubuntu 26.04 Desktop) · Aufrufer: n8n im TECH-Cluster · Code: `argocd/apps/tech/n8n/ollama-pc/` in capulus-core und die Rolle [`ollama_pc`](../../capulus-ansible/rollen/ollama_pc.md) in capulus-ansible. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
-Ollama stellt ein lokal gehostetes LLM (`llama3.2:3b`) über eine einfache
-HTTP-API bereit. Genutzt wird es aktuell ausschließlich vom n8n-Workflow
-**„Zammad Externer KI-Lauf (täglich)“** (siehe [30070-n8n.md](30070-n8n.md)),
-um Antwortentwürfe für Tickets in der externen Zammad-Instanz
-`https://ticket.emue365.de` zu erzeugen.
+Ollama liefert die KI-Antwortentwürfe für E-Mails und Tickets. Es läuft nicht mehr im Cluster, sondern auf dem Desktop-PC. Der PC schläft, bis ein Request kommt: Der Homeserver weckt ihn per Wake-on-LAN, wartet auf Ollama und ruft dann direkt dessen API auf. Qualität geht vor Geschwindigkeit, eine Antwort darf bis zu 15 Minuten dauern. Genutzt wird Ollama vom n8n-Workflow „Zammad Tickets verarbeiten“ ([30070](30070-n8n.md#beispiel-workflow-externer-zammad--ki-antwortentwurf-ollama)).
 
-Ursprünglich als `llama3.1:8b` (Q4) geplant — beim ersten echten
-End-to-End-Testlauf (27.08.2026) scheiterte der `/api/generate`-Call jedoch
-zuverlässig mit `model requires more system memory (6.1 GiB) than is
-available (6.0 GiB)`. `worker-0` (Lenovo M90q) hat nur ~7,3Gi
-Node-Allocatable; ein Hochsetzen des Pod-Memory-Limits (5Gi/6500Mi auf
-6Gi/7Gi) änderte **nichts** an dieser Meldung — Ollama 0.3.14 liest hier
-offenbar den tatsächlichen freien Host-Speicher, nicht das Cgroup-Limit des
-Pods. `llama3.2:3b` (~2GB) passt mit deutlichem Puffer in die vorhandene
-Hardware. Bei einem Wechsel auf ein größeres/weniger stark quantisiertes
-Modell dieselbe Prüfung wiederholen, bevor Zeit in Config-Tuning gesteckt
-wird — das Pod-Memory-Limit ist hier nachweislich nicht der Hebel.
-
-**CPU-Performance ist der eigentliche Flaschenhals, nicht RAM.** `worker-0`
-läuft auf einem **Intel Pentium Gold G5400T** — `cat /proc/cpuinfo` zeigt
-**kein AVX2/FMA, nur SSE4_1/SSE4_2**. Ollamas CPU-Backend (llama.cpp) ist
-auf AVX2 für schnelle Matrixoperationen angewiesen; ohne das fällt es auf
-einen deutlich langsameren generischen Pfad zurück. Gemessen (27.08.2026,
-`llama3.2:3b`, einfacher Testprompt): `total_duration` 62s für ganze 9
-Antwort-Tokens, davon 35s allein für die Prompt-Auswertung von 33
-Eingabe-Tokens — **~1 Token/Sekunde**, unabhängig vom Modell. Bei den
-tatsächlich langen Ticket-Verläufen als Prompt bedeutet das mehrere zehn
-Minuten pro Ticket; der HTTP-Request-Node „LLM-Anfrage (Ollama, lokal)“
-im Sub-Workflow wurde deshalb zweimal hochgesetzt: 180000ms → 1800000ms
-(30min, reichte für ein reales Ticket mit langem Verlauf NICHT — Ollamas
-eigenes Log zeigte 29m59s Laufzeit vor einem 500er) → aktuell `3600000`ms
-(60min). Mit dem ursprünglichen kurzen Timeout brach der Call mit einem
-rohen `ECONNABORTED`/„connection was aborted“ ab statt eines sauberen
-Timeout-Fehlers. Auch 60min ist nur ein Erfahrungswert für bisher
-beobachtete Ticket-Längen, keine harte Garantie. Das ist eine harte
-Hardware-Grenze, keine Ollama-/n8n-Konfigurationsfrage — ein kleineres
-Modell (z. B. `llama3.2:1b`) wäre pro Token schneller, bliebe aber ohne
-AVX2 im selben langsamen Pfad. Abhilfe nur durch andere/neuere Hardware
-für diesen Workload.
+Begründungen und Fallstricke zum Code: [60040](../6-hintergruende/60040-helm-charts-tech.md#ollama).
 
 ---
 
-## Architektur: Scale-to-Zero statt Dauerbetrieb
+## Architektur
 
 ```
-n8n (taeglich, 07:00 Uhr)
-  1. POST carplay-api.prod.homeserver/api/power/wake  {"target":"worker-0"}
-       -> weckt den Lenovo M90q per Wake-on-LAN
-  2. PATCH kubernetes.default.svc/.../deployments/ollama/scale {"spec":{"replicas":1}}
-       -> Ollama-Pod startet auf worker-0
-  3. Wait (~150s)
-  4. Sub-Workflow "Zammad Tickets verarbeiten"
-       -> pro Ticket: POST ollama.ollama.svc.cluster.local:11434/api/generate
-  5. PATCH .../deployments/ollama/scale {"spec":{"replicas":0}}
-       -> Ollama-Pod wird wieder heruntergefahren
+n8n (Zammad Tickets verarbeiten, je Ticket)
+  1. LLM-Eingabe bauen            Verlauf, Mail, Zusatzkontext als JSON (Base64)
+  2. cli.js probe                 GET <PC>:11434/api/tags, Timeout 3 s
+  3. PC schläft?  ja ->  POST carplay-api/api/power/wake {"target":"ollama-pc"}
+                           carplay-api -> power-agent (Host homeserver) -> wakeonlan <MAC>
+  4. cli.js chat                  wartet mit Backoff bis Ollama antwortet (max. 120 s),
+                                  lädt das Modell vor (leerer /api/chat, keep_alive),
+                                  baut den Prompt, kürzt den Verlauf, ruft /api/chat auf
+  5. Antwortentwurf extrahieren   -> interne Notiz in Zammad, ntfy-Push
 ```
 
-Das Deployment läuft **mit `replicas: 0` im Ruhezustand** — kein
-dauerhafter Footprint, weder auf dem 24/7-Node (`homeserver`) noch auf
-einem der WoL-Worker. Weder `homeserver` noch `worker-0` müssen also
-dauerhaft Kapazität für ein LLM reservieren.
+| Baustein | Ort | Aufgabe |
+|---|---|---|
+| `cli.js` und `lib/*.js` | `argocd/apps/tech/n8n/ollama-pc/`, als ConfigMap `n8n-ollama-pc` nach `/opt/ollama-pc` im n8n-Pod | Wake-and-Call-Logik: `probe`, `wake`, `chat`, `ps` |
+| `prompts/email_system.md`, `prompts/email_examples.md` | ebenda, ConfigMap, `/opt/ollama-pc/prompts` | Systemprompt und Beispiel-Antworten |
+| `knowledge/*.md` | ebenda, ConfigMap, `/opt/ollama-pc/knowledge` | Firmenwissen, bei jeder Anfrage neu gelesen |
+| `benchmark.js`, `test-wake-and-chat.sh`, `testdata/emails/` | ebenda, nicht in der ConfigMap | Modellvergleich und End-to-End-Test von Hand |
+| power-agent auf dem Homeserver | Rolle [`power_agent`](../../capulus-ansible/rollen/power_agent.md) | sendet das Magic Packet (`wakeonlan`), Ziel `ollama-pc` |
+| Rolle `ollama_pc` | capulus-ansible, Playbook `ollama-pc.yml` | Ollama, systemd-Override, WoL, Resume-Hook, GPU, UFW |
 
-**Warum nicht der bestehende `cluster_power_manager`?** Der weckt Worker
-nur reaktiv anhand der CPU/RAM-Last auf `homeserver`
-(siehe [20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md))
-— er beobachtet keine Pending-Pods. Ein an `worker-0` gepinnter Pod mit
-`replicas: 1` würde also einfach `Pending` bleiben, bis zufällig genug
-Last auf `homeserver` entsteht. Deshalb weckt der n8n-Workflow `worker-0`
-**explizit** über den bereits vorhandenen `power-agent`-Endpoint (siehe
-[300d0-carplay-api.md](300d0-carplay-api.md#power-agent)), bevor er
-hochskaliert.
+**Warum geht das Magic Packet nicht direkt aus dem n8n-Pod?** Ein Pod hängt im Overlay-Netz, ein Broadcast ins Heimnetz verlässt es nicht zuverlässig. Der power-agent läuft auf dem Host des Homeservers und sendet ihn im LAN. Der Token für carplay-api liegt als n8n-Credential „carplay-api API Token“, deshalb ist der Wake ein eigener HTTP-Node im Workflow und nicht Teil des Skripts (Wake-Modus `none` im Pod).
 
-**Warum `replicas: 0` statt eines dauerhaft laufenden Pods mit
-`OLLAMA_KEEP_ALIVE`?** Ausdrücklicher Wunsch: der Pod soll nur für die
-Dauer des täglichen Laufs existieren, nicht nur das Modell zwischen
-Anfragen aus dem RAM entladen.
+**Wake-Modi des Skripts** (`OLLAMA_WAKE_MODE`): `udp` (Magic Packet direkt, für Aufrufe von einem Host im LAN wie Benchmark und Test), `http` (POST an einen Relay wie carplay-api), `command` (beliebiges Kommando, z. B. `wakeonlan <MAC>`), `none` (nur pollen, der Aufrufer hat bereits geweckt).
+
+**Keine Egress-NetworkPolicy nötig.** Der Namespace `n8n` hat keine Egress-Regeln, nur die generische `tier-default-ingress`. Der Aufruf `n8n → PC:11434` geht deshalb ohne Änderung. Eine zusätzliche Egress-Policy würde den gesamten übrigen Egress von n8n sperren (Zammad, ntfy, DNS) und ist hier der falsche Weg. Die Absicherung liegt auf dem PC: UFW lässt Port 11434 nur vom Homeserver zu (die Pods erscheinen mit der Node-IP des Homeservers).
 
 ---
 
-## ArgoCD & Scale-Konflikt
+## Modellwahl und Begründung
 
-ArgoCDs `selfHeal` würde das Deployment bei jedem Sync auf den in Git
-hinterlegten Wert (`replicas: 0`) zurücksetzen — auch **während** n8n es
-gerade auf 1 hochskaliert hat, für die Dauer eines laufenden KI-Laufs. Das
-Deployment `ollama` ist deshalb in
-`argocd/bootstrap/root-applicationset.yaml` (und im Quelltemplate
-`capulus-ansible/roles/argocd/templates/bootstrap-applicationset.yaml.j2`) explizit
-per `ignoreDifferences` auf `/spec/replicas` von der Sync-Prüfung
-ausgenommen — analog zum bereits bestehenden Muster für die
-HPA-gesteuerten `zammad-railsserver`/`zammad-nginx`-Deployments.
+| | |
+|---|---|
+| Standard | `gemma3:27b-it-q8_0` |
+| Vergleich | `llama3.3:70b` |
+| Umschalten | `OLLAMA_MODEL` (n8n-Chart: `ollamaPc.env`), ohne Codeänderung |
 
----
+- **Hardware:** 12 GB VRAM (rund 11,5 GB nutzbar, der Desktop belegt ca. 750 MB) und 64 GB RAM (rund 52 GB frei). Beide Modelle passen nicht in den VRAM. Ollama lagert Schichten in den RAM aus, das ist ausdrücklich gewollt.
+- **`gemma3:27b-it-q8_0`:** 27B-Modell in 8 Bit, rund 29 GB. Es ist der beste Kompromiss aus Antwortqualität (Q8 verliert kaum gegenüber 16 Bit) und Speicherbedarf. Es passt in den RAM mit viel Reserve, ein Teil der Schichten liegt auf der GPU.
+- **`llama3.3:70b`:** Standard-Tag in 4 Bit, rund 43 GB. Größeres Modell, deutlich mehr Schichten im RAM, entsprechend langsamer. Es dient dem Qualitätsvergleich mit dem Benchmark ([unten](#benchmark)).
+- **Der tatsächliche GPU-Anteil und die Token/s stehen nicht fest, bevor man sie misst.** Der Benchmark gibt sie je Modell aus (`ollama ps`, `eval_count`, Token/s).
+- **Kontext 16384 Token** (`OLLAMA_CONTEXT_LENGTH` auf dem PC, `num_ctx` im Request): lange E-Mail-Verläufe passen, der KV-Cache bleibt klein genug. `OLLAMA_KV_CACHE_TYPE=q8_0` und `OLLAMA_FLASH_ATTENTION=1` halbieren den KV-Cache-Bedarf gegenüber 16 Bit.
+- **`OLLAMA_KEEP_ALIVE=30m`:** Das Modell bleibt nach einer Antwort 30 Minuten geladen, damit mehrere Tickets hintereinander nicht jedes Mal neu laden.
+- **`temperature` 0,6:** genug Variation für natürliche Formulierungen, wenig Halluzination.
 
-## RBAC: n8n darf NUR dieses eine Deployment skalieren
-
-`argocd/apps/tech/ollama/templates/role-n8n-scaler.yaml` gibt der
-n8n-ServiceAccount (Namespace `n8n`) eine `Role` im Namespace `ollama`,
-beschränkt auf:
-
-```yaml
-apiGroups: ["apps"]
-resources: ["deployments/scale"]
-resourceNames: ["ollama"]
-verbs: ["get", "patch"]
-```
-
-Kein sonstiger Cluster-Zugriff. n8n authentifiziert sich dafür mit seinem
-eigenen, automatisch gemounteten ServiceAccount-Token
-(`/var/run/secrets/kubernetes.io/serviceaccount/token`, im Workflow per
-Code-Node ausgelesen) direkt gegen `https://kubernetes.default.svc` — kein
-zusätzliches Secret nötig.
+Die frühere Cluster-Variante (`llama3.2:3b` auf worker-0, Pentium G5400T ohne AVX2) schaffte rund 1 Token/s und scheiterte an größeren Modellen am Speicher. Das war die harte Grenze, nicht die Konfiguration.
 
 ---
 
-## Netzwerk-Isolation
+## Setup Desktop-PC
 
-Ollama darf **weder ins Internet noch zu anderen Systemen** im Cluster
-verbinden können — nur der n8n-Workflow darf es über Port 11434
-ansprechen. Zwei `NetworkPolicy`-Ressourcen setzen das um:
+Voraussetzungen: Ubuntu 26.04 mit installiertem NVIDIA-Treiber (`nvidia-smi` funktioniert), LAN-Kabel, feste DHCP-Reservierung. Die BIOS-Einstellungen stehen im [nächsten Abschnitt](#bios-einstellungen), sie sind Voraussetzung für Wake-on-LAN und gehören nicht in die Rolle.
 
-- **`networkpolicy-default-deny.yaml`** — verbietet standardmäßig ALLES
-  (Ingress UND Egress) im `ollama`-Namespace.
-- **`networkpolicy-allow-n8n-ingress.yaml`** — einzige Ausnahme: die
-  n8n-Pods (Namespace `n8n`, Label `app.kubernetes.io/name: n8n`) dürfen
-  Port 11434 erreichen.
+### Mit Ansible (empfohlen)
 
-**Egress bleibt bewusst ohne jede Ausnahme.** Im Normalbetrieb (nur
-HTTP-Antworten auf eingehende Anfragen) braucht Ollama weder DNS noch
-sonstige ausgehende Verbindungen — "kein Internet, keine anderen Systeme"
-ist damit die dauerhafte, in Git verankerte Grundeinstellung, nicht nur
-eine Momentaufnahme.
+Die Rolle `ollama_pc` richtet alles ein und ist wiederholbar. Der PC steht im Inventar als `ollama-pc` (`192.168.178.66`, Benutzer `pke`), Schnittstelle `enp7s0`, NetworkManager-Verbindung `netplan-enp7s0`, MAC `34:5a:60:50:f5:ec` (`host_vars/ollama-pc/vars.yml`).
 
-**Wichtig — `ollama` muss von der generischen `tier-default-ingress`-Policy
-ausgeschlossen sein** (`argocd_network_policy_excluded_apps` in
-`capulus-ansible/roles/argocd/defaults/main.yml`, ausgewertet in
-`capulus-ansible/roles/argocd/templates/bootstrap-networkpolicies.yaml.j2`). Ohne
-diesen Ausschluss würde jeder Workload-Namespace automatisch zusätzlich
-eine `tier-default-ingress`-Policy bekommen, die u. a. `kube-system`,
-`monitoring` und `cloudflared` (und je nach Verfeinerungsstufe den ganzen
-Workload-Tier) als Ingress-Quelle erlaubt — NetworkPolicy-Ingress-Regeln
-mehrerer Policies auf denselben Pod werden per Union kombiniert, sodass
-diese generische Regel die absichtlich enge "nur n8n"-Policy oben wieder
-aufweichen würde. Gefunden und gefixt am 19.08.2026 beim ersten
-tatsächlichen Rollout — `ollama` fehlte zunächst sowohl in
-`argocd_workloads_apps` (AppProject-Destination, ArgoCD-Sync schlug mit
-`InvalidSpecError` fehl) als auch in dieser Ausschlussliste.
-
-> **Ob NetworkPolicy auf diesem Cluster tatsächlich durchgesetzt wird, ist
-> nicht verifiziert.** k3s läuft mit Standard-Flannel + dem seit v1.21
-> mitgelieferten, separaten kube-router-basierten NetworkPolicy-Controller
-> (aktiv, sofern nicht per `--disable-network-policy` deaktiviert — hier
-> nicht der Fall) — Flannel selbst setzt NetworkPolicy NICHT durch, der
-> k3s-Controller schon. Im Repo gibt es aber noch keine einzige andere
-> NetworkPolicy als Präzedenzfall. **Vor dem produktiven Einsatz zwingend
-> empirisch testen** (siehe Verifikation unten) statt der Policy blind zu
-> vertrauen. Zeigt der Test, dass sie nicht greift, ist das ein größerer,
-> separater Architektur-Entscheid (CNI-Wechsel betrifft den gesamten
-> Cluster) — kein Punkt, der hier nebenbei mitgelöst wird.
-
-### Modell-Pull braucht eine bewusste, temporäre Ausnahme
-
-`ollama pull` lädt vom Internet — mit Default-Deny-Egress geht das nicht
-mehr automatisch. Deshalb für den (seltenen, manuellen) Pull-Vorgang kurz
-eine temporäre Policy setzen und danach sofort wieder entfernen — diese
-landet NIE im Git-Stand:
+Direkt auf dem PC, ohne SSH (fragt Vault- und sudo-Passwort ab):
 
 ```bash
-kubectl -n ollama apply -f - <<'EOF'
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: ollama-temp-allow-egress-internet
-spec:
-  podSelector: {}
-  policyTypes: [Egress]
-  egress:
-    - {}
-EOF
+make ollama-pc-local-check   # Dry-run direkt auf dem PC
+make ollama-pc-local         # direkt auf dem PC
+```
 
-kubectl -n ollama exec deploy/ollama -- ollama pull llama3.2:3b
+Per SSH vom Verwaltungsrechner: `make ollama-pc-check` (Dry-run) und `make ollama-pc`. Dafür muss auf dem PC ein SSH-Server laufen (`sudo apt install openssh-server`) und der Schlüssel des Verwaltungsrechners in `~/.ssh/authorized_keys` stehen.
 
-# Danach SOFORT wieder entfernen:
-kubectl -n ollama delete networkpolicy ollama-temp-allow-egress-internet
+Was die Rolle tut ([Details](../../capulus-ansible/rollen/ollama_pc.md)):
+
+1. Prüft `nvidia-smi`, installiert `curl`, `zstd`, `ethtool`, `network-manager`, `ufw`.
+2. Installiert Ollama mit dem offiziellen Installationsskript, falls `ollama` fehlt (`ollama_pc_version` pinnt die Version).
+3. Schreibt den systemd-Override `/etc/systemd/system/ollama.service.d/override.conf` mit `OLLAMA_HOST`, `OLLAMA_KEEP_ALIVE`, `OLLAMA_FLASH_ATTENTION`, `OLLAMA_KV_CACHE_TYPE`, `OLLAMA_CONTEXT_LENGTH`.
+4. Hängt `nvidia-persistenced` beim Boot ein (die Unit ist `static`, die Rolle legt den Symlink in `multi-user.target.wants` selbst an) und deployt `nvidia-power-limit.service` (`nvidia-smi -pm 1` und `-pl <Watt>`, Standard 280). Eine vorhandene gleichnamige Unit wird ersetzt.
+5. Setzt `802-3-ethernet.wake-on-lan magic` per `nmcli`, aktiviert Wake-on-LAN sofort mit `ethtool -s <if> wol g` und bricht ab, wenn `ethtool` danach nicht `Wake-on: g` zeigt.
+6. Legt den Resume-Hook `/usr/lib/systemd/system-sleep/ollama-resume` an: nach jedem Aufwachen werden `nvidia-power-limit.service` und `ollama.service` neu gestartet und der Leerlauf-Zähler des Auto-Suspends zurückgesetzt.
+7. Richtet den [Auto-Suspend](#auto-suspend) ein (Timer `ollama-idle-suspend.timer`).
+8. UFW: SSH aus dem LAN, Port 11434 nur vom Homeserver, Standardrichtlinie `deny incoming`, UFW aktivieren.
+9. Startet Ollama, wartet auf `/api/tags` und lädt fehlende Modelle aus `ollama_pc_models` (Standard `gemma3:27b-it-q8_0`; für den Vergleich `llama3.3:70b` ergänzen).
+
+**Nach dem ersten Lauf einmal neu starten** und prüfen, dass die Einstellungen den Reboot überstehen:
+
+```bash
+sudo ethtool enp7s0 | grep Wake-on      # Wake-on: g
+nmcli -g 802-3-ethernet.wake-on-lan connection show netplan-enp7s0
+systemctl is-active ollama nvidia-persistenced
+nvidia-smi --query-gpu=persistence_mode,power.limit --format=csv
+curl -s http://127.0.0.1:11434/api/tags
+```
+
+Die NetworkManager-Verbindung stammt aus Netplan (Datei unter `/run/NetworkManager/system-connections`). Ob `nmcli connection modify` die Einstellung dauerhaft über den Reboot rettet, ist nicht vorab getestet. Zeigt `ethtool` nach dem Reboot `Wake-on: d`, in der Netplan-Datei der Schnittstelle `wakeonlan: true` setzen und `sudo netplan apply` ausführen.
+
+### Per Hand (Äquivalent, jeder Befehl braucht sudo)
+
+Für den Fall ohne Ansible. Die Befehle ändern das System, deshalb vor dem Ausführen lesen:
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+sudo systemctl edit ollama      # [Service]-Block mit den Environment-Zeilen aus dem Override
+sudo nmcli connection modify netplan-enp7s0 802-3-ethernet.wake-on-lan magic
+sudo ethtool -s enp7s0 wol g
+sudo ufw allow from 192.168.178.94 to any port 11434 proto tcp
+sudo ufw allow from 192.168.178.0/24 to any port 22 proto tcp
+sudo ufw default deny incoming
+sudo ufw enable
+```
+
+Override-Inhalt:
+
+```ini
+[Service]
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+Environment="OLLAMA_KEEP_ALIVE=30m"
+Environment="OLLAMA_FLASH_ATTENTION=1"
+Environment="OLLAMA_KV_CACHE_TYPE=q8_0"
+Environment="OLLAMA_CONTEXT_LENGTH=16384"
 ```
 
 ---
 
-## Ersteinrichtung
+## BIOS-Einstellungen
 
-1. **Node-Kapazität prüfen**: `kubectl describe node worker-0` — die
-   Resource-Requests/Limits in `values.yaml` sind ein Startwert, im Repo
-   sind für den Lenovo M90q keine exakten CPU/RAM-Werte dokumentiert.
-2. **Modell ziehen** (einmalig, Pod dafür kurz manuell hochskalieren, PLUS
-   die temporäre Egress-Ausnahme aus dem Abschnitt „Netzwerk-Isolation“
-   oben):
-   ```bash
-   kubectl -n ollama scale deploy/ollama --replicas=1
-   # warten bis der Pod Ready ist, dann die temporaere Egress-Policy
-   # anwenden (siehe oben), pullen, Policy wieder loeschen:
-   kubectl -n ollama exec deploy/ollama -- ollama pull llama3.2:3b
-   kubectl -n ollama scale deploy/ollama --replicas=0
-   ```
-   Das Modell bleibt auf der PVC erhalten, auch wenn der Pod auf 0
-   skaliert wird — muss also nicht bei jedem täglichen Lauf neu gezogen
-   werden (und braucht dann auch keine Egress-Ausnahme mehr).
-3. **Direkt testen** (Pod kurz hochskaliert lassen):
-   ```bash
-   kubectl -n ollama port-forward deploy/ollama 11434:11434
-   curl http://localhost:11434/api/generate -d '{"model":"llama3.2:3b","prompt":"Sag Hallo auf Deutsch.","stream":false}'
-   ```
-4. n8n-Workflows einrichten: siehe [30070-n8n.md](30070-n8n.md), Abschnitt
-   „Zammad Externer KI-Lauf (täglich)“.
-5. **Netzwerk-Isolation verifizieren** (zwingend vor dem produktiven
-   Einsatz, siehe Warnhinweis im Abschnitt „Netzwerk-Isolation“ oben —
-   NetworkPolicy-Durchsetzung ist auf diesem Cluster nicht vorab
-   bestätigt):
-   ```bash
-   # (a) Ingress von fremdem Namespace MUSS blockiert sein:
-   kubectl run netpol-test --rm -it --image=curlimages/curl -n default \
-     -- curl -m 3 http://ollama.ollama.svc.cluster.local:11434/
-   # Erwartung: Timeout/Fehler
+Wake-on-LAN funktioniert nur, wenn das Mainboard die Netzwerkkarte im Schlafzustand mit Strom versorgt. Das ist BIOS-Sache. Der PC ist ein MSI-Board (`MS-7E59`), die Bezeichnungen unterscheiden sich je nach BIOS-Version.
 
-   # (b) Ingress von n8n MUSS funktionieren:
-   kubectl exec -n n8n deploy/n8n -- wget -qO- --timeout=3 \
-     http://ollama.ollama.svc.cluster.local:11434/
-   # Erwartung: 200, "Ollama is running"
+| Einstellung (typischer Name bei MSI) | Wert |
+|---|---|
+| Wake Up Event Setup → Resume By PCI-E Device / „Power On By PCI-E“ | Enabled |
+| Wake Up Event Setup → Resume By LAN / „Wake on LAN“ (falls vorhanden) | Enabled |
+| ErP Ready / EuP (Advanced → Power Management Setup) | Disabled |
+| Deep Sleep (falls vorhanden) | Disabled |
 
-   # (c) Egress vom Ollama-Pod MUSS blockiert sein:
-   kubectl exec -n ollama deploy/ollama -- wget -qO- --timeout=3 https://1.1.1.1
-   # Erwartung: Timeout/Fehler
-   ```
-   Weicht ein Ergebnis von der Erwartung ab, greift NetworkPolicy auf
-   diesem Cluster nicht wie angenommen — das ist dann ein größerer,
-   separater Architektur-Entscheid (CNI-Wechsel), keine Kleinigkeit, die
-   sich nebenbei fixen lässt.
+- **ErP muss aus sein.** Mit ErP Ready schaltet das Board die Standby-Versorgung der Netzwerkkarte ab, ein Magic Packet kommt dann nie an.
+- Der Zielzustand ist **Suspend (S3)**. Aufwachen aus dem Ausschalten (S5) braucht zusätzlich „Resume By PCI-E“ und funktioniert nur mit ErP aus.
+- Das Magic Packet erreicht den PC nur im selben Subnetz, über LAN-Kabel (nicht WLAN).
 
 ---
 
-## Konfiguration (values.yaml)
+## Setup Homeserver
 
-| Key | Bedeutung | Default |
+1. **Wake-Ziel im power-agent.** Die Rolle `power_agent` kennt `ollama-pc` als Ziel „nur wecken“ (`power_agent_wake_only_targets`). Auf dem Homeserver ausrollen:
+   ```bash
+   make power-agent
+   ```
+   Danach steht `ollama-pc` in `TARGETS` in `/etc/power-agent/config.env`. carplay-api reicht das Ziel unverändert durch (`POST /api/power/wake {"target":"ollama-pc"}`), es braucht keine Codeänderung.
+2. **PC-Adresse im n8n-Chart.** `argocd/apps/tech/n8n/values.yaml`, Abschnitt `ollamaPc.env`, ist auf `OLLAMA_URL: "http://192.168.178.66:11434"` gesetzt. Ändert sich die IP des PCs, hier und in `host_vars/ollama-pc` und `inventory/hosts.yml` anpassen. Andere Werte siehe [Env-Variablen](#env-variablen).
+3. **Prompts und Firmenwissen füllen.** `prompts/email_system.md` (Name, Signatur), `prompts/email_examples.md` (2–3 Beispiele) und `knowledge/firma.md` ([Firmenwissen](#firmenwissen)). Solange `[PLATZHALTER…]` im Text steht, warnt das Skript, und die Beispiele werden ignoriert. Aufbau: [Systemprompt](#aufbau-des-systemprompts).
+4. **Workflows aktualisieren.** In n8n die Workflows `zammad-tickets-verarbeiten.json` und `zammad-externer-ki-lauf-taeglich.json` neu importieren (Stand 2026-10-31 per API in die bestehenden Workflows eingespielt, IDs und Aktivierung blieben) bzw. nach dem Muster in [30070](30070-n8n.md#beispiel-workflow-externer-zammad--ki-antwortentwurf-ollama) anpassen. Der Node „Ollama-PC wecken“ nutzt das bestehende Credential „carplay-api API Token“.
+5. **Cluster-Ollama entfällt.** Mit dem Merge entfernt ArgoCD die Application `ollama` samt PVC (`prune`). Das Modell auf der PVC (`llama3.2:3b`) geht damit verloren, es wird nicht mehr gebraucht. Der leere Namespace `ollama` kann danach von Hand gelöscht werden: `kubectl delete namespace ollama`.
+6. **Test:** [End-to-End-Test](#end-to-end-test).
+
+---
+
+## Zusatzkontext und Verlauf aus Zammad
+
+Der Node „LLM-Eingabe bauen“ macht aus einem Ticket die Eingabe für `cli.js chat`:
+
+| Feld | Quelle |
+|---|---|
+| `mail` | die letzte Kunden-Nachricht (`sender: Customer`), sonst die letzte öffentliche Nachricht |
+| `history` | alle übrigen öffentlichen Nachrichten, chronologisch |
+| `context` | interne Notizen, die mit `Kontext:` beginnen (Text nach dem Präfix) |
+
+Interne Notizen ohne `Kontext:` und System-Nachrichten fließen **nicht** ein, damit frühere KI-Entwürfe nicht als Kontext zurückkehren. Der Payload ist auf 90 000 Byte begrenzt (Shell-Argument-Limit), älteste Mails fallen vorher weg (Log im n8n-Pod). Die genaue Kürzung auf das Token-Budget macht `cli.js`.
+
+---
+
+## Request an Ollama
+
+| Schritt | Detail |
+|---|---|
+| Health-Check | `GET /api/tags`, Timeout `OLLAMA_HEALTH_TIMEOUT_SECONDS` (3 s), getrennt vom Request-Timeout |
+| Wake | je nach Modus, danach Polling mit Backoff (2 s, ×1,5, höchstens 15 s) bis `OLLAMA_WAKE_TIMEOUT_SECONDS` (120 s) |
+| Vorladen | `POST /api/chat` mit leerer `messages`-Liste, `keep_alive` und denselben `options.num_ctx`, Timeout `OLLAMA_PRELOAD_TIMEOUT_SECONDS` (900 s). Ändert sich `num_ctx` zwischen Vorladen und Anfrage, lädt Ollama das Modell neu |
+| Anfrage | `POST /api/chat`, `stream: false`, `options: {num_ctx, temperature}`, `keep_alive`, Timeout `OLLAMA_REQUEST_TIMEOUT_SECONDS` (1200 s) |
+| Kürzen | Der Verlauf wird von den ältesten Mails her gekürzt, bis Systemprompt, Kontext, Verlauf und Mail ins Budget passen (`num_ctx` minus `OLLAMA_RESPONSE_RESERVE_TOKENS`). Das Ergebnis steht als Warnung in der Antwort (`warnings`) und im Log. Der Prompt sagt dem Modell, dass ältere Mails fehlen |
+| Nachprüfung | Meldet Ollama mehr `prompt_eval_count`, als das Budget zulässt (Schätzung zu optimistisch), wird der Verlauf einmal mit dem gemessenen Zeichen/Token-Verhältnis neu gekürzt |
+| Zu große Pflichtteile | Passen Systemprompt, Kontext und Mail allein nicht ins Budget, bricht der Aufruf mit `PROMPT_TOO_LARGE` ab, statt still abzuschneiden |
+| Ausgabe | nur der Antworttext. Eine führende `Betreff:`-Zeile wird entfernt |
+
+Fehlercodes in der Ausgabe von `cli.js` (`{"ok":false,"error":{"code":…,"message":…}}`, Exit-Code 1):
+
+| Code | Bedeutung |
+|---|---|
+| `PC_NOT_WAKING` | Ollama antwortet nach dem Wake nicht innerhalb des Zeitlimits |
+| `WAKE_FAILED` | das Wake-Signal ließ sich nicht senden (Relay nicht erreichbar, MAC ungültig) |
+| `MODEL_MISSING` | Modell nicht auf dem PC (`ollama pull <Modell>`) |
+| `MODEL_LOAD_TIMEOUT`, `MODEL_LOAD_FAILED` | Vorladen schlug fehl oder dauerte zu lang |
+| `REQUEST_TIMEOUT`, `CHAT_FAILED` | Anfrage zu langsam oder von Ollama abgelehnt |
+| `PROMPT_TOO_LARGE` | Pflichtteile überschreiten `num_ctx` |
+| `EMPTY_REPLY` | Modell lieferte keinen Text |
+| `INVALID_INPUT`, `SYSTEM_PROMPT_MISSING` | Eingabe oder Prompt-Datei fehlerhaft |
+
+---
+
+## Aufbau des Systemprompts
+
+Die Nachricht an das Modell besteht aus zwei Teilen.
+
+**System-Nachricht** (aus Dateien, nicht im Code):
+
+1. `prompts/email_system.md`: Rolle und Schreibstil, Anrede-Regel (Du oder Sie aus der eingehenden Mail übernehmen, im Zweifel Sie), Signatur, Faktenregel (Preise, Links und Fakten nur aus `<firmenwissen>`, sonst `[OFFEN: …]`), Ausgabe-Regeln (nur Antworttext, ohne Betreffzeile und Erklärungen)
+2. `prompts/email_examples.md` als Abschnitt „Beispiel-Antworten“, mit 2–3 Beispielen (`**Eingehende E-Mail:**` / `**Antwort:**`)
+3. das [Firmenwissen](#firmenwissen) als Abschnitt `<firmenwissen>…</firmenwissen>`
+
+**User-Nachricht** (vom Skript gebaut), Abschnitte durch `---` getrennt:
+
+1. `## Zusatzkontext`, nur wenn vorhanden
+2. `## E-Mail-Verlauf (chronologisch, älteste zuerst)`, nur wenn vorhanden, mit Hinweis auf weggelassene Mails
+3. `## Zu beantwortende E-Mail`
+4. Schlusssatz: nur den Antworttext ausgeben
+
+Das Firmenwissen steht am Ende der System-Nachricht und damit vor dem Mail-Verlauf, der in der User-Nachricht kommt. Eigene Dateien über `OLLAMA_SYSTEM_PROMPT_FILE` und `OLLAMA_EXAMPLES_FILE`. Änderungen an den Prompts gehören ins Repo (ConfigMap), das Aktualisieren im Pod dauert nach dem ArgoCD-Sync rund eine Minute, ein Neustart ist nicht nötig.
+
+---
+
+## Auto-Suspend
+
+Der PC schläft nach Leerlauf wieder ein, damit er nicht dauerhaft läuft. Der Timer `ollama-idle-suspend.timer` startet jede Minute `/usr/local/sbin/ollama-idle-suspend`. Das Skript hält einen Zeitstempel „zuletzt beschäftigt“ in `/run/ollama-idle-suspend/last_busy`. Der PC gilt als **beschäftigt**, solange eines davon zutrifft:
+
+| Prüfung | Zutreffend, wenn |
+|---|---|
+| Ollama | `GET /api/ps` meldet ein geladenes Modell (läuft eine Anfrage, oder die `keep_alive`-Frist von 30 Minuten ist noch nicht abgelaufen) |
+| Sitzung | eine logind-Sitzung hat `IdleHint=no` (jemand arbeitet am Desktop) |
+| Sperre | ein Programm hält eine blockierende Sperre gegen `sleep` oder `idle` (`systemd-inhibit --list`, z. B. Download, Video) |
+| Last | der 5-Minuten-Lastwert liegt bei `ollama_pc_idle_suspend_max_load` oder darüber |
+
+Trifft nichts zu und liegt der letzte Zeitstempel mindestens `ollama_pc_idle_suspend_minutes` zurück (Standard 15), führt das Skript `systemctl suspend` aus. Zwischen der letzten Anfrage und dem Suspend vergehen damit rund 30 Minuten (`keep_alive`) plus 15 Minuten Leerlauf. Nach jedem Aufwachen setzt der Resume-Hook den Zeitstempel auf „jetzt“, sonst würde der PC zwischen Magic Packet und Modell-Laden sofort wieder einschlafen.
+
+Ausschalten: `ollama_pc_idle_suspend_enabled: false` und die Rolle neu laufen lassen. Vorübergehend: `sudo systemctl stop ollama-idle-suspend.timer`. Protokoll: `journalctl -t ollama-idle-suspend` und `journalctl -u ollama-idle-suspend`.
+
+Der Auto-Suspend gilt für den PC als Ganzes. Wer am Desktop arbeitet, wird nicht unterbrochen, ein langer Job ohne Eingaben, ohne Sperre und mit Last unter dem Schwellwert aber schon. Für solche Jobs `systemd-inhibit` verwenden oder `ollama_pc_idle_suspend_max_load` senken.
+
+---
+
+## Firmenwissen
+
+Alles, was das Modell über die Firma wissen soll (Kontakt, Links, Preise, Regeln, häufige Fragen), steht als Markdown-Dateien in `argocd/apps/tech/n8n/ollama-pc/knowledge/`. Der Inhalt aller `*.md`-Dateien wird bei **jeder Anfrage** in die System-Nachricht eingefügt, zwischen Systemprompt (samt Beispielen) und Mail-Verlauf:
+
+```
+<firmenwissen>
+### Datei: firma.md
+
+…Inhalt…
+
+### Datei: preise.md
+
+…Inhalt…
+</firmenwissen>
+```
+
+Das Modell darf Preise, Links, Kontaktdaten, Zeiten und Regeln nur von dort übernehmen. Fehlt eine Angabe, schreibt es `[OFFEN: <was fehlt>]` an die Stelle, damit der Mensch, der den Entwurf prüft, sie ergänzt. Diese Regel steht in `prompts/email_system.md`.
+
+### Aufbau und Pflege
+
+- **Dateien:** beliebig viele `*.md` in `knowledge/`, alphabetisch sortiert, ohne Unterordner. Andere Endungen werden ignoriert. Beispiel: `knowledge/firma.md` mit den Abschnitten Kontakt und Links, Preise (Tabelle), Regeln, Häufige Fragen. Eine Datei je Thema (`preise.md`, `faq.md`, `regeln.md`) hält die Pflege übersichtlich.
+- **Schreibstil:** kurze, eindeutige Sätze und Tabellen. Jeder Preis mit Einheit und „netto“ oder „brutto“. Links vollständig. Keine Dopplungen, sonst widersprechen sich die Dateien irgendwann.
+- **Platzhalter:** Zeilen mit `[PLATZHALTER…]` werden **nicht** an das Modell gegeben (und mit einer Warnung gemeldet). So stehen unausgefüllte Beispielzeilen nie als „Fakten“ im Prompt. Eine Zeile ist erst gültig, wenn der Platzhalter ersetzt ist. Das gilt je Zeile, eine teilweise ausgefüllte Datei wirkt also sofort mit den fertigen Zeilen.
+- **Wirkung ohne Neustart:** Das Skript liest die Dateien bei jedem Aufruf neu. Im Cluster liegen sie als ConfigMap im n8n-Pod, nach einer Änderung im Repo und dem ArgoCD-Sync dauert es rund eine Minute, ein Neustart ist nicht nötig. Auf dem Rechner (Benchmark, Test) wirkt eine Änderung sofort. Anderer Ordner: `OLLAMA_KNOWLEDGE_DIR`.
+- **Prüfen:** `cli.js chat` und der Benchmark schreiben bei jedem Aufruf `Firmenwissen: <n> Datei(en), ca. <x> Token (<y>% von num_ctx)` ins Log und die Warnungen ins Feld `warnings`.
+
+### Größenlimit
+
+Das Firmenwissen belegt Platz im Kontext (`num_ctx`, Standard 16384 Token) und fehlt dann dem Mail-Verlauf. Das Skript schätzt die Größe (3 Zeichen je Token) und **warnt, wenn es mehr als 40 % von `num_ctx` belegt** (`OLLAMA_KNOWLEDGE_WARN_RATIO`, Standard `0.4`). Bei 16384 Token sind das rund 6500 Token, etwa 20 000 Zeichen oder 8–10 Seiten Text. Die Warnung ist nur ein Hinweis, der Aufruf läuft weiter. Passen Systemprompt, Firmenwissen, Kontext und Mail zusammen nicht mehr ins Budget, bricht er mit `PROMPT_TOO_LARGE` ab. Der Verlauf wird zuerst gekürzt.
+
+Weitere Grenzen:
+
+- **ConfigMap:** Alle Dateien (Skripte, Prompts, Wissen) zusammen dürfen höchstens 1 MiB haben (Kubernetes-Limit). Das reicht für das Firmenwissen weit über das Token-Limit hinaus.
+- **Geschwindigkeit:** Jedes Token Firmenwissen muss bei jeder Anfrage ausgewertet werden (`prompt_eval`). Bei einem Modell, das zum Teil im RAM liegt, kostet das spürbar Zeit. Die Prompt-Auswertung steht im Benchmark (`prompt_eval (s)`, Prompt-Token).
+- **Qualität:** Je mehr Text im Prompt steht, desto eher überliest das Modell Details. Wenige, klare Fakten wirken besser als ein ganzes Handbuch.
+
+### Ab wann RAG sinnvoll ist
+
+RAG (Retrieval-Augmented Generation) legt das Wissen in einen Index und gibt dem Modell je Mail nur die passenden Abschnitte. Es lohnt sich, wenn eines davon zutrifft:
+
+| Signal | Bedeutung |
+|---|---|
+| Die Warnung „Firmenwissen belegt … % von num_ctx“ erscheint dauerhaft | Das Wissen passt nicht mehr bequem in den Prompt. `num_ctx` zu erhöhen kostet VRAM (KV-Cache) und Zeit und löst es nur kurz |
+| Das Wissen umfasst deutlich mehr als rund 10 Seiten (Produkthandbücher, viele Preislisten, Vertragsbedingungen) | Der Großteil davon ist für eine einzelne Mail ohnehin irrelevant |
+| Die Texte ändern sich oft oder kommen aus anderen Systemen (Wiki, Shop, Dokumentenablage) | Ein Index wird automatisch aktualisiert, Dateien in Git nicht |
+| Die Antworten brauchen kundenspezifische Daten (Verträge, Bestellungen) | Das gehört per Abfrage in den Kontext, nicht in eine statische Datei |
+
+Bis dahin ist die Datei-Lösung einfacher, nachvollziehbar (alles steht im Git) und braucht keine weitere Komponente. Vor einem RAG-Umbau zuerst prüfen, ob sich das Wissen straffen lässt. Ein späterer Umbau setzt an derselben Stelle an: `lib/knowledge.js` liefert den Text für `<firmenwissen>`, dort käme stattdessen eine Suche nach den passenden Abschnitten hin (Embedding-Modell auf dem PC, z. B. `nomic-embed-text`, Texte in Abschnitte teilen, die besten drei bis fünf Treffer je Mail einfügen).
+
+---
+
+## Env-Variablen
+
+### Aufrufer (`cli.js`, `benchmark.js`; im n8n-Chart unter `ollamaPc.env`)
+
+| Variable | Default | Bedeutung |
 |---|---|---|
-| `replicaCount` | Ruhezustand-Replicas — wird von n8n überschrieben, siehe oben | `0` |
-| `image.tag` | Ollama-Image-Version | `0.3.14` |
-| `nodeSelector` | Pinnt den Pod auf `worker-0` (Lenovo M90q) | `kubernetes.io/hostname: worker-0` |
-| `resources` | CPU/RAM für das aktuelle Modell (`llama3.2:3b`) — vor einem Modell-Wechsel gegen echte Node-Kapazität prüfen. `memory` am 27.08.2026 versuchsweise von 5Gi/6500Mi auf 6Gi/7Gi angehoben, um `llama3.1:8b` doch noch zu laden — **ohne Wirkung** (Ollama 0.3.14 meldete unveraendert `model requires more system memory`, siehe Hinweis oben zu Cgroup-Limit vs. tatsaechlichem Host-Speicher). Der eigentliche Fix war der Modell-Wechsel auf `llama3.2:3b`, das 6Gi/7Gi-Limit blieb danach unangetastet (deutlich mehr als das ~2GB-Modell braucht, aber kein Grund es wieder zu verkleinern) | siehe `values.yaml` |
-| `persistence.size` | Modell-Storage (NFS, `nas`-StorageClass) | `20Gi` |
-| `n8nServiceAccountName` / `n8nNamespace` | Ziel-ServiceAccount für das Scale-RBAC | `n8n` / `n8n` |
+| `OLLAMA_URL` | – (Pflicht) | Basis-URL des PCs, z. B. `http://192.168.178.66:11434` |
+| `OLLAMA_MODEL` | `gemma3:27b-it-q8_0` | Modell für `chat` |
+| `OLLAMA_NUM_CTX` | `16384` | Kontextlänge, in Vorladen und Anfrage identisch |
+| `OLLAMA_TEMPERATURE` | `0.6` | Temperatur |
+| `OLLAMA_KEEP_ALIVE` | `30m` | `keep_alive` für Vorladen und Anfrage |
+| `OLLAMA_RESPONSE_RESERVE_TOKENS` | `2048` | Platz für die Antwort im Kontext |
+| `OLLAMA_CHARS_PER_TOKEN` | `3` | Schätzung für das Kürzen (konservativ für Deutsch) |
+| `OLLAMA_HEALTH_TIMEOUT_SECONDS` | `3` | Timeout des Health-Checks |
+| `OLLAMA_WAKE_TIMEOUT_SECONDS` | `120` | maximale Wartezeit nach dem Wake |
+| `OLLAMA_WAKE_POLL_INITIAL_SECONDS` | `2` | erster Polling-Abstand (wächst um Faktor 1,5) |
+| `OLLAMA_WAKE_POLL_MAX_SECONDS` | `15` | größter Polling-Abstand |
+| `OLLAMA_PRELOAD_TIMEOUT_SECONDS` | `900` | Timeout für das Vorladen |
+| `OLLAMA_REQUEST_TIMEOUT_SECONDS` | `1200` | Timeout der Anfrage (20 Minuten) |
+| `OLLAMA_WAKE_MODE` | `udp` (im n8n-Chart `none`) | `none`, `udp`, `http`, `command` |
+| `OLLAMA_WAKE_MAC` | – | MAC für `udp` |
+| `OLLAMA_WAKE_BROADCAST` | `255.255.255.255` | Broadcast-Adresse für `udp` |
+| `OLLAMA_WAKE_PORT` | `9` | UDP-Port für `udp` |
+| `OLLAMA_WAKE_URL` | – | Relay-URL für `http` (z. B. `https://carplay-api.prod.homeserver/api/power/wake`) |
+| `OLLAMA_WAKE_TARGET` | `ollama-pc` | Ziel im Body für `http` |
+| `OLLAMA_WAKE_TOKEN` | – | Bearer-Token für `http` |
+| `OLLAMA_WAKE_COMMAND` | – | Kommando für `command` |
+| `OLLAMA_WAKE_REQUEST_TIMEOUT_SECONDS` | `10` | Timeout des Wake-Aufrufs |
+| `OLLAMA_PROMPTS_DIR` | `<Skriptordner>/prompts` (im Pod `/opt/ollama-pc/prompts`) | Ordner der Prompt-Dateien |
+| `OLLAMA_SYSTEM_PROMPT_FILE` | `<OLLAMA_PROMPTS_DIR>/email_system.md` | Systemprompt |
+| `OLLAMA_EXAMPLES_FILE` | `<OLLAMA_PROMPTS_DIR>/email_examples.md` | Beispiel-Antworten |
+| `OLLAMA_KNOWLEDGE_DIR` | `<Skriptordner>/knowledge` (im Pod `/opt/ollama-pc/knowledge`) | Ordner der Wissensdateien |
+| `OLLAMA_KNOWLEDGE_WARN_RATIO` | `0.4` | Anteil von `num_ctx`, ab dem die Warnung kommt |
+| `OLLAMA_BENCH_MODELS` | `gemma3:27b-it-q8_0,llama3.3:70b` | Modelle des Benchmarks |
+
+### Test-Skript
+
+| Variable | Default | Bedeutung |
+|---|---|---|
+| `OLLAMA_PC_SSH` | – (Pflicht) | `benutzer@host` für den Suspend per SSH |
+| `SUSPEND_COMMAND` | `sudo -n systemctl suspend` | Kommando auf dem PC |
+| `SUSPEND_WAIT_SECONDS` | `180` | wie lange auf das Einschlafen gewartet wird |
+| `TEST_MAIL` | `testdata/emails/02-rueckfrage-du.json` | Eingabe für den Test |
+
+### Ollama auf dem PC (Ansible-Variablen der Rolle `ollama_pc`)
+
+| Variable | Default | Wird zu |
+|---|---|---|
+| `ollama_pc_listen` | `0.0.0.0:11434` | `OLLAMA_HOST` |
+| `ollama_pc_keep_alive` | `30m` | `OLLAMA_KEEP_ALIVE` |
+| `ollama_pc_flash_attention` | `1` | `OLLAMA_FLASH_ATTENTION` |
+| `ollama_pc_kv_cache_type` | `q8_0` | `OLLAMA_KV_CACHE_TYPE` |
+| `ollama_pc_context_length` | `16384` | `OLLAMA_CONTEXT_LENGTH` |
+| `ollama_pc_gpu_power_limit_watts` | `280` | `nvidia-smi -pl` |
+| `ollama_pc_idle_suspend_enabled` | `true` | Auto-Suspend einrichten |
+| `ollama_pc_idle_suspend_minutes` | `15` | Leerlauf in Minuten bis zum Suspend |
+| `ollama_pc_idle_suspend_max_load` | `1.0` | Lastwert (5 min), ab dem der PC als beschäftigt gilt |
+| `ollama_pc_models` | `[gemma3:27b-it-q8_0]` | Modelle, die die Rolle lädt |
+| `ollama_pc_ufw_allowed_sources` | Homeserver-IP | erlaubte Quellen für Port 11434 |
+
+---
+
+## Benchmark
+
+`benchmark.js` schickt dieselben Test-Mails an beide Modelle und vergleicht sie. Es braucht Node.js ab Version 22 auf einem Rechner im selben LAN wie der PC (kein weiterer Install, keine Abhängigkeiten). Dasselbe Skript weckt den PC bei Bedarf selbst (`OLLAMA_WAKE_MODE=udp`).
+
+```bash
+cd argocd/apps/tech/n8n/ollama-pc
+export OLLAMA_URL=http://192.168.178.66:11434
+export OLLAMA_WAKE_MAC=34:5a:60:50:f5:ec
+node benchmark.js                                  # beide Standardmodelle
+node benchmark.js --models gemma3:27b-it-q8_0      # nur eines
+node benchmark.js --emails ./meine-mails --out ./ergebnis
+```
+
+Vorher muss `llama3.3:70b` auf dem PC liegen (`ollama_pc_models` ergänzen oder `ollama pull llama3.3:70b`).
+
+Ablauf je Modell: andere geladene Modelle entladen, Modell vorladen, `ollama ps` auslesen (GPU-Anteil, Ausgabe auf der Konsole und im Bericht), dann jede Mail aus `testdata/emails/*.json` senden. Die Mails haben das Format der Eingabe von `cli.js chat` (`context`, `history`, `mail`), eigene Mails einfach als weitere `.json`-Dateien ablegen.
+
+Ergebnis in `benchmark-results/<Zeitstempel>/` (oder `--out`):
+
+| Datei | Inhalt |
+|---|---|
+| `results.md` | `ollama ps`-Tabelle, Ergebnistabelle je Modell und Mail: GPU-Anteil, Gesamtdauer, `prompt_eval_duration`, Prompt-Token, `eval_count`, Token/s, Warnungen |
+| `comparison.md` | je Mail eine Tabelle mit den Antworten der Modelle nebeneinander |
+| `results.json` | alle Rohwerte |
+
+Dauer und Token/s kommen aus der Ollama-Antwort (`eval_count`, `eval_duration`), die Gesamtdauer ist die gemessene Zeit des Aufrufs. Die Qualität der Antworten beurteilt man in `comparison.md` von Hand.
+
+---
+
+## End-to-End-Test
+
+`test-wake-and-chat.sh` prüft die ganze Kette: PC in Suspend versetzen, Request vom Homeserver, aufgewacht, Modell auf der GPU, Antwort da.
+
+```bash
+export OLLAMA_URL=http://192.168.178.66:11434
+export OLLAMA_PC_SSH=pke@192.168.178.66
+export OLLAMA_WAKE_MODE=udp OLLAMA_WAKE_MAC=34:5a:60:50:f5:ec
+./test-wake-and-chat.sh
+```
+
+Schritte: (1) PC wecken, falls er schläft, (2) per SSH Suspend auslösen, (3) warten bis Ollama nicht mehr antwortet, (4) `cli.js chat` senden und prüfen, dass der PC geweckt wurde (`woke: true`) und eine Antwort kommt, (5) `ollama ps` auswerten, das Modell muss einen GPU-Anteil über 0 haben. Das Skript endet mit `TEST BESTANDEN` oder `FEHLER: …`.
+
+Voraussetzungen auf dem PC, jeweils mit sudo und von Hand einzurichten:
+
+- SSH-Server und der Schlüssel des Aufrufers: `sudo apt install openssh-server`.
+- Suspend ohne Passwort. Beispiel `/etc/sudoers.d/ollama-suspend` (mit `sudo visudo -f` anlegen): `pke ALL=(root) NOPASSWD: /usr/bin/systemctl suspend`. Alternativ `SUSPEND_COMMAND` auf ein Kommando setzen, das ohne Passwort geht.
+
+Unit-Tests der Skripte (Fake-Ollama, ohne PC und GPU): `cd argocd/apps/tech/n8n/ollama-pc && npm test`.
 
 ---
 
 ## Troubleshooting
 
-| Symptom | Check |
+| Symptom | Ursache und Prüfung |
 |---|---|
-| Pod bleibt `Pending` nach Scale-up | Ist `worker-0` überhaupt wach? `kubectl get nodes` — falls nicht, Wake-Schritt im n8n-Workflow prüfen (Credential/Token für `carplay-api` gültig?) |
-| n8n bekommt `403` beim Scale-PATCH | RBAC prüfen: `kubectl -n ollama auth can-i patch deployments/scale --as=system:serviceaccount:n8n:n8n -n ollama` |
-| n8n bekommt `401`/TLS-Fehler beim Scale-PATCH | Service-Account-Token im n8n-Pod noch vorhanden? (`automountServiceAccountToken` nicht deaktiviert) |
-| Ollama antwortet nicht rechtzeitig | Wait-Node-Dauer im Haupt-Workflow zu knapp — Kaltstart (Node-Boot + Pod-Start + Modell-Laden) kann je nach Hardware länger als 150s dauern |
-| Deployment bleibt dauerhaft `OutOfSync` in ArgoCD | `ignoreDifferences`-Eintrag für `ollama`/`/spec/replicas` in `argocd/bootstrap/root-applicationset.yaml` vorhanden? |
-| `ollama pull` schlägt fehl (kein Internet) | Temporäre Egress-Ausnahme aus „Netzwerk-Isolation“ vergessen? Muss vor dem Pull gesetzt UND danach wieder gelöscht werden |
-| n8n bekommt Timeout bei `/api/generate`, obwohl Ollama laut `kubectl get pods` läuft | `networkpolicy-allow-n8n-ingress.yaml` korrekt deployt? Label `app.kubernetes.io/name: n8n` bei den n8n-Pods vorhanden (`kubectl -n n8n get pods --show-labels`)? |
-| Verifikationstest (Schritt 5 oben) zeigt, dass Ollama trotz Default-Deny von überall erreichbar bleibt | NetworkPolicy wird auf diesem Cluster nicht durchgesetzt (k3s-NetworkPolicy-Controller inaktiv?) — kein Workaround hier, sondern als Befund zurückmelden statt selbstständig CNI zu wechseln |
-| `/api/generate` liefert `500 model requires more system memory (X GiB) than is available (Y GiB)` | `resources.limits.memory` in `values.yaml` zu knapp für das geladene Modell — anheben (siehe [60040](../6-hintergruende/60040-helm-charts-tech.md#ollama)), aber gegen `kubectl describe node worker-0` → Allocatable prüfen; ist die Node-Kapazität selbst der Flaschenhals, hilft nur mehr RAM oder ein kleineres/staerker quantisiertes Modell |
-| Live-`kubectl patch`/`edit` auf dem `ollama`-Deployment wird nach Sekunden wieder zurückgesetzt | Erwartetes ArgoCD-`selfHeal`-Verhalten für JEDES Feld außer `/spec/replicas` (dafür existiert die `ignoreDifferences`-Ausnahme oben) — Änderungen an `resources`, `image` etc. gehören in `values.yaml`, nicht als Live-Patch |
+| `PC_NOT_WAKING` | Der PC wacht nicht auf oder Ollama startet nicht. Zuerst `ethtool enp7s0 \| grep Wake-on` am PC (`g`), dann BIOS ([oben](#bios-einstellungen)). Den Wake einzeln testen: `wakeonlan 34:5a:60:50:f5:ec` auf dem Homeserver. Kommt das Paket an, aber Ollama nicht: `systemctl status ollama` am PC, `journalctl -u ollama -b` |
+| `WAKE_FAILED` oder Wake-Node meldet 401/502 | Credential „carplay-api API Token“ ungültig oder power-agent nicht erreichbar. `systemctl status power-agent` am Homeserver, `ollama-pc` in `/etc/power-agent/config.env` unter `TARGETS`? |
+| `OLLAMA_URL ist nicht gesetzt` | `ollamaPc.env.OLLAMA_URL` im n8n-Chart leer |
+| `REQUEST_TIMEOUT` | Antwort länger als `OLLAMA_REQUEST_TIMEOUT_SECONDS` (1200 s). Bei `llama3.3:70b` und langen Mails möglich: Timeout erhöhen, `num_ctx` oder Verlauf verkleinern, Token/s im Benchmark prüfen |
+| `MODEL_LOAD_TIMEOUT` oder Modell lädt nicht | Beim ersten Laden liest Ollama bis zu 43 GB von der Platte. `OLLAMA_PRELOAD_TIMEOUT_SECONDS` erhöhen. `journalctl -u ollama -f` am PC zeigt Fehler wie „unable to allocate“ (zu wenig freier RAM: andere Programme schließen, `free -h`) |
+| `MODEL_MISSING` | `ollama pull <Modell>` am PC, oder `ollama_pc_models` ergänzen und die Rolle laufen lassen |
+| Läuft nur auf der CPU (`gpu_percent` 0, `ollama ps` zeigt `100% CPU`) | `nvidia-smi` am PC. Nach einem Suspend geht die GPU für Ollama oft verloren, der Resume-Hook startet `ollama.service` neu. Hilft das nicht: `sudo systemctl stop ollama && sudo rmmod nvidia_uvm && sudo modprobe nvidia_uvm && sudo systemctl start ollama`. `journalctl -u ollama -b \| grep -i -E "cuda\|gpu"` zeigt, ob eine GPU erkannt wurde |
+| Nur ein Teil des Modells auf der GPU | Erwartet bei 12 GB VRAM, siehe [Modellwahl](#modellwahl-und-begründung). Der Anteil steht im Benchmark. Bei fast vollem VRAM durch den Desktop lädt Ollama weniger Schichten, dann Browser und Co. schließen |
+| Antwort bricht ab („Antwort wurde durch das Kontextlimit abgeschnitten“) | `OLLAMA_RESPONSE_RESERVE_TOKENS` erhöhen oder `OLLAMA_NUM_CTX` erhöhen (der VRAM-Bedarf des KV-Caches steigt) |
+| Warnung „ältere Mails im Verlauf gekürzt“ | Kein Fehler, der Verlauf war länger als das Token-Budget. Wer mehr Verlauf will: `OLLAMA_NUM_CTX` erhöhen |
+| `PROMPT_TOO_LARGE` | Systemprompt, Zusatzkontext oder die Mail selbst sind zu lang für `num_ctx`. Kontext kürzen oder `OLLAMA_NUM_CTX` erhöhen |
+| Warnung „Firmenwissen belegt … % von num_ctx“ | Wissen kürzen, `OLLAMA_NUM_CTX` erhöhen oder [RAG](#ab-wann-rag-sinnvoll-ist) einsetzen |
+| Warnung „Firmenwissen … Zeile(n) mit [PLATZHALTER…] ignoriert“ | Platzhalter in `knowledge/*.md` durch echte Angaben ersetzen, solange fehlt die Angabe im Prompt |
+| Entwürfe enthalten `[OFFEN: …]` | Die Angabe fehlt in `<firmenwissen>`: in `knowledge/` ergänzen. Die Stelle im Entwurf ergänzt der Prüfer von Hand |
+| Warnung „Systemprompt enthält noch [PLATZHALTER…]“ | Signatur und Name in `prompts/email_system.md` ausfüllen, Beispiele in `prompts/email_examples.md` ersetzen |
+| Leistung oder Takt nach dem Aufwachen anders | `nvidia-power-limit.service` neu starten (der Resume-Hook tut das), `nvidia-smi -q -d POWER` prüfen |
+| `make ollama-pc` bricht beim Wake-on-LAN-Check ab | NIC oder Treiber unterstützt Magic Packet nicht, oder `ollama_pc_interface` zeigt auf die falsche Schnittstelle (nicht die Bridge) |
+| Nach dem Reboot `Wake-on: d` | Netplan überschreibt die NetworkManager-Einstellung: in der Netplan-Datei `wakeonlan: true` setzen |
+| Der PC schläft ein, obwohl jemand arbeitet, oder nie ein | `journalctl -t ollama-idle-suspend`, `loginctl show-session <id> -p IdleHint` (Sitzung), `systemd-inhibit --list`, `curl -s localhost:11434/api/ps` (Modell geladen?) und `cat /proc/loadavg` zeigen, welche Prüfung greift |
+| Der PC ist per SSH nicht erreichbar | Auf dem PC läuft kein SSH-Server (Standard bei Ubuntu Desktop), `make ollama-pc-local` nutzen |
+
+> **Stand der Verifikation:** Die Skripte sind mit Unit-Tests und gegen einen simulierten, schlafenden PC getestet. Noch nicht gelaufen sind die Rolle `ollama_pc` auf dem echten PC, der Wake-Weg über carplay-api und power-agent sowie die geänderten n8n-Workflows im Cluster. Vor dem produktiven Einsatz einmal [den Test](#end-to-end-test) und einen manuellen Workflow-Lauf mit einem Test-Ticket ausführen.

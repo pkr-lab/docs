@@ -29,6 +29,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `power_agent_kubeconfig` | `{{ cluster_power_manager_kubeconfig }}` | – |
 | `power_agent_state_dir` | `{{ cluster_power_manager_state_dir }}` | – |
 | `power_agent_targets` | `{{ cluster_power_manager_workers }}` | – |
+| `power_agent_wake_only_targets` | `[ollama-pc]` | Ziele, die nur per `/wake` geweckt werden (Desktop-PC mit Ollama), Einträge ohne MAC entfallen |
 
 ## Ablauf
 

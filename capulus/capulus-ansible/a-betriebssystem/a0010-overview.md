@@ -283,7 +283,6 @@ Aufgaben und die Adressen.
 | `zammad` | Ticketsystem / Helpdesk | N · L · S · D · C | `zammad.tech.homeserver` |
 | `vaultwarden` | Passwort-Manager (Bitwarden-kompatibel) | N · L · S · C | `vault.tech.homeserver` |
 | `n8n` | Automatisierungen ohne Code | N · S | `n8n.prod.homeserver` |
-| `ollama` | lokales LLM, nur bei Bedarf hochgefahren (`replicas: 0`) | — | — (intern) |
 | `uptime-kuma` | Erreichbarkeits-Überwachung + Status-Seite | L · C · SSO | `uptime-kuma.prod.homeserver` |
 | `mediamtx` | Live-Video: RTSP / RTMP / WebRTC / HLS | C | `stream.prod.homeserver` |
 | `alamos-apager` | Alarmmonitor-Steuerung (ALAMOS AMweb) | S | `alamos-apager.prod.homeserver` |
