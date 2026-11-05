@@ -89,7 +89,7 @@ docker run --rm \
 
 **Systemsteuerung → Task Scheduler → Erstellen → Geplante Aufgabe →
 Benutzerdefiniertes Skript.** Zeitplan siehe [Wie oft?](#wie-oft-empfehlungen)
-unten, Skript-Inhalt:
+unten (**04:00 Uhr**, nach allen Cluster-Jobs, siehe [Zeitplan der Nacht](#zeitplan-der-nacht)), Skript-Inhalt:
 
 ```bash
 #!/bin/sh
@@ -143,14 +143,14 @@ sinnvolle Optionen:
 
 | Option | Zeitplan | Max. Datenverlust (RPO) | Wann sinnvoll |
 |---|---|---|---|
-| **Täglich (empfohlen)** | Jede Nacht, z. B. 02:00 Uhr | ≤ 24 Stunden | Standardfall — Immich-Fotos, Nextcloud-Dateien und Vaultwarden-Tresor ändern sich laufend, dank Dedup kostet der tägliche Lauf kaum mehr als ein wöchentlicher |
+| **Täglich (empfohlen)** | Jede Nacht, 04:00 Uhr | ≤ 24 Stunden | Standardfall — Immich-Fotos, Nextcloud-Dateien und Vaultwarden-Tresor ändern sich laufend, dank Dedup kostet der tägliche Lauf kaum mehr als ein wöchentlicher |
 | **Zweimal wöchentlich** | z. B. Mi + So, 02:00 Uhr | ≤ 3–4 Tage | Kompromiss, falls die USB-Platte über eine langsame Schnittstelle (USB 2.0) angebunden ist und ein täglicher Lauf spürbar Last erzeugt |
 | **Wöchentlich** | z. B. So, 03:00 Uhr | ≤ 7 Tage | Nur falls Kapazität/Performance der Platte stark eingeschränkt ist — höheres Risiko, eine ganze Woche Fotos/Dokumente bei einem Ausfall zwischen zwei Läufen zu verlieren |
 
-**Empfehlung: täglich um 02:00 Uhr**, mit der Aufbewahrungsrichtlinie aus
+**Empfehlung: täglich um 04:00 Uhr**, mit der Aufbewahrungsrichtlinie aus
 Schritt 2 (7 Tage täglich, 4 Wochen wöchentlich, 6 Monate monatlich —
 danach werden ältere Snapshots automatisch durch `forget --prune`
-entfernt). Nachts, weil dann sowohl Cluster- als auch NAS-Last (SMB/NFS-
+entfernt). Der Lauf liegt hinter allen Cluster-Backups (siehe [Zeitplan der Nacht](#zeitplan-der-nacht)), damit die restic-Repositories der Apps nicht mitten im Schreiben auf die USB-Platte kopiert werden. Nachts, weil dann sowohl Cluster- als auch NAS-Last (SMB/NFS-
 Zugriffe, Immich-Uploads) am geringsten sind.
 
 ### Aufbewahrung (Retention)
@@ -165,6 +165,28 @@ bleiben, unabhängig vom gewählten Backup-Intervall:
 Damit lässt sich z. B. eine versehentlich vor 3 Wochen gelöschte Datei
 noch wiederherstellen, ohne dass die Platte mit täglichen Snapshots über
 Monate hinweg vollläuft.
+
+---
+
+## Zeitplan der Nacht
+
+Alles, was auf `local-path` liegt (SSD des Nodes `homeserver`), sieht der NAS-Task nicht. Diese Apps sichern deshalb zuerst per Cluster-Job auf das NAS-Volume (`volume1`), danach kopiert der NAS-Task `volume1` + `volume2` verschlüsselt auf die USB-Platte. Auf der USB-Platte liegt damit alles im restic-Repository des NAS-Tasks, die Cluster-Repositories der Apps sind zusätzlich selbst verschlüsselt.
+
+| Zeit | Job | Cluster | Art | Verschlüsselt im Cluster |
+|---|---|---|---|---|
+| 01:30 | `vaultwarden-backup` | TECH | Spiegel (rsync) | nein |
+| 01:50 | `immich-postgres-backup` | PROD | `pg_dump` | nein |
+| 02:10 | `vaultwarden` | TECH | restic (Operator) | ja |
+| 02:20 | `n8n-restic-backup` | TECH | restic | ja |
+| 02:30 | `nextcloud-postgresql-backup` | PROD | `pg_dump` (7 Stück) | nein |
+| 02:40 | `mdm-backup` | TECH | restic | ja |
+| 02:50 | `uptime-kuma` | TECH | restic (Operator) | ja |
+| 03:00 | `zammad` | TECH | restic (Operator, `pg_dump`) | ja |
+| 04:00 | NAS-Task | NAS | restic auf USB | ja |
+
+- **Immich** braucht keinen Cluster-Job für die Dateien: Bibliothek und Datenbankverzeichnis liegen auf `volume2` (`immich-nas`), dazu der `pg_dump`.
+- **Nextcloud:** Daten und HTML liegen auf `volume1` (`nas`) und sind damit im NAS-Task. Die Datenbank liegt auf `local-path`, deshalb der nächtliche `pg_dump` auf das PVC `nextcloud-postgresql-backup` (`nas`). Der Dump ist im Cluster unverschlüsselt und liegt erst auf der USB-Platte verschlüsselt.
+- **Neue Apps mit `local-path`-Daten** brauchen einen eigenen Cluster-Job und müssen **vor 04:00** fertig sein. Läuft ein Cluster-Job länger, den NAS-Task entsprechend später legen.
 
 ---
 
@@ -328,6 +350,26 @@ kubectl -n n8n delete pod restic-restore-test
 ```
 
 - **Echtes Zurückspielen:** n8n auf 0 skalieren (der ArgoCD-Selbstheilungslauf setzt Replicas zurück, dafür den `argocd-application-controller` kurz anhalten, siehe [20000](20000-nas-storage.md#migrations-runbook-hdd-worker-0sda--nas-nas)), den Restore in ein leeres `local-path`-PVC schreiben, `stage/database.sqlite` als `database.sqlite` ins Datenverzeichnis legen (ohne `-wal` und `-shm`), `config` und `whatsapp-session` aus `source/` übernehmen, Besitzer auf `1000:1000` setzen, n8n wieder hochskalieren.
+
+---
+
+## restic für Uptime Kuma (im Cluster)
+
+Uptime Kuma (SQLite `kuma.db` auf `local-path`) sichert täglich um 02:50 über das `Backup` `uptime-kuma` des capulus-operators in ein restic-Repository auf dem NAS-Volume (PVC `uptime-kuma-restic`, StorageClass `nas`, 2 Gi). Der Operator macht erst einen konsistenten `sqlite3 .backup` samt `integrity_check`, dann sichert restic das Datenverzeichnis ohne die Live-Datenbank. Aufbewahrung 7 tägliche, 4 wöchentliche, 6 monatliche Snapshots. Chart-Dateien `restic-backup.yaml`, `restic-pvc.yaml`, `restic-sealedsecret.yaml` unter `argocd/apps/tech/uptime-kuma/templates/`, alles hinter `resticBackup.enabled` (Standard `false`).
+
+- **Einrichten (einmalig):** `./scripts/seal-restic-password.sh uptime-kuma`, Passwort in den Passwortmanager legen, **ohne es sind alle Snapshots unlesbar**, danach Merge.
+- **Prüfen:** `kubectl -n uptime-kuma create job --from=cronjob/uptime-kuma restic-test`, `kubectl -n uptime-kuma logs job/restic-test` (endet mit `fertig:`), danach `kubectl -n uptime-kuma delete job restic-test`. `kubectl -n uptime-kuma get backup` zeigt Phase und letzten Erfolg, `CapulusBackupStale` meldet nach 30 Stunden ohne Erfolg.
+- **Wiederherstellung:** wie bei [Vaultwarden](#restic-für-vaultwarden-im-cluster) mit einem Test-Pod, Secret `uptime-kuma-restic` und PVC `uptime-kuma-restic`; die Datenbank liegt im Snapshot unter `stage/data/kuma.db`.
+
+---
+
+## restic für Zammad (im Cluster)
+
+Zammad (PostgreSQL auf `local-path`, Anhänge liegen in der Datenbank, `storageVolume` ist aus) sichert täglich um 03:00 über das `Backup` `zammad` in ein restic-Repository (PVC `zammad-restic`, StorageClass `nas`, 10 Gi). Der Operator zieht per `pg_dump -Fc` einen konsistenten Dump von `zammad_production` (Host `zammad-postgresql`, Passwort aus `zammad-secrets`), restic sichert ihn. Redis und Memcached sind Cache und werden nicht gesichert. Chart-Dateien unter `argocd/apps/tech/zammad/templates/restic-*.yaml`, hinter `resticBackup.enabled` (Standard `false`).
+
+- **Einrichten (einmalig):** `./scripts/seal-restic-password.sh zammad`, Passwort in den Passwortmanager legen, danach Merge.
+- **Prüfen:** `kubectl -n zammad create job --from=cronjob/zammad restic-test`, Logs mit `kubectl -n zammad logs job/restic-test`, danach den Job löschen.
+- **Wiederherstellung:** Dump mit einem Test-Pod wie bei Vaultwarden aus dem Snapshot holen (`stage/postgres/zammad_production.dump`), dann `pg_restore --clean --if-exists -d zammad_production` in eine leere oder neu angelegte Datenbank, Zammad vorher auf 0 skalieren.
 
 ---
 
