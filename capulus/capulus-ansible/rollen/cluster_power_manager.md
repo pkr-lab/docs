@@ -1,6 +1,6 @@
 # Rolle `cluster_power_manager`
 
-weckt Worker per WoL, fährt sie per SSH wieder herunter.
+weckt Worker per WoL, fährt sie per SSH wieder herunter. Seit der Umstellung auf zwei Control-Planes betrifft das nur noch `worker-1`: `controlplane-1` läuft dauerhaft und steht nicht in der Liste ([400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md)).
 
 | | |
 |---|---|
@@ -32,7 +32,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `cluster_power_manager_ntfy_host` | `ntfy.tech.homeserver` | – |
 | `cluster_power_manager_ntfy_ip` | `{{ network_static_ip }}` | – |
 | `cluster_power_manager_ntfy_topic` | `Home-Lab-System` | – |
-| `cluster_power_manager_workers` | `[{ansible_host: '{{ hostvars.get(''worker-0'', {}).ansible_host \| default('''') }}', m…` | – |
+| `cluster_power_manager_workers` | `[{name: worker-1, ansible_host: …, mac_address: …}]` | Liste der per WoL gesteuerten Worker. `nightly_worker_wake` und `power_agent_targets` übernehmen sie. Die Hochskalier-Logik (erste Stufe nach `scale_up_sustain_seconds`, jede weitere um `scale_up_sustain_seconds_stage2` später) bleibt generisch und hat mit einem Eintrag nur eine Stufe |
 
 ## Ablauf
 

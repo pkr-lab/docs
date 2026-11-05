@@ -115,6 +115,8 @@ Kiosk-Modus per `file://`. Ablauf und Betrieb: [300e8](../3-apps-workloads/300e8
 
 ### cluster_power_manager, cluster_power_manager_target und wake_on_lan
 
+**Control-Planes sind kein Ziel.** `cluster_power_manager_workers` enthält nur Worker, die per WoL gesteuert werden dürfen (heute `worker-1`). controlplane-0 und controlplane-1 sind etcd-Mitglieder: Ein Poweroff nähme bei zwei Mitgliedern die API mit. Damit auch bereits verteilte Zugänge verschwinden, entfernt `cluster_power_manager_target` mit `cluster_power_manager_target_enabled: false` den Shutdown-Schlüssel und die sudoers-Freigabe (auf controlplane-1 gesetzt). Der Eintrag `cluster-power-manager@homeserver` im Schlüsselkommentar bleibt, er ist ein Name, kein Host.
+
 - `cluster_power_manager` läuft auf dem Homeserver und erzeugt das SSH-Schlüsselpaar, mit dem der Watchdog die Worker
   herunterfährt. Autorisiert wird der Public Key erst durch `cluster_power_manager_target` auf den Workern. Das Playbook mit
   `cluster_power_manager` muss also **vor** den Worker-Playbooks laufen.
@@ -194,6 +196,8 @@ Desktop-PC mit Ollama ([300g0](../../capulus-core/3-apps-workloads/300g0-ollama.
 - **`power_agent_wake_only_targets`.** Der PC steht nicht in `cluster_power_manager_workers`: Der Last-Watchdog würde ihn sonst wie einen Worker behandeln (wecken bei Last, herunterfahren). Das Ziel ist nur für `/wake` im power-agent bekannt. Einträge ohne MAC fallen aus `TARGETS` heraus, solange `host_vars/ollama-pc` fehlt.
 
 ### thermal_watchdog und resource_watchdog
+
+**Server nur mit Alarm.** `resource_watchdog_action` (`poweroff` oder `notify`) unterscheidet Worker von den k3s-Servern. `group_vars/k3s_servers.yml` setzt `notify`: Bei 90 % CPU/RAM über 300 s kommt eine ntfy-Meldung (Priorität 5, höchstens einmal je `resource_watchdog_alert_repeat_seconds`), der Host bleibt in Betrieb. Der Homeserver hat zuvor selbst abgeschaltet, das hätte bei etcd ein Mitglied entfernt. Schutz vor echtem Ressourcendruck liefern auf den Servern die Kubelet-Reserven und die Eviction-Schwelle (`k3s_kubelet_*`) sowie `thermal_watchdog` bei Überhitzung.
 
 - Der `thermal_watchdog` liest `/sys/class/hwmon` **direkt** (ohne Prometheus/k8s) und fährt den Host herunter, wenn der heißeste
   Sensor `THRESHOLD_C` für `SUSTAIN_SECONDS` erreicht (90 s = Mitte der gewünschten 1–2 Minuten), vorher geht eine ntfy-Meldung raus.

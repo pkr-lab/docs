@@ -1,12 +1,12 @@
-# Nightly Worker Update: automatisches apt-Update für worker-0/worker-1
+# Nightly Worker Update: automatisches apt-Update für die WoL-Worker
 
-worker-0 und worker-1 sind reine k3s-Compute-Nodes ohne die volle
+worker-1 ist ein reiner k3s-Compute-Node ohne die volle
 [`common`-Rolle](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/common) des Homeservers — sie bekommen
 dadurch nie ein OS-Update, zumal sie die meiste Zeit per
 [Cluster Power Manager](20020-cluster-power-manager.md) ausgeschaltet sind.
 `nightly_worker_wake` schließt diese Lücke: jede Nacht um 01:00 Uhr Berlin
-Zeit löst ein n8n-Workflow (Schedule-Trigger) das Wecken aus, beide Worker
-werden per Wake-on-LAN geweckt, per Semaphore `apt update && apt
+Zeit löst ein n8n-Workflow (Schedule-Trigger) das Wecken aus, alle Worker aus
+`cluster_power_manager_workers` (heute nur worker-1) werden per Wake-on-LAN geweckt, per Semaphore `apt update && apt
 dist-upgrade` gefahren (inkl. automatischem Reboot, falls ein
 Kernel-/libc-Update das verlangt), und danach bis spätestens 01:30 Uhr
 wieder heruntergefahren — hartes Zeitbudget von maximal 25 Minuten ab dem
@@ -14,6 +14,8 @@ ersten Wake. Am Ende jedes Laufs geht IMMER ein Bericht (was wurde
 geupdated, wo gab es Fehler, wurde rebootet) als Zammad-Ticket über n8n
 raus, siehe [Bericht (Zammad-Ticket via n8n)](#bericht-zammad-ticket-via-n8n)
 unten.
+
+> **Seit der Umstellung auf zwei Control-Planes** ist controlplane-1 (bisher worker-0) nicht mehr Teil dieses Zyklus: Er läuft dauerhaft, wird nie geweckt oder abgeschaltet und hat kein Semaphore-Projekt `worker-0` mehr (Projekt und Template heißen `controlplane-1` bzw. `Deploy controlplane-1`). Sein apt-Update läuft manuell über `make worker-apt-update`. Ein Neustart eines Servers braucht eine Prüfung des etcd-Verbunds, siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md). Die Beschreibungen und Beispiele unten nennen noch `worker-0`, sie stammen aus der Zeit davor.
 
 Das **lastbasierte** Zu-/Abschalten von worker-0/worker-1 tagsüber
 (CPU/RAM-Watchdog, unabhängig von der Uhrzeit) ist NICHT Teil dieses

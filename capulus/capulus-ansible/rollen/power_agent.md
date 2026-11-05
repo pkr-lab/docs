@@ -1,6 +1,8 @@
 # Rolle `power_agent`
 
-HTTP-API für Helligkeit, Wake und Shutdown aus der iOS-App.
+HTTP-API für Helligkeit, Wake und Shutdown aus der iOS-App. Wake und Shutdown gelten nur für die Ziele aus `power_agent_targets` (`worker-1`) und die Wake-only-Ziele (`ollama-pc`). `controlplane-1` ist kein Ziel mehr, eine Anfrage dafür beantwortet der Agent mit 400.
+
+> **Achtung `/poweroff-self`:** Der Aufruf fährt controlplane-0 herunter (drain, `k3s` stoppen, Poweroff). Mit zwei Control-Planes ist die Kubernetes-API ohne controlplane-0 nicht schreibbar, auch wenn controlplane-1 läuft. Bereits laufende Dienste laufen weiter. Die iOS-App warnt davor, [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md).
 
 | | |
 |---|---|

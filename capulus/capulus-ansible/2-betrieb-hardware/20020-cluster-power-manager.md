@@ -1,11 +1,15 @@
 # Cluster Power Manager: Worker per Wake-on-LAN dazuschalten
 
-Homeserver (192.168.178.94) läuft dauerhaft. worker-0 und worker-1
-(192.168.178.95/.96) sollen dagegen **nur dann laufen, wenn sie
-tatsächlich gebraucht werden**: Wird die Last auf dem Homeserver zu
-groß, weckt der Homeserver worker-0 per Wake-on-LAN (WoL), bei
-anhaltend hoher Last zusätzlich worker-1. Geht die Last wieder zurück,
-schaltet der Homeserver die Worker in umgekehrter Reihenfolge wieder ab.
+ControlPlane-0 (Homeserver, 192.168.178.94) und ControlPlane-1
+(192.168.178.95) laufen dauerhaft und sind **nicht** Teil dieses Features:
+Beide sind etcd-Mitglieder, ein Poweroff würde die API mitnehmen
+([400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md)).
+worker-1 (192.168.178.96) soll dagegen **nur dann laufen, wenn er
+tatsächlich gebraucht wird**: Wird die Last auf dem Homeserver zu
+groß, weckt der Homeserver ihn per Wake-on-LAN (WoL). Geht die Last wieder
+zurück, schaltet der Homeserver ihn wieder ab. Die Logik verarbeitet eine
+Liste von Workern (jeder weitere Eintrag wartet um die Stage-2-Zeit länger),
+heute steht dort nur worker-1.
 
 Ergänzt [thermal_watchdog/resource_watchdog](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md), die jeden Node
 bei **eigener** Übertemperatur/Überlast selbst herunterfahren — dieses
@@ -23,8 +27,8 @@ des Homeservers.
 │  ├─ pollt lokale CPU/RAM (kein Prometheus/k8s in der Messkette,                      │
 │  │  gleiches Prinzip wie resource_watchdog)                                         │
 │  │                                                                                   │
-│  ├─ Last sustained hoch  ──▶ wakeonlan worker-0-MAC ──▶ warten auf Ready            │
-│  │                            (weiter hoch) ──▶ wakeonlan worker-1-MAC              │
+│  ├─ Last sustained hoch  ──▶ wakeonlan worker-1-MAC ──▶ warten auf Ready            │
+│  │                            (weitere Worker in der Liste: nach Stage-2-Zeit)       │
 │  │                                                                                   │
 │  └─ Last sustained niedrig ──▶ kubectl cordon+drain ──▶ ssh poweroff                │
 │                                 (zuletzt geweckter Worker zuerst)                    │
@@ -32,7 +36,7 @@ des Homeservers.
               │ Magic Packet (UDP, Broadcast)      │ SSH (forced command: nur poweroff)
               ▼                                     ▼
 ┌─────────────────────┐                   ┌─────────────────────┐
-│ worker-0 (.95)       │                   │ worker-1 (.96)       │
+│ weiterer Worker      │                   │ worker-1 (.96)       │
 │ wake_on_lan-Rolle:   │                   │ wake_on_lan-Rolle:   │
 │ ethtool wol g beim   │                   │ ethtool wol g beim   │
 │ Boot (NIC muss WoL   │                   │ Boot                 │
@@ -61,9 +65,9 @@ abfließen sollte, kann damit nichts anderes ausgeführt werden.
 
 | Rolle | Läuft auf | Zweck |
 |---|---|---|
-| [`wake_on_lan`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/wake_on_lan) | worker-0, worker-1 | Aktiviert WoL (`ethtool wol g`) persistent bei jedem Boot |
+| [`wake_on_lan`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/wake_on_lan) | controlplane-1, worker-1 | Aktiviert WoL (`ethtool wol g`) persistent bei jedem Boot |
 | [`cluster_power_manager`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager) | homeserver | Erzeugt den Shutdown-SSH-Key, deployt den Watchdog (`cluster-power-manager.service`) |
-| [`cluster_power_manager_target`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager_target) | worker-0, worker-1 | Autorisiert den Public Key des Homeservers, beschränkt auf `poweroff` |
+| [`cluster_power_manager_target`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager_target) | worker-1 | Autorisiert den Public Key des Homeservers, beschränkt auf `poweroff`. Auf controlplane-1 mit `cluster_power_manager_target_enabled: false` nur zum Entfernen von Schlüssel und sudoers-Freigabe |
 | [`power_agent`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/power_agent) | homeserver | HTTP-Gegenstück für **manuelle** Wake-/Shutdown-Taps aus der iOS-App (siehe [capulus-core/3-apps-workloads/300d0-carplay-api.md](../../capulus-core/3-apps-workloads/300d0-carplay-api.md#power-agent)) — nutzt denselben SSH-Key, dieselbe `woke_at`-Buchführung und dieselbe Worker-Liste wie oben weiter, damit sich App-Taps und dieser automatische Last-Watchdog nicht widersprechen. Läuft direkt nach `cluster_power_manager` in `site.yml`. |
 
 Reihenfolge beim erstmaligen Rollout wichtig: `make install` (site.yml,
@@ -74,17 +78,17 @@ erzeugt den SSH-Key auf homeserver) **vor** `make controlplane-1` /
 
 ## Voraussetzungen
 
-1. **WoL im BIOS/UEFI aktivieren** — auf worker-0 und worker-1 einmalig
+1. **WoL im BIOS/UEFI aktivieren** — auf worker-1 (und für den Neustart nach Stromausfall auf controlplane-1) einmalig
    manuell (Bezeichnung je nach Hersteller z.B. "Power On by PCI-E",
    "Wake on LAN", "Resume by PME#"). Ansible kann das nicht setzen, nur
    den OS-seitigen Teil (`ethtool -s <iface> wol g`).
 2. **MAC-Adressen eintragen** — auf jedem Worker per
    `ip link show` ermitteln und in
-   `capulus-ansible/host_vars/worker-0/vars.yml` bzw. `worker-1/vars.yml` den
+   `capulus-ansible/host_vars/worker-1/vars.yml` den
    Platzhalter `wake_on_lan_mac_address` ersetzen. Ohne echte MAC kann
    `cluster_power_manager` diesen Worker nicht wecken — der Rollout
    warnt darauf hin, bricht aber nicht ab.
-3. Homeserver und beide Worker im selben L2-Segment
+3. Homeserver und worker-1 im selben L2-Segment
    (`192.168.178.0/24`) — WoL-Magic-Packets sind UDP-Broadcasts und
    werden von den meisten Routern/Switches nicht zwischen Subnetzen
    weitergeleitet.
@@ -95,8 +99,8 @@ erzeugt den SSH-Key auf homeserver) **vor** `make controlplane-1` /
 
 ```bash
 make install     # site.yml: k3s-Server + cluster_power_manager (SSH-Key)
-make controlplane-1    # wake_on_lan + cluster_power_manager_target auf worker-0
 make worker-1    # wake_on_lan + cluster_power_manager_target auf worker-1
+make controlplane-1    # wake_on_lan; entfernt den Shutdown-Schlüssel (cluster_power_manager_target_enabled: false)
 ```
 
 Nur den Power-Manager auf dem Homeserver neu deployen (z.B. nach
@@ -118,8 +122,8 @@ Defaults in
 |---|---|---|
 | `cluster_power_manager_cpu_scale_up_threshold` | 60% | CPU-Schwelle zum Hochskalieren |
 | `cluster_power_manager_ram_scale_up_threshold` | 60% | RAM-Schwelle zum Hochskalieren |
-| `cluster_power_manager_scale_up_sustain_seconds` | 60s | Wie lange sustained hoch, bevor worker-0 geweckt wird |
-| `cluster_power_manager_scale_up_sustain_seconds_stage2` | 200s | Zusätzliche Zeit, bevor auch worker-1 geweckt wird |
+| `cluster_power_manager_scale_up_sustain_seconds` | 60s | Wie lange sustained hoch, bevor der erste Worker (worker-1) geweckt wird |
+| `cluster_power_manager_scale_up_sustain_seconds_stage2` | 200s | Zusätzliche Zeit je weiterem Worker in der Liste (heute nicht genutzt) |
 | `cluster_power_manager_cpu_scale_down_threshold` | 30% | CPU-Schwelle zum Herunterskalieren |
 | `cluster_power_manager_ram_scale_down_threshold` | 30% | RAM-Schwelle zum Herunterskalieren |
 | `cluster_power_manager_scale_down_sustain_seconds` | 900s | Wie lange sustained niedrig, bevor EIN Worker abgeschaltet wird |
@@ -163,7 +167,7 @@ Manueller WoL-Test unabhängig vom Watchdog:
 
 ```bash
 # Von homeserver oder einem beliebigen Host im selben Subnetz:
-wakeonlan <mac-adresse-worker-0>
+wakeonlan <mac-adresse-worker-1>
 ```
 
 ---
@@ -247,6 +251,11 @@ von früh/sanft bis spät/hart:
    letzte Instanz, wenn Schicht 3 die Last nicht mehr abfangen konnte:
    fährt den kompletten Node herunter. Erreichbar dann nur noch über
    physischen Zugriff, NICHT mehr über Tailscale (Poweroff, kein Hang).
+   Auf den k3s-Servern (controlplane-0/-1) ist diese Schicht ein reiner
+   Alarm: `resource_watchdog_action: notify` schickt nur eine ntfy-Meldung
+   und lässt den Host laufen, weil ein Poweroff ein etcd-Mitglied und damit
+   bei zwei Mitgliedern die API mitnähme. `thermal_watchdog` (Hardware-Schutz)
+   schaltet weiterhin ab.
 
 Schicht 2 und 3 wurden ergänzt, nachdem ein reiner Shutdown ohne
 Vorwarnung (Schicht 1 + 4 allein) dazu führte, dass der Homeserver ohne
