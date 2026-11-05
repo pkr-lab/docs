@@ -267,6 +267,8 @@ Client-Gerät erneut installieren** (siehe
 [Client-Geräte](#client-geräte-vertrauensspeicher)), weil sich die CA
 selbst ändert.
 
+Zusätzlich liegt je eine Kopie der Root-CA in den Charts, deren Pods intern per HTTPS sprechen: `argocd/apps/tech/n8n/files/`, `argocd/apps/tech/uptime-kuma/files/` und `argocd/apps/tech/github-release-watcher/files/`. Alle drei beim CA-Tausch mit aktualisieren.
+
 ---
 
 ## Aufräumen

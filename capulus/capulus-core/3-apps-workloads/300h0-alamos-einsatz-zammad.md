@@ -161,7 +161,7 @@ Sekunden eintreffen, nicht nach einem Neustart).
    Sonst Token neu erzeugen wie in
    [f0040-github-release-watcher.md, Schritt 1](../f-cicd-automatisierung/f0040-github-release-watcher.md#schritt-1--zammad-api-token-erzeugen)
    beschrieben, Credential in n8n neu anlegen: Typ "Zammad Token Auth API",
-   Base URL `http://zammad.tech.homeserver`, Access Token aus Schritt 1.
+   Base URL `https://zammad.tech.homeserver` (nicht `http://`: der TECH-Traefik antwortet auf HTTP mit `308`, und der Zammad-Node folgt dem bei POST nicht), „Ignore SSL Issues“ aus. n8n vertraut der Homeserver-Root-CA über `NODE_EXTRA_CA_CERTS`, siehe [30070](30070-n8n.md#interne-ca). Access Token aus Schritt 1.
 2. **n8n:** `alamos-einsatz-to-zammad.json` importieren, im Node
    "Zammad-Ticket erstellen" die Credential aus Schritt 1 zuweisen —
    Credential-IDs werden beim Import nicht übernommen, normaler
@@ -215,7 +215,7 @@ Sekunden eintreffen, nicht nach einem Neustart).
 | Test-Call (z. B. `curl` gegen alamos-relay ohne Query-Parameter) erzeugt kein Ticket | **Erwartetes Verhalten**, siehe [Leere Test-Calls werden übersprungen](#leere-test-calls-werden-übersprungen-nicht-geticketet) — kein Fehler, nur ein Log-Eintrag |
 | Ticket wird unterdrückt, obwohl es ein neuer Einsatz war | `DEDUP_WINDOW_MS` zu großzügig, oder `keyword`/`unit` fehlen und der Fallback-Payload-Vergleich trifft zufällig — Rohdaten in der n8n-Execution ansehen |
 | Ticket erstellt, aber keine Mail | Zammad-Agenten-Mitgliedschaft/Benachrichtigung prüfen (siehe oben), ausgehender E-Mail-Kanal in Zammad konfiguriert? |
-| n8n-Workflow schlägt am Zammad-Node fehl | Credential vom Typ "Zammad Token Auth API" zugewiesen (nicht die Header-Auth-Credential aus `banana-pi-down-to-zammad.json`)? Base URL korrekt (`http://zammad.tech.homeserver`)? Token gültig/`ticket.agent`-Berechtigung? |
+| n8n-Workflow schlägt am Zammad-Node fehl | Credential vom Typ "Zammad Token Auth API" zugewiesen (nicht die Header-Auth-Credential aus `banana-pi-down-to-zammad.json`)? Base URL korrekt (`https://zammad.tech.homeserver`; mit `http://` kommt `308 Permanent Redirect`)? Token gültig/`ticket.agent`-Berechtigung? |
 | Webhook kommt gar nicht in n8n an | Erst [alamos-relay](300i0-alamos-relay.md#fehlerbehebung) prüfen (`kubectl -n alamos-relay logs deploy/alamos-relay`, korrektes Token in der Alamos-Konfiguration?) — kommt der Call dort schon nicht an, liegt es an Alamos/DNS, nicht an n8n. Kommt er beim Relay an, aber nicht bei n8n: NetworkPolicy-Rollout aus [300i0, Rollout](300i0-alamos-relay.md#rollout-nach-dem-ersten-push) vollständig durchgelaufen? |
 
 ## Relevante Links

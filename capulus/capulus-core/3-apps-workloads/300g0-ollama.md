@@ -230,6 +230,7 @@ Der PC schläft nach Leerlauf wieder ein, damit er nicht dauerhaft läuft. Der T
 | Prüfung | Zutreffend, wenn |
 |---|---|
 | Ollama | `GET /api/ps` meldet ein geladenes Modell (läuft eine Anfrage, oder die `keep_alive`-Frist von 30 Minuten ist noch nicht abgelaufen) |
+| Ollama-Befehl | ein `ollama pull`, `run`, `create` oder `push` läuft (ein Modell-Download erzeugt kaum Last und lädt kein Modell, soll aber nicht durch einen Suspend unterbrochen werden) |
 | Sitzung | eine logind-Sitzung hat `IdleHint=no` (jemand arbeitet am Desktop) |
 | Sperre | ein Programm hält eine blockierende Sperre gegen `sleep` oder `idle` (`systemd-inhibit --list`, z. B. Download, Video) |
 | Last | der 5-Minuten-Lastwert liegt bei `ollama_pc_idle_suspend_max_load` oder darüber |
