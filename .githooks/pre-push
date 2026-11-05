@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+protected='^refs/heads/(main|master)$'
+zero='0000000000000000000000000000000000000000'
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_ref" =~ $protected ]]; then
+    echo "Push nach ${remote_ref#refs/heads/} blockiert: Änderungen gehen nur per PR hinein." >&2
+    if [[ "$local_sha" != "$zero" ]]; then
+      branch="$(git rev-parse --abbrev-ref HEAD)"
+      echo "Stattdessen auf den eigenen Branch pushen: git push origin ${branch}" >&2
+    fi
+    exit 1
+  fi
+done
