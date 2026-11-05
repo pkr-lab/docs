@@ -28,6 +28,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `k3s_mode` | `single` | `single`, `init` oder `join`, siehe oben |
 | `k3s_primary_host` | erster Host der Gruppe `k3s_primary` | Quelle von Join-Token und `server:`-URL |
 | `k3s_resolv_nameservers` | `[]` (auf den k3s-Servern `network_static_ip`, `1.1.1.1`, `8.8.8.8`) | Nameserver für kubelet und CoreDNS. Nicht leer: Die Rolle schreibt `/etc/rancher/k3s/resolv.conf` und setzt `resolv-conf` darauf. Leer: `/run/systemd/resolve/resolv.conf` wie bisher (prod-vm, entw-vm) |
+| `k3s_resolv_search` | `[]` (auf den k3s-Servern `tail532fb5.ts.net`, `andernach.dlrg-jugend.de`) | `search`-Zeile der eigenen `resolv.conf`. Ohne sie verlören Pods die Such-Domains des Hosts, die kubelet sonst aus `systemd-resolved` übernimmt |
 | `k3s_resolv_conf_path` | abgeleitet | Pfad, der als `resolv-conf` in die Config kommt |
 | `k3s_node_taints` | `[]` | Taints, die der Node bei der Registrierung bekommt (`node-taint`). controlplane-1 setzt `capulus.homeserver/protected=true:PreferNoSchedule`. Ein Taint in der Config wirkt nur bei der Erstregistrierung |
 | `k3s_tls_san_extra` | `[]` | zusätzliche Einträge für `tls-san` (später die Tailscale-Adresse von ControlPlane-2). Die Liste enthält sonst IP, Inventarname und Nodename aller Server |
