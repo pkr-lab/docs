@@ -1,6 +1,6 @@
 # Rolle `resource_watchdog`
 
-Selbst-Abschaltung bei Dauerlast.
+Selbst-Abschaltung bei Dauerlast, auf den k3s-Servern nur Alarm.
 
 | | |
 |---|---|
@@ -15,6 +15,8 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | Variable | Default | Bedeutung |
 |---|---|---|
 | `resource_watchdog_enabled` | `true` | – |
+| `resource_watchdog_action` | `poweroff` | `poweroff` fährt den Host bei Dauerlast herunter (Worker, Kiosks). `notify` schickt nur einen ntfy-Alarm (Priorität 5) und lässt den Host laufen. `group_vars/k3s_servers.yml` setzt `notify` |
+| `resource_watchdog_alert_repeat_seconds` | `3600` | Mindestabstand zwischen zwei Alarmen im Modus `notify` |
 | `resource_watchdog_poll_seconds` | `10` | – |
 | `resource_watchdog_cpu_threshold` | `90` | – |
 | `resource_watchdog_cpu_sustain_seconds` | `300` | – |
@@ -65,6 +67,7 @@ cat /etc/resource-watchdog/*.env
 
 | Symptom | Ursache | Lösung |
 |---|---|---|
+| Auf controlplane-0 oder controlplane-1 kommt ein Alarm „Dauerhaft hohe CPU/RAM-Auslastung“, der Host bleibt an | `resource_watchdog_action: notify` auf den k3s-Servern (gewollt: ein Poweroff würde ein etcd-Mitglied und bei zwei Mitgliedern die API mitnehmen) | Ursache der Last suchen, Alarm wiederholt sich höchstens alle `resource_watchdog_alert_repeat_seconds` |
 | Host schaltet sich ab | Dauerlast über der Schwelle (CPU und RAM 90 % über 300 s) — gewollter Selbstschutz | Ursache der Last suchen ([Monitoring](../../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md)), Schwellen unter `resource_watchdog_*` anpassen |
 | Warnmeldungen (85 % CPU, 80 % RAM über 60 s) fehlen | Meldung an ntfy scheitert | [ntfy_publisher](ntfy_publisher.md), Topic `Home-Lab-System` |
 | Dienst läuft nicht | Instanz nicht aktiviert (Vorlage `resource-watchdog@.service`) | `systemctl enable --now resource-watchdog@<name>` |

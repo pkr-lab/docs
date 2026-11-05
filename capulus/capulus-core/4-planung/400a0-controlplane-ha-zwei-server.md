@@ -66,7 +66,7 @@ Die Reihenfolge ist zwingend, weil die Umstellung SQLite → etcd eine Einbahnst
 | AP | Inhalt | Stand |
 |---|---|---|
 | 1 | Namensschema und Inventar (nur Code, keine Node-Änderung) | Code vorbereitet |
-| 2 | Entkopplung vom Power-Management, Watchdog-Umstellung | offen |
+| 2 | Entkopplung vom Power-Management, Watchdog-Umstellung | ausgerollt (2026-11-05) |
 | 3 | etcd und Server-Join, Runbook | offen |
 | 4 | Monitoring und Alarme | offen |
 | 5 | Verlagerung einzelner Apps nach ControlPlane-1 | offen, nach Messwerten |
@@ -87,7 +87,20 @@ Folgen, die beim Ausrollen zu beachten sind:
 | Vault-Variablen mit alten Namen | `k3s_server_host` wird in `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml` überschrieben (Kindgruppe schlägt `all`), eine Vault-Änderung ist nicht nötig. Aufräumen im Vault macht der Nutzer selbst |
 | `ops/token-register.yaml` (capulus-core) | `stored_in` zeigt auf `host_vars/controlplane-1/vars.yml`. Der Gerätename für die Live-Prüfung des Tailscale-Keys bleibt `worker-0`, bis das Gerät in AP3 umbenannt ist |
 
-### AP2 bis AP7
+### AP2: Entkopplung
+
+| Änderung | Begründung |
+|---|---|
+| `cluster_power_manager_workers` enthält nur `worker-1`, `nightly_worker_wake` und `power_agent_targets` folgen | Der Power-Manager darf kein etcd-Mitglied herunterfahren. Die Stufenlogik bleibt generisch, mit einem Eintrag gibt es eine Stufe |
+| `cluster_power_manager_target_enabled: false` auf controlplane-1 | Die Rolle entfernt Schlüssel (`cluster-power-manager@homeserver`) und sudoers-Datei. Ohne das könnte der Homeserver controlplane-1 weiter per SSH abschalten |
+| `resource_watchdog_action: notify` für die Gruppe `k3s_servers` | Ein Poweroff bei 90 % Dauerlast nähme ein etcd-Mitglied mit. Der Homeserver hat bisher selbst abgeschaltet und verhält sich jetzt wie controlplane-1. `thermal_watchdog` bleibt |
+| Semaphore-Projekt `worker-0` heißt `controlplane-1` | Der nächtliche Zyklus sucht Projekt und Template nach dem Worker-Namen, er kennt controlplane-1 nicht mehr |
+| carplay-api: Host-ID `controlplane-1`, kein Power-Target `worker-0` | Die iOS-Power-Ansicht zeigt controlplane-1 nur als Statuskarte. Alte App-Builds zeigen bis zum Update eine falsche Karte, Wake/Shutdown für `worker-0` beantwortet der power-agent mit 400 |
+| Warnung beim Herunterfahren von controlplane-0 über die App | `/poweroff-self` stoppt k3s auf controlplane-0, mit zwei Mitgliedern ist die API danach nicht schreibbar |
+
+Beim Ausrollen gilt die Reihenfolge: erst `site.yml` (Power-Manager-Liste ohne worker-0), dann controlplane-1 (Schlüssel entfernen), sonst fährt der alte Power-Manager controlplane-1 wieder herunter.
+
+### AP3 bis AP7
 
 Die Inhalte stehen im jeweiligen Abschnitt, sobald das Paket umgesetzt ist. Vorab die Randbedingungen, die schon feststehen:
 

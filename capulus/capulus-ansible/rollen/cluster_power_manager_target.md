@@ -1,10 +1,10 @@
 # Rolle `cluster_power_manager_target`
 
-autorisiert den Shutdown-Schlüssel, beschränkt auf `poweroff`.
+autorisiert den Shutdown-Schlüssel, beschränkt auf `poweroff`. Mit `cluster_power_manager_target_enabled: false` entfernt die Rolle Schlüssel und sudoers-Freigabe wieder.
 
 | | |
 |---|---|
-| Läuft gegen | controlplane-1, worker-1 |
+| Läuft gegen | worker-1 (controlplane-1 mit `cluster_power_manager_target_enabled: false`, nur zum Aufräumen) |
 | Tags | `cluster-power-manager-target`, `power-management` |
 | Quellcode | [roles/cluster_power_manager_target](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager_target) |
 
@@ -14,15 +14,20 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 | Variable | Default | Bedeutung |
 |---|---|---|
+| `cluster_power_manager_target_enabled` | `true` | `false` entfernt den `authorized_keys`-Eintrag (`cluster-power-manager@homeserver`) und `/etc/sudoers.d/cluster-power-manager`. Auf `controlplane-1` gesetzt, damit der Homeserver ihn nicht mehr per SSH abschalten kann |
 | `cluster_power_manager_ssh_user` | `ubuntu` | – |
 | `cluster_power_manager_ssh_key_path` | `/etc/cluster-power-manager/id_ed25519` | – |
 | `cluster_power_manager_poweroff_bin` | `/usr/sbin/poweroff` | – |
 
 ## Ablauf
 
+Bei `cluster_power_manager_target_enabled: true`:
+
 1. Public Key des cluster-power-manager vom Homeserver lesen
 2. cluster-power-manager-Key autorisieren (nur für poweroff, forced command)
 3. Passwortlosen sudo für poweroff erlauben ({{ cluster_power_manager_ssh_user }})
+
+Bei `false`: Schlüssel aus `authorized_keys` entfernen, sudoers-Freigabe löschen.
 
 ---
 
