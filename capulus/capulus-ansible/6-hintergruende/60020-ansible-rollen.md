@@ -147,7 +147,7 @@ Kiosk-Modus per `file://`. Ablauf und Betrieb: [300e8](../3-apps-workloads/300e8
 - Der **automatische Reboot** bei Kernel-/libc-Updates läuft im selben Semaphore-Task, den `nightly_worker_wake` ohnehin bis zu
   `nightly_worker_wake_max_runtime_seconds` abwartet, ein eigener Schritt im Orchestrator-Skript ist nicht nötig. `cordon`+`drain`
   laufen **vor** dem Reboot, damit Pods sauber evakuiert werden statt beim harten Neustart abzureißen. Das Uncordon übernimmt die
-  Play „Uncordon nach Provisioning“ am Ende von `worker-0.yml`/`worker-1.yml`, die immer läuft.
+  Play „Uncordon nach Provisioning“ am Ende von `controlplane-1.yml`/`worker-1.yml`, die immer läuft.
   `worker_apt_update_reboot_timeout_seconds` (300) gilt für den Neustart samt erneuter Erreichbarkeit und für die Wartezeit danach, bis
   sich k3s-Agent und Netzwerk gesetzt haben.
 
@@ -249,9 +249,15 @@ Desktop-PC mit Ollama ([300g0](../../capulus-core/3-apps-workloads/300g0-ollama.
   `/dev/nvme*`) und scannt alle Platten selbst (`smartctl --scan`). Er lauscht auf dem Default-Port `9633` des Ubuntu-Pakets
   `prometheus-smartctl-exporter`, der Cluster scrapt ihn per `VMStaticScrape`.
 
+### Namensschema und Variablenvorrang
+
+Der Inventar-Host und der k3s-Nodename sind getrennt: `k3s_node_name` (Standard `inventory_hostname`) speist `node-name` in der k3s-Config, die Vault-abhängige Variable `hostname` ist dafür nicht mehr zuständig. Ein k3s-Nodename lässt sich nicht ändern, eine Umbenennung wäre ein neuer Node mit verwaisten `local-path`-PVs. Deshalb setzt `controlplane-0` weiter `k3s_node_name: homeserver`.
+
+Werte, die im Vault noch den alten Hostnamen tragen (`k3s_server_host`), werden in unverschlüsselten `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml` überschrieben. Ansible lässt Kindgruppen die Variablen von `all` überstimmen, so ist keine Vault-Änderung nötig. Details: [60010](../../capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md#namensschema-inventar-host-gruppen-und-k3s-nodename).
+
 ### k3s_agent: Host-Firewall
 
-`k3s_agent_ufw_enable` (Standard `false`, auf worker-1 `true`) schaltet UFW auf einem Worker scharf: Vollzugriff nur für `k3s_agent_ufw_trusted_hosts` (homeserver, worker-0), SSH aus dem LAN, Tailscale `41641/udp`, Flannel aus dem LAN, Pod- und Service-Netz, `default deny`. Mit `k3s_agent_ufw_vm_bridge: br0` kommt `ufw route allow in on br0 out on br0` dazu: worker-1 betreibt die ENTW-VM über die Bridge, und weil `net.bridge.bridge-nf-call-iptables=1` gesetzt ist, läuft deren Verkehr durch die iptables-`FORWARD`-Kette; ohne diese Regel (`deny routed`) wäre die VM vom LAN getrennt. Ohne den Schalter legt die Rolle nur die Regeln an, **aktiviert aber UFW nie**; bis zum 2026-10-18 stand worker-1 deshalb mit „inactive“ da, obwohl die Regeln vorgemerkt waren und `ufw` laut systemd `active` meldete. Vor dem Einschalten auf einem Worker: Backup von `/etc/ufw`, Rollback-Timer (`systemd-run --on-active=15min ufw disable`), danach zweite SSH-Session und Prüfung von Node-Status, Exportern und (worker-1) der ENTW-VM. Tailscale-Verkehr läuft über `ts-input` vor UFW und ist von den Regeln nicht betroffen. Auf worker-0 (ohne VM-Bridge, aber mit Docker-Containern) ist der Schalter ebenfalls an; die Rolle entfernt dort die älteren offenen Regeln (LAN mit Vollzugriff, SSH von überall, kubelet aus dem LAN). Dockers veröffentlichte Ports (`3002`, `3003`, `8001`, `18080`) laufen über Dockers eigene NAT-/`FORWARD`-Regeln und sind von den UFW-Eingangsregeln unabhängig.
+`k3s_agent_ufw_enable` (Standard `false`, auf worker-1 `true`) schaltet UFW auf einem Worker scharf: Vollzugriff nur für `k3s_agent_ufw_trusted_hosts` (controlplane-0, controlplane-1), SSH aus dem LAN, Tailscale `41641/udp`, Flannel aus dem LAN, Pod- und Service-Netz, `default deny`. Mit `k3s_agent_ufw_vm_bridge: br0` kommt `ufw route allow in on br0 out on br0` dazu: worker-1 betreibt die ENTW-VM über die Bridge, und weil `net.bridge.bridge-nf-call-iptables=1` gesetzt ist, läuft deren Verkehr durch die iptables-`FORWARD`-Kette; ohne diese Regel (`deny routed`) wäre die VM vom LAN getrennt. Ohne den Schalter legt die Rolle nur die Regeln an, **aktiviert aber UFW nie**; bis zum 2026-10-18 stand worker-1 deshalb mit „inactive“ da, obwohl die Regeln vorgemerkt waren und `ufw` laut systemd `active` meldete. Vor dem Einschalten auf einem Worker: Backup von `/etc/ufw`, Rollback-Timer (`systemd-run --on-active=15min ufw disable`), danach zweite SSH-Session und Prüfung von Node-Status, Exportern und (worker-1) der ENTW-VM. Tailscale-Verkehr läuft über `ts-input` vor UFW und ist von den Regeln nicht betroffen. Auf worker-0 (ohne VM-Bridge, aber mit Docker-Containern) ist der Schalter ebenfalls an; die Rolle entfernt dort die älteren offenen Regeln (LAN mit Vollzugriff, SSH von überall, kubelet aus dem LAN). Dockers veröffentlichte Ports (`3002`, `3003`, `8001`, `18080`) laufen über Dockers eigene NAT-/`FORWARD`-Regeln und sind von den UFW-Eingangsregeln unabhängig.
 
 ### journal_upload
 
@@ -305,7 +311,7 @@ Desktop-PC mit Ollama ([300g0](../../capulus-core/3-apps-workloads/300g0-ollama.
     serialisiert `"{{ x | int }}"` als JSON-String, und Semaphores strikter Go-Decoder antwortet mit HTTP 400 (z. B. `ssh_key_id`,
     `project_id`).
   - **Repository** (`git_url`, `git_branch`) wird bei Abweichung per PUT nachgezogen. Ohne das behielt ein vorhandenes Repository
-    `home-server-git` nach der Aufspaltung die URL von capulus-core, während die Templates schon auf `site.yml` und `worker-0.yml`
+    `home-server-git` nach der Aufspaltung die URL von capulus-core, während die Templates schon auf `site.yml` und `controlplane-1.yml`
     zeigten, die dort nicht mehr liegen: Semaphore fand das Playbook nicht (Stand 2026-10-19, Nachprüfung
     [600b0](../../capulus-core/6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md)).
   - **Schedules** (`cron`) sind self-healing: existiert der Name schon, wird der komplette Body per PUT neu gesetzt. Sie laufen in

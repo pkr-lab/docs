@@ -4,7 +4,7 @@ Kubernetes-Server und Helm, je Cluster eigene CIDRs.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver, prod-vm, entw-vm |
+| Läuft gegen | controlplane-0, prod-vm, entw-vm (später auch controlplane-1) |
 | Tags | – |
 | Quellcode | [roles/k3s](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/k3s) |
 
@@ -16,6 +16,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 |---|---|---|
 | `k3s_installer_url` | `https://raw.githubusercontent.com/k3s-io/k3s/2977c525a2e7a487886107ce4df43630ae9b03b2/i…` | – |
 | `k3s_installer_sha256` | `e5cc3b3d9dfc1662c2d9be6da5abc9a4cd317d6abc3a5ffc02e3dd3248207fee` | – |
+| `k3s_node_name` | `{{ inventory_hostname }}` | Nodename in k3s (`node-name`). `controlplane-0` setzt `homeserver` in den `host_vars`, weil ein Nodename nicht änderbar ist |
 | `k3s_helm_release` | `v3.22.1` | – |
 | `k3s_helm_arch` | `{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}` | – |
 

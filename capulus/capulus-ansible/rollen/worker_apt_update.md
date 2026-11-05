@@ -4,7 +4,7 @@ apt-Update der Worker (haben keine `common`-Rolle).
 
 | | |
 |---|---|
-| Läuft gegen | worker-0, worker-1 |
+| Läuft gegen | controlplane-1, worker-1 |
 | Tags | `apt-update`, `updates` |
 | Quellcode | [roles/worker_apt_update](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/worker_apt_update) |
 

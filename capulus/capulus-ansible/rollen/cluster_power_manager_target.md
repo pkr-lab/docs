@@ -4,7 +4,7 @@ autorisiert den Shutdown-Schlüssel, beschränkt auf `poweroff`.
 
 | | |
 |---|---|
-| Läuft gegen | worker-0, worker-1 |
+| Läuft gegen | controlplane-1, worker-1 |
 | Tags | `cluster-power-manager-target`, `power-management` |
 | Quellcode | [roles/cluster_power_manager_target](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager_target) |
 
@@ -38,7 +38,7 @@ ssh -i /etc/cluster-power-manager/id_ed25519 ubuntu@worker-0     # auf dem Homes
 
 | Symptom | Ursache | Lösung |
 |---|---|---|
-| Shutdown des Workers schlägt fehl (`Permission denied (publickey)`) | Schlüssel des Power-Managers nicht in `authorized_keys` des Workers | Rolle auf dem Worker erneut ausrollen (`make worker-0`/`worker-1`) |
+| Shutdown des Workers schlägt fehl (`Permission denied (publickey)`) | Schlüssel des Power-Managers nicht in `authorized_keys` des Workers | Rolle auf dem Worker erneut ausrollen (`make controlplane-1`/`worker-1`) |
 | Befehl wird abgewiesen | der Schlüssel ist per `command=` auf `poweroff` beschränkt, andere Befehle funktionieren nicht | gewollt, nur `poweroff` ausführen |
 | `sudo: a password is required` | Sudoers-Eintrag für `poweroff` fehlt | Rolle erneut ausrollen, Datei unter `/etc/sudoers.d/` prüfen |
 

@@ -4,11 +4,13 @@ Cluster-Beitritt (TECH) per Join-Token vom Control-Plane.
 
 | | |
 |---|---|
-| Läuft gegen | worker-0, worker-1 |
+| Läuft gegen | controlplane-1 (bis zur Umstellung auf Server, siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md)), worker-1 |
 | Tags | – |
 | Quellcode | [roles/k3s_agent](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/k3s_agent) |
 
 ## Variablen
+
+Der Server, bei dem der Agent beitritt, kommt aus `k3s_server_host` (`controlplane-0`, gesetzt in `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml`, nicht im Vault). Der k3s-Nodename ist `k3s_agent_hostname` aus den `host_vars`.
 
 Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`.
 
@@ -79,7 +81,7 @@ kubectl get nodes -o wide              # auf dem Homeserver
 
 | Symptom | Ursache | Lösung |
 |---|---|---|
-| Worker tritt nicht bei (`Unauthorized`, Timeout zur Server-URL) | Join-Token veraltet (Control-Plane neu aufgesetzt) oder Server nicht erreichbar (UFW, Netz, Tailscale) | Rolle erneut ausrollen: sie liest den Token neu von `/var/lib/rancher/k3s/server/node-token` des Servers (`make worker-0`/`worker-1`) |
+| Worker tritt nicht bei (`Unauthorized`, Timeout zur Server-URL) | Join-Token veraltet (Control-Plane neu aufgesetzt) oder Server nicht erreichbar (UFW, Netz, Tailscale) | Rolle erneut ausrollen: sie liest den Token neu von `/var/lib/rancher/k3s/server/node-token` des Servers (`make controlplane-1`/`worker-1`) |
 | Pods auf dem Worker starten nicht (NFS) | `nfs-common` fehlt oder NAS nicht erreichbar | Paket installieren (die Rolle tut das), [NAS-Speicher](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#fehlerbehebung) |
 | Kubelet nicht erreichbar vom Server (`logs`, `exec` schlagen fehl) | UFW blockiert Port 10250 vom Server | Regel „kubelet API von k3s-Server“ (die Rolle setzt sie), UFW-Status prüfen |
 | Netz zwischen Nodes gestört | VXLAN (UDP 8472) nur aus dem LAN erlaubt | Firewall und Flannel prüfen ([k3s](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md#fehlersuche)) |

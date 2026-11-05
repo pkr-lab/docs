@@ -67,7 +67,7 @@ abfließen sollte, kann damit nichts anderes ausgeführt werden.
 | [`power_agent`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/power_agent) | homeserver | HTTP-Gegenstück für **manuelle** Wake-/Shutdown-Taps aus der iOS-App (siehe [capulus-core/3-apps-workloads/300d0-carplay-api.md](../../capulus-core/3-apps-workloads/300d0-carplay-api.md#power-agent)) — nutzt denselben SSH-Key, dieselbe `woke_at`-Buchführung und dieselbe Worker-Liste wie oben weiter, damit sich App-Taps und dieser automatische Last-Watchdog nicht widersprechen. Läuft direkt nach `cluster_power_manager` in `site.yml`. |
 
 Reihenfolge beim erstmaligen Rollout wichtig: `make install` (site.yml,
-erzeugt den SSH-Key auf homeserver) **vor** `make worker-0` /
+erzeugt den SSH-Key auf homeserver) **vor** `make controlplane-1` /
 `make worker-1` (lesen den Public Key per `delegate_to` vom Homeserver).
 
 ---
@@ -95,7 +95,7 @@ erzeugt den SSH-Key auf homeserver) **vor** `make worker-0` /
 
 ```bash
 make install     # site.yml: k3s-Server + cluster_power_manager (SSH-Key)
-make worker-0    # wake_on_lan + cluster_power_manager_target auf worker-0
+make controlplane-1    # wake_on_lan + cluster_power_manager_target auf worker-0
 make worker-1    # wake_on_lan + cluster_power_manager_target auf worker-1
 ```
 
@@ -193,7 +193,7 @@ sudo ssh -i /etc/cluster-power-manager/id_ed25519 ubuntu@192.168.178.95 whoami
 ```
 
 Falls die SSH-Verbindung mit `Permission denied` fehlschlägt: Lief
-`make worker-0`/`make worker-1` **nach** `make install`? Der Public Key
+`make controlplane-1`/`make worker-1` **nach** `make install`? Der Public Key
 muss zuerst auf homeserver existieren, bevor er auf den Workern
 autorisiert werden kann.
 

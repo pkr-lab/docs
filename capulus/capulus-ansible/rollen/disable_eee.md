@@ -4,7 +4,7 @@ Energy Efficient Ethernet dauerhaft deaktivieren (Realtek-NIC-Link-Drops).
 
 | | |
 |---|---|
-| Läuft gegen | homeserver, worker-0, worker-1 |
+| Läuft gegen | controlplane-0, controlplane-1, worker-1 |
 | Tags | `disable-eee`, `network` |
 | Quellcode | [roles/disable_eee](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/disable_eee) |
 

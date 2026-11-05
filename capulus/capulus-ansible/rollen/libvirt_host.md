@@ -4,7 +4,7 @@ KVM/libvirt, Bridge `br0`, legt `prod-vm` bzw. `entw-vm` an.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver, worker-1 |
+| Läuft gegen | controlplane-0, worker-1 |
 | Tags | `libvirt-host`, `virtualization` |
 | Quellcode | [roles/libvirt_host](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/libvirt_host) |
 

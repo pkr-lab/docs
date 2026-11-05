@@ -4,7 +4,7 @@ Wiederherstellung der Vaultwarden-Daten aus dem NAS-Backup.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `vaultwarden-restore` |
 | Quellcode | [roles/vaultwarden_restore](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/vaultwarden_restore) |
 

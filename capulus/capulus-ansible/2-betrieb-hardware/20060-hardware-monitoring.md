@@ -161,7 +161,7 @@ ansible-playbook -i inventory/hosts.yml entw.yml --tags node-exporter --ask-vaul
 # S.M.A.R.T.-Exporter auf den physischen Nodes (worker-0 nur, wenn er gerade wach ist)
 ansible-playbook -i inventory/hosts.yml site.yml     --tags smartctl-exporter --limit homeserver --ask-vault-pass
 ansible-playbook -i inventory/hosts.yml worker-1.yml --tags smartctl-exporter --ask-vault-pass
-ansible-playbook -i inventory/hosts.yml worker-0.yml --tags smartctl-exporter --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml controlplane-1.yml --tags smartctl-exporter --ask-vault-pass
 ```
 
 Ohne `--tags` installieren die Playbooks die Rollen ohnehin bei jedem

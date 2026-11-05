@@ -18,7 +18,7 @@ Alle Fixes liegen als lokale Commits auf eigenen Branches, nichts ist gepusht.
 
 | Nr | Befund | Repo / Datei | Fix (Branch, Commit) |
 |---|---|---|---|
-| 1 | Semaphore-Repository `home-server-git` behält nach erneutem Bootstrap die alte `git_url` (capulus-core), die Templates zeigen aber auf `site.yml` und `worker-0.yml`, die dort nicht mehr liegen. Der tägliche Lauf 06:00 würde das Playbook nicht finden. Live nicht prüfbar. | capulus-ansible, `roles/semaphore_bootstrap/tasks/repository.yml` | `fix/semaphore-repository-update`, `35474a9`. Test gegen Mock-API: PUT nur bei abweichender URL oder Branch, POST nur bei fehlendem Repo, sonst nichts. |
+| 1 | Semaphore-Repository `home-server-git` behält nach erneutem Bootstrap die alte `git_url` (capulus-core), die Templates zeigen aber auf `site.yml` und `controlplane-1.yml`, die dort nicht mehr liegen. Der tägliche Lauf 06:00 würde das Playbook nicht finden. Live nicht prüfbar. | capulus-ansible, `roles/semaphore_bootstrap/tasks/repository.yml` | `fix/semaphore-repository-update`, `35474a9`. Test gegen Mock-API: PUT nur bei abweichender URL oder Branch, POST nur bei fehlendem Repo, sonst nichts. |
 | 2 | wiki-sync-Chart bleibt auf `v1.0.0`, Renovate öffnet keinen PR (Ursache unten). | capulus-core, `renovate.json` | `fix/renovate-wiki-sync-release-age`, `05ed5fb` |
 | 3 | `argocd/bootstrap/projects.yaml` ist gegenüber dem Template der Rolle `argocd` veraltet (`metallb-system` fehlt). Drift stammt aus dem Monorepo (capulus-ansible `36f69f2`), nicht aus dem Split. Kein Live-Effekt: der AppProject kommt per `kubectl apply` aus dem Template, die Datei in core dient nur der CI-Validierung. | capulus-core, `argocd/bootstrap/projects.yaml` | `chore/bootstrap-projects-render`, `6af3bb7` (erzeugt mit `make render-bootstrap`) |
 | 4 | Root-CA-Quellverweis `docs/assets/` im Template zeigt ins Leere (Quelle ist `pki/`). Gerenderte Objekte unverändert. | capulus-core, `argocd/apps/tech/github-release-watcher/templates/ca-configmap.yaml` | `chore/ca-configmap-quellpfad`, `5a552e2` |
@@ -153,7 +153,7 @@ Noch offen, jeweils mit Befehl bzw. Handgriff:
 |---|---|
 | ArgoCD-CLI | `argocd login argocd.tech.homeserver` (Token abgelaufen), danach `argocd app list`. |
 | Semaphore-Repository | In der Oberfläche Projekt `home-server` → Repositories → `home-server-git`: URL muss `https://github.com/pkr-lab/capulus-ansible.git` sein. Sonst nach dem Merge von Fix Nr. 1 `make semaphore-bootstrap` ausführen (**ändert Semaphore-Konfiguration**). Dazu den Verlauf des täglichen 06:00-Templates seit 2026-10-18 ansehen. |
-| Ansible mit Vault | `make check` bzw. `make worker-0-check` mit Vault-Passwort. Vorher `ssh_hardening` im Check-Modus beachten (bricht ab). |
+| Ansible mit Vault | `make check` bzw. `make controlplane-1-check` mit Vault-Passwort. Vorher `ssh_hardening` im Check-Modus beachten (bricht ab). |
 | PROD-Cluster | Kubeconfig-Kontext für PROD (VM `prod-vm`) fehlt auf diesem Rechner; wiki-docs-sync dort nach dem Renovate-PR auf `v1.1.0` prüfen: `kubectl --context prod -n wiki-docs-sync get cronjob,job`. |
 | worker-1 | Seit mindestens einem Tag ausgefallen (`NotReady`, Tailscale „offline“). Betrifft ollama und die ENTW-VM. Ursache nicht untersucht. |
 

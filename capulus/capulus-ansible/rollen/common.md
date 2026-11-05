@@ -4,7 +4,7 @@ Basis-OS, UFW, Pakete, sysctl, chrony, Swap aus, optional statische IP.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver, prod-vm, entw-vm |
+| Läuft gegen | controlplane-0, prod-vm, entw-vm |
 | Tags | `base`, `common` |
 | Quellcode | [roles/common](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/common) |
 

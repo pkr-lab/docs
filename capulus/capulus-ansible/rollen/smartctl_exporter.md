@@ -4,7 +4,7 @@ S.M.A.R.T.-Werte der physischen Platten.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver, worker-0/-1 |
+| Läuft gegen | controlplane-0, controlplane-1, worker-1 |
 | Tags | `monitoring`, `smartctl-exporter` |
 | Quellcode | [roles/smartctl_exporter](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/smartctl_exporter) |
 

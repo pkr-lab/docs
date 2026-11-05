@@ -4,7 +4,7 @@ Notfall-Tunnel, falls die Tailscale-Control-Plane ausfällt.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `backup`, `vpn`, `wireguard` |
 | Quellcode | [roles/wireguard_backup](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/wireguard_backup) |
 
