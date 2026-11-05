@@ -156,6 +156,8 @@ Hintergrund: dnsmasq auf dem Host (`192.168.178.94:53`) löst `*.homeserver` fü
 (`10.43.0.10`) und kennen die Domain nicht. Anfragen an z. B. `semaphore.tech.homeserver` scheiterten mit „no such host“. Der Block
 leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
 
+**Zweites CoreDNS-Replikat per HPA** (`hpa.yaml` im selben Verzeichnis): Das Deployment `coredns` gehört dem k3s-Addon-Controller (`objectset.rio.cattle.io/owner-name: coredns`, Manifest `/var/lib/rancher/k3s/server/manifests/coredns.yaml` mit `replicas: 1`). Eine manuelle Skalierung oder ein Patch durch ArgoCD kann beim erneuten Anwenden des Addons zurückgesetzt werden, und ArgoCD würde ein fremd verwaltetes Deployment nicht übernehmen. Ein HPA mit `minReplicas: 2` und `maxReplicas: 2` stellt die Anzahl nach jedem Zurücksetzen binnen Sekunden wieder her, ohne das Addon zu berühren. Wohin das zweite Replikat kommt, regeln die vorhandenen `topologySpreadConstraints` des Addons (`kubernetes.io/hostname`, `DoNotSchedule`): immer auf den anderen Server. Fällt controlplane-1 aus, bleibt das zweite Replikat `Pending` und der erste läuft weiter. Die CPU-Schwelle (100 %) spielt wegen `min == max` keine Rolle, die Metrik ist nur nötig, weil ein HPA mindestens eine verlangt.
+
 ### cloudflared
 
 - **Zwei Replicas** = zwei unabhängige Edge-Verbindungen für denselben Tunnel (cloudflared unterstützt das nativ, kein Leader-Election

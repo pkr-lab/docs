@@ -247,7 +247,7 @@ Muster und Begründung: [60040](../6-hintergruende/60040-helm-charts-tech.md#sch
 |---|---|---|
 | 1 | ticket-gate, github-release-watcher, pacman, ntfy-bridge, alamos-apager, alamos-relay | Code vorbereitet |
 | 2 | cloudflared (verteilt auf beide Server), headlamp, kubeseal-webgui (bevorzugt controlplane-1) | Code vorbereitet |
-| 3 | CoreDNS (zweites Replikat) | offen, siehe oben |
+| 3 | CoreDNS (zweites Replikat per HPA) | Code vorbereitet |
 | 4 | uptime-kuma | offen, braucht Datenmigration |
 
 ### AP6 und AP7
