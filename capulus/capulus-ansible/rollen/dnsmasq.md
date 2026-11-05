@@ -4,13 +4,17 @@ Split-DNS `*.homeserver` (inkl. `*.dev.homeserver` → ENTW und PROD-Einzelhosts
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `dns`, `dnsmasq` |
 | Quellcode | [roles/dnsmasq](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/dnsmasq) |
 
 ## Variablen
 
 Die Rolle hat keine Defaults.
+
+## Hostnamen
+
+Das Template legt `address=`-Einträge für die Hosts an: `homeserver` und `controlplane-0` (beide auf die Server-IP), `controlplane-1` und `worker-0` (`.95`), `worker-1`, `ugreen-nas`. `homeserver` und `worker-0` sind Übergangs-Alias für das neue Namensschema ([60010](../../capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md#namensschema-inventar-host-gruppen-und-k3s-nodename)). `address=/homeserver/…` gilt zugleich für alle Subdomains `*.homeserver` und bleibt dauerhaft.
 
 ## Ablauf
 

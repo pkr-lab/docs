@@ -55,7 +55,7 @@ Nur Alarme mit dem Label `page="true"` und der Watchdog-Ausfall. Alles andere l�
 | `KubeApiDownPaging` | kein einziges `up{job="apiserver"} == 1` mehr, 5 min lang | „Die Kubernetes A P I antwortet nicht …“ |
 | Watchdog-Ausfall | länger als `WATCHDOG_TIMEOUT` (600 s) kein Watchdog am Caller | „Der Cluster meldet sich seit über 10 Minuten nicht mehr.“ |
 
-`NodeDownPaging` erfasst bewusst nur die immer laufenden Rechner. Die Worker (`worker-0`, `worker-1`), `entw-vm` und `infotafel` stehen im Normalbetrieb auf `up == 0` (sie schlafen oder sind
+`NodeDownPaging` erfasst bewusst nur die immer laufenden Rechner (`homeserver`, `controlplane-1`, `prod-vm`, `ugreen-nas`). controlplane-1 gehört seit der Umstellung auf zwei Control-Planes dazu: Sein Ausfall nimmt die Kubernetes-API. Der Worker `worker-1`, `entw-vm` und `infotafel` stehen im Normalbetrieb auf `up == 0` (sie schlafen oder sind
 Kiosk-Geräte) und würden sonst jede Nacht anrufen. Der Vereinsheim-Alarmmonitor hat seinen eigenen Weg ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). Mit dem Caller im Cluster sind
 `NodeDownPaging` für `homeserver` und `KubeApiDownPaging` nur sinnvoll, wenn der Homeserver noch läuft, etwa bei einem Ausfall allein des Exporters oder der API.
 
@@ -63,7 +63,7 @@ Kiosk-Geräte) und würden sonst jede Nacht anrufen. Der Vereinsheim-Alarmmonito
 
 - Einleitung „Achtung, Cluster Alarm.“, bei mehreren Alarmen zusätzlich „N Probleme.“. Höchstens 3 Alarme werden vorgelesen (älteste zuerst), dann „Und N weitere, Details in der Push Nachricht.“
 - Pro Alarm: Annotation `ansage` (Rückfall `summary`, dann `alertname`), „seit X Minuten/Stunden/Tagen“ aus `startsAt`, „Grund: …“ aus `grund`, optional der Kontext.
-- **Aussprache:** `:port` wird entfernt, bekannte Hostnamen und IPs werden ersetzt (`worker-0` und `192.168.178.95` → „Worker null“, `ugreen-nas` → „NAS“, `vereinsheim-alarmmonitor` → „Alarmmonitor im Vereinsheim“),
+- **Aussprache:** `:port` wird entfernt, bekannte Hostnamen und IPs werden ersetzt (`controlplane-0` → „Control Plane null“, `controlplane-1` und `192.168.178.95` → „Control Plane eins“, `ugreen-nas` → „NAS“, `vereinsheim-alarmmonitor` → „Alarmmonitor im Vereinsheim“),
   `-` und `_` zwischen Wörtern werden zu Leerzeichen. Abbruchgründe werden übersetzt (`OOMKilled` → „Arbeitsspeicher voll“, `Error` → „Programmfehler“, `ContainerCannotRun` → „Container startet nicht“).
   Die Tabellen `SPOKEN_NAMES` und `SPOKEN_REASONS` stehen oben in `argocd/apps/tech/alert-caller/src/caller.py`.
 - **Kontext:** Hat der Alarm die Annotation `kontext` (eine PromQL-Abfrage mit genau einem Ergebnis), fragt der Caller `VM_URL/api/v1/query` mit 3 s Timeout ab und ersetzt `{}` in `kontext_text` durch den gerundeten Wert.

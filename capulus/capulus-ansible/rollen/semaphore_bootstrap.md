@@ -4,9 +4,17 @@ Projekte, Inventories, Templates und Zeitpläne in Semaphore per REST-API.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | – |
 | Quellcode | [roles/semaphore_bootstrap](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/semaphore_bootstrap) |
+
+## Projekte für die Control-Planes und Worker
+
+Das Projekt für controlplane-1 heißt `controlplane-1` (Template `Deploy controlplane-1`, Inventar `controlplane_1_only`). Das frühere Projekt `worker-0` bleibt nach dem Umbenennen in Semaphore als Altlast stehen, `make semaphore-bootstrap` löscht nichts. Es wird in der UI von Hand gelöscht. Der nächtliche Zyklus ([20030](../2-betrieb-hardware/20030-nightly-worker-update.md)) sucht nur noch `worker-1`.
+
+## Hinweis zur Quelle der Projekte
+
+`semaphore_projects` wird aus `defaults/main.yml` gelesen, kann aber in `group_vars/all.yml` überschrieben werden. Nach dem Umbenennen der Gruppen (`k3s_servers`, `k3s_primary`, `k3s_agents` statt `homeservers`) muss eine solche Überschreibung dieselben Inventar-Inhalte nutzen, sonst findet das Playbook in Semaphore keine Hosts. Nach jedem Merge, der Hostnamen oder Gruppen ändert, läuft `make semaphore-bootstrap`.
 
 ## Variablen
 

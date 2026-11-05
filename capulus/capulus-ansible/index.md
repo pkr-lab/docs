@@ -8,7 +8,7 @@ Repository: [pkr-lab/capulus-ansible](https://github.com/pkr-lab/capulus-ansible
 
 | Bereich | Inhalt |
 |---|---|
-| Playbooks | `site.yml` (Homeserver/TECH), `worker-0.yml`, `worker-1.yml`, `prod.yml`, `entw.yml`, Kiosk-Playbooks, `alert-caller.yml`, `vaultwarden-restore.yml`, `render-bootstrap.yml` |
+| Playbooks | `site.yml` (Homeserver/TECH), `controlplane-1.yml`, `worker-1.yml`, `prod.yml`, `entw.yml`, Kiosk-Playbooks, `alert-caller.yml`, `vaultwarden-restore.yml`, `render-bootstrap.yml` |
 | Rollen | 33 Rollen nach dem Prinzip „eine Rolle pro Aufgabe“, siehe [Rollen](rollen/index.md) |
 | Inventory | `inventory/hosts.yml` mit den Gruppen `homeservers`, `k3s_agents`, `prod`, `entw`, `semaphore_targets`, `xibo_displays`, `banana_pis`, `raspberry_pis`, `alert_callers`, `alert_caller_pi` |
 | Variablen | `group_vars/` und `host_vars/<host>/{vars,vault}.yml`; Secrets als `!vault`-Werte |
@@ -20,7 +20,7 @@ Repository: [pkr-lab/capulus-ansible](https://github.com/pkr-lab/capulus-ansible
 flowchart TD
   op["Betreiber: make install"] --> site["site.yml"]
   site --> tech["homeserver: OS, k3s, ArgoCD-Hub, Dienste"]
-  w["worker-0.yml / worker-1.yml"] --> agents["Worker: k3s-Agent, Watchdogs"]
+  w["controlplane-1.yml / worker-1.yml"] --> agents["Worker: k3s-Agent, Watchdogs"]
   prod["prod.yml"] --> pvm["prod-vm: k3s"]
   entw["entw.yml"] --> evm["entw-vm: k3s + ArgoCD"]
   kiosk["Kiosk-Playbooks"] --> pis["Raspberry Pi, Banana Pi, Xibo-Display"]

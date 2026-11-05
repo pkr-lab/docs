@@ -49,7 +49,9 @@ flowchart LR
 | `vmrule-resources.yaml` | `HostHighCPULoad` (80 %), `HostHighMemoryUsage` (70 %), `HostHighDiskUsage`, je zwei Minuten, `warning` |
 | `vmrule-temperature.yaml` | `HostHighTemperature` (95 °C, drei Minuten, `critical`) |
 | `vmrule-host-services.yaml` | `JournalUploadFailed` (`systemd-journal-upload` seit 15 Minuten `failed`) |
-| `vmrule-banana-pi.yaml`, `vmrule-worker-0.yaml`, `vmrule-worker-1.yaml` | `BananaPiAlarmmonitorDown`, `worker-0Down`, `worker-1Down` |
+| `vmrule-banana-pi.yaml`, `vmrule-controlplane-1.yaml`, `vmrule-worker-1.yaml` | `BananaPiAlarmmonitorDown`, `ControlPlane1Down` (und `ControlPlane1MemoryRequestsHigh`), `worker-1Down` |
+| `vmrule-etcd.yaml` | etcd-Alarme: `EtcdNoLeader`, `EtcdMemberMissing`, `EtcdPeerLost`, `EtcdLeaderChangesFrequent`, `EtcdWalFsyncSlow`, `EtcdDatabaseSizeHigh` |
+| `vmstaticscrape-etcd.yaml` | scrapt die etcd-Metriken (`:2381`) beider Control-Planes, Werte unter `etcd.targets` |
 | `vmrule-paging.yaml` | `NodeDownPaging`, `PodCrashLoopPaging`, `DiskFailurePaging`, `KubeApiDownPaging` (Telefon-Anruf, siehe [Telefon-Alarm](../1-benachrichtigungen/10020-telefon-alarm.md)) |
 
 Nur `severity=critical` löst einen Push aus, `warning` ist nur in Alertmanager und Grafana sichtbar.

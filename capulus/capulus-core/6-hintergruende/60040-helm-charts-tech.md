@@ -9,6 +9,17 @@ den Docs unter `3-apps-workloads/`. Themen mit eigenem Doc: Monitoring in [60060
 
 ## Gemeinsame Muster
 
+### Scheduling auf controlplane-1 (Toleration und bevorzugte Affinity)
+
+Planung: [400a0](../4-planung/400a0-controlplane-ha-zwei-server.md#ap5-apps-nach-controlplane-1). controlplane-1 trägt den weichen Taint `capulus.homeserver/protected=true:PreferNoSchedule`, damit ungepinnte Pods den Node meiden. Eine App, die dort laufen soll, bekommt zwei Werte in der `values.yaml`:
+
+| Wert | Inhalt | Begründung |
+|---|---|---|
+| `tolerations` | `capulus.homeserver/protected`, `Exists`, `PreferNoSchedule` | Hebt den Score-Malus des Taints für diese App auf |
+| `affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution` | Gewicht 100 auf `kubernetes.io/hostname In [controlplane-1]` | Zieht die App dorthin, **ohne sie festzunageln**. Fällt controlplane-1 aus, weicht sie auf controlplane-0 aus |
+
+Kein `nodeSelector`: Ein hartes Pinning hielte die App bei Ausfall von controlplane-1 in `Pending`. Pods wandern erst, wenn sie neu gestartet werden (Rollout nach der Wertänderung), laufende Pods werden nicht verschoben. Die Charts brauchen dafür `tolerations` und `affinity` im Pod-Template. In `pacman` fehlten die Felder und wurden ergänzt.
+
 ### HPA und `replicas: null`
 
 - Bei Charts, deren Values-Schema keine Autoscaling-Schlüssel kennt (headlamp, kubeseal-webgui, zammad nginx/railsserver), definiert der
@@ -145,12 +156,15 @@ Hintergrund: dnsmasq auf dem Host (`192.168.178.94:53`) löst `*.homeserver` fü
 (`10.43.0.10`) und kennen die Domain nicht. Anfragen an z. B. `semaphore.tech.homeserver` scheiterten mit „no such host“. Der Block
 leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
 
+**Zweites CoreDNS-Replikat per HPA** (`hpa.yaml` im selben Verzeichnis): Das Deployment `coredns` gehört dem k3s-Addon-Controller (`objectset.rio.cattle.io/owner-name: coredns`, Manifest `/var/lib/rancher/k3s/server/manifests/coredns.yaml` mit `replicas: 1`). Eine manuelle Skalierung oder ein Patch durch ArgoCD kann beim erneuten Anwenden des Addons zurückgesetzt werden, und ArgoCD würde ein fremd verwaltetes Deployment nicht übernehmen. Ein HPA mit `minReplicas: 2` und `maxReplicas: 2` stellt die Anzahl nach jedem Zurücksetzen binnen Sekunden wieder her, ohne das Addon zu berühren. Wohin das zweite Replikat kommt, regeln die vorhandenen `topologySpreadConstraints` des Addons (`kubernetes.io/hostname`, `DoNotSchedule`): immer auf den anderen Server. Fällt controlplane-1 aus, bleibt das zweite Replikat `Pending` und der erste läuft weiter. Die CPU-Schwelle (100 %) spielt wegen `min == max` keine Rolle, die Metrik ist nur nötig, weil ein HPA mindestens eine verlangt.
+
 ### cloudflared
 
 - **Zwei Replicas** = zwei unabhängige Edge-Verbindungen für denselben Tunnel (cloudflared unterstützt das nativ, kein Leader-Election
   nötig). Wirksam solange `autoscaling.enabled=false`, danach übernimmt der HPA (`minReplicas: 2`, damit zwei Verbindungen das Minimum
   bleiben). Skalierung nur nach CPU (winziger Footprint: 32Mi Request, 128Mi Limit).
 - **Origin-Zertifikat wird geprüft (kein `noTLSVerify`).** Der Hop cloudflared → Traefik (`https://traefik.kube-system.svc.cluster.local:443`) lief früher mit `noTLSVerify: true`: Ein Pod, der den Service-Namen verbiegt, hätte den Tunnelverkehr lesen können. Jetzt prüft cloudflared das Zertifikat gegen die Homeserver-Root-CA (`caPool: /etc/cloudflared/origin-ca.pem`, die öffentliche CA steht in `values.yaml` als `tunnel.originCaPem`, identisch zu `pki/homeserver-root-ca.pem`, und kommt über die vorhandene ConfigMap in den Pod). Der Service-Name `traefik.kube-system.svc.cluster.local` steht nicht in der SAN-Liste, deshalb setzt `originServerName` einen Namen, der drin steht: in TECH `homeserver`, in PROD `nextcloud.prod.homeserver`. Das ist nur der Name für SNI und Prüfung, geroutet wird weiter über den `Host`-Header. Traefik liefert für beide Namen sein Standardzertifikat (TLSStore). Vor der Umstellung geprüft mit `openssl s_client -verify_hostname` und einem Go-`tls.Dial` (RootCAs nur die Root-CA, `ServerName` wie oben) gegen beide Traefik-Instanzen. **Fallstrick:** Verschwindet der Name aus der SAN-Liste (PROD: `nextcloud.prod.homeserver`) oder ändert sich die Root-CA, bricht jeder Tunnel-Aufruf mit 502; der Pod bleibt `Ready`, weil die Liveness-Probe nur `/ready` des Tunnels prüft. Dann in `originServerName` einen vorhandenen Namen eintragen. Die Prüflauf-Spuren stehen im Log (`kubectl -n cloudflared logs deploy/cloudflared | grep -i 'x509\|certificate'`).
+- **Verteilung auf beide Control-Planes:** Statt der Affinity auf controlplane-1 gilt eine **bevorzugte Pod-Anti-Affinity** auf den Hostnamen (Gewicht 100) und dieselbe Toleration für den weichen Taint. Hinter der Wahl steht der Zweck der Replicas: zwei Edge-Verbindungen sollen nicht am selben Node hängen. Mit einer Affinity auf controlplane-1 wären alle Pods dort, ein Neustart des Nodes trennte den Tunnel ganz. Die Anti-Affinity verlangt kein Verteilen (`preferred`), bei einem Node-Ausfall laufen alle Pods auf dem verbleibenden. Das Ziel `traefik.kube-system.svc` und das Secret `cloudflared-credentials` sind clusterweit erreichbar, es hängt nichts an einem Node. Die Anti-Affinity matcht `app.kubernetes.io/instance: cloudflared`, das ist der Helm-Release-Name (gleich dem ArgoCD-Application-Namen).
 - Tunnel-Name und Tunnel-ID (UUID aus `cloudflared tunnel create`) sind **kein Secret**, nur Bezeichner, unbedenklich im Klartext.
 - **PROD hat einen eigenen Tunnel** `homeserver-prod`. Es kommen nur Hosts an, deren DNS-Eintrag per
   `cloudflared tunnel route dns homeserver-prod <host>` auf diesen Tunnel zeigt. Der Wildcard `*.pke-lab.de` zeigt weiter auf den TECH-Tunnel. Die

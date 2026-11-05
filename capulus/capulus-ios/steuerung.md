@@ -13,11 +13,12 @@ Das Backend dazu: [carplay-api](../capulus-core/3-apps-workloads/300d0-carplay-a
 | Karte | Aktion | Wirkung |
 |---|---|---|
 | **Bildschirmhelligkeit** | Slider 0 bis 100 % in 5er-Schritten | Setzt die Helligkeit des eingebauten Bildschirms des Homeservers (HP ProBook 450 G9) |
-| **Worker 0**, **Worker 1** | *Aufwecken* (aktiv, wenn der Host offline ist), *Ausschalten* (aktiv, wenn online) | Wake-on-LAN bzw. Shutdown über `carplay-api`. Ausschalten fragt vorher „… wirklich herunterfahren?“ |
-| **Homeserver** | *Homeserver herunterfahren* | Öffnet ein Warn-Sheet mit Code-Eingabe. Kein Wake-on-LAN möglich, weil der Homeserver der einzige Dauerläufer im Cluster ist |
+| **ControlPlane-1** | keine (reine Statusanzeige) | Zeigt nur Online/Offline. ControlPlane-1 läuft dauerhaft und wird nicht per Wake-on-LAN oder Shutdown gesteuert |
+| **Worker 1** | *Aufwecken* (aktiv, wenn der Host offline ist), *Ausschalten* (aktiv, wenn online) | Wake-on-LAN bzw. Shutdown über `carplay-api`. Ausschalten fragt vorher „… wirklich herunterfahren?“ |
+| **Homeserver** | *Homeserver herunterfahren* | Öffnet ein Warn-Sheet mit Code-Eingabe. Kein Wake-on-LAN möglich. Das Sheet warnt: ohne ControlPlane-0 ist die Kubernetes-API nicht schreibbar, auch wenn ControlPlane-1 läuft |
 | **Windows-PC (Vereinsheim)** | *Aufwecken* | Sendet ein Magic Packet über den Banana Pi am Standort. Kein Online-Status, keine Rückfrage |
 
-Der Online-Status der Karten kommt aus den Host-Metriken der Übersicht (`hosts[]`, Kennung `worker-0`, `worker-1`, `homeserver`). Ist ein Host dort nicht aufgeführt, gilt er auf den Worker-Karten als offline, auf der Homeserver-Karte als online.
+Der Online-Status der Karten kommt aus den Host-Metriken der Übersicht (`hosts[]`, Kennung `controlplane-1`, `worker-1`, `homeserver`). Ist ein Host dort nicht aufgeführt, gilt er auf den Worker-Karten und auf der ControlPlane-1-Karte als offline, auf der Homeserver-Karte als online.
 
 ---
 
@@ -27,7 +28,7 @@ Der Online-Status der Karten kommt aus den Host-Metriken der Übersicht (`hosts[
 |---|---|---|
 | Helligkeit lesen | `GET /api/brightness` → `{"percent": n}` | Bearer-Token `carplay-api` |
 | Helligkeit setzen | `PUT /api/brightness` mit `{"percent": n}` | wie oben |
-| Wake | `POST /api/power/wake` mit `{"target": "worker-0"\|"worker-1"}` | wie oben |
+| Wake | `POST /api/power/wake` mit `{"target": "worker-1"}` | wie oben |
 | Shutdown | `POST /api/power/shutdown` mit `{"target": …, "code": …}`; `code` nur beim Homeserver | wie oben, Code serverseitig geprüft |
 | Windows-PC wecken | `POST https://100.123.214.4:9102/wol` mit `{"target": "windows-pc"}` | eigenes Token des WoL-Agents |
 

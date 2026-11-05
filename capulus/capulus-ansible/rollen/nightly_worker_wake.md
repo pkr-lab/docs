@@ -1,10 +1,10 @@
 # Rolle `nightly_worker_wake`
 
-01:00-Timer: Worker wecken, Update anstoßen, wieder herunterfahren.
+01:00-Timer: Worker wecken, Update anstoßen, wieder herunterfahren. Betrifft nur die Worker aus `cluster_power_manager_workers` (`worker-1`). Die Updates der Control-Planes laufen nicht in diesem Zyklus, sie brauchen eine Prüfung des etcd-Verbunds (siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md)).
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `nightly-worker-wake`, `power-management` |
 | Quellcode | [roles/nightly_worker_wake](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/nightly_worker_wake) |
 

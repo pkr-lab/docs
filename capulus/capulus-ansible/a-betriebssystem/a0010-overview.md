@@ -38,6 +38,8 @@ Testumgebung.
 | **PROD** | KVM/libvirt-VM `prod-vm` auf dem homeserver | `.99` | 6 vCPU / 24 GiB / 100 GiB | `10.46.0.0/16` / `10.47.0.0/16` | keine eigene, vom TECH-Hub verwaltet | `argocd/apps/prod/` |
 | **ENTW** | KVM/libvirt-VM `entw-vm` auf `worker-1` | `.100` | 3 vCPU / 12 GiB / 20 GiB | `10.44.0.0/16` / `10.45.0.0/16` | **eigene, isolierte Instanz**, Branch `entw` | `argocd/apps/entw/` |
 
+Nach der Umstellung auf zwei Control-Planes ([400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md#ap3-etcd-und-server-join)) ist controlplane-1 ein dauerhaft laufender k3s-Server mit embedded etcd, nicht mehr ein per WoL geweckter Agent. Namensschema: Im Inventar heißen die TECH-Hosts `controlplane-0` (bisher `homeserver`), `controlplane-1` (bisher `worker-0`) und `worker-1`. Die k3s-Nodenamen bleiben vorerst `homeserver` und `worker-0`, siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md).
+
 Alle IPs liegen im LAN `192.168.178.0/24`. Die VMs hängen über eine Bridge (`br0`) direkt im LAN. Von
 den Servern sind nur `homeserver`, `worker-0` und `worker-1` Tailscale-Mitglieder (dazu kommen einzelne Kiosk-Geräte);
 `prod-vm` und `entw-vm` sind bewusst **nicht** im Tailnet und aus der Ferne nur über den Subnet-Router `homeserver` (`192.168.178.0/24`) erreichbar.
@@ -426,7 +428,7 @@ flowchart TB
 
 ```
 make install        # site.yml gegen homeserver  →  erzeugt Join-Token + Shutdown-Key, TECH-Cluster + ArgoCD-Hub
-make worker-0       # erst danach möglich
+make controlplane-1       # erst danach möglich
 make worker-1
 make libvirt-host   # auf dem homeserver: Bridge + prod-vm (braucht libvirt_host_enabled)
 make worker-1-libvirt-host   # auf worker-1: Bridge + entw-vm
@@ -505,7 +507,7 @@ keinen eigenen Port, UI und API laufen über Traefik auf `:443`. Details je App:
 - Von außen: `cloudflared` (je Cluster ein Tunnel) → Traefik → App. Ohne cloudflared bleiben nur LAN und Tailscale.
 
 **Rechenleistung und Reihenfolge**
-- Erst `make install` auf dem Homeserver (erzeugt Join-Token und Shutdown-Schlüssel), dann `make worker-0` / `make worker-1` — sonst können die Worker nicht beitreten.
+- Erst `make install` auf dem Homeserver (erzeugt Join-Token und Shutdown-Schlüssel), dann `make controlplane-1` / `make worker-1` — sonst können die Worker nicht beitreten.
 - Die VMs brauchen zuerst die Bridge (`libvirt_host` mit `libvirt_host_configure_bridge`); ein falsch gepinntes Interface hat schon einmal den Homeserver vom LAN getrennt, die Rolle prüft das jetzt per `assert`. Nach jeder Netzwerkumstellung einen Reboot-Test machen.
 - Wake-on-LAN braucht zusätzlich die BIOS-Einstellung auf den Workern und die richtige MAC-Adresse in `capulus-ansible/host_vars/`.
 - Argo Workflows braucht MinIO als Artefaktspeicher; die Alarm-Brücke braucht ntfy; `wiki-docs-sync` (PROD) braucht Wiki.js; `github-release-watcher` braucht Zammad.

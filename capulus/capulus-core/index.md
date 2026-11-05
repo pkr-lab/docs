@@ -348,6 +348,7 @@ Pläne und Analysen. Ein Doc trägt in seiner Statuszeile, wie weit es umgesetzt
 | [GitHub-Repos versionieren](4-planung/40050-github-repos-versionierung.md) | Versionierung für alle GitHub-Repos |
 | [Einsatz-Alarm per E-Mail](4-planung/40060-alamos-einsatz-email-benachrichtigung.md) | E-Mail mit den wichtigsten Einsatzdaten |
 | [Multi-Cluster ENTW/PROD/TECH](4-planung/40080-multi-cluster-entw-prod-tech.md) | Architektur und Umsetzungsplan der Drei-Cluster-Umstellung, Phasen und offene Punkte |
+| [Zwei Control-Planes im TECH-Cluster](4-planung/400a0-controlplane-ha-zwei-server.md) | Umstellung auf embedded etcd mit ControlPlane-0 und -1, ControlPlane-2 vorbereitet, Namensschema, Runbooks |
 
 ### Incidents (`5-incidents/`)
 

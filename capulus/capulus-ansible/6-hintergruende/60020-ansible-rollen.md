@@ -115,6 +115,8 @@ Kiosk-Modus per `file://`. Ablauf und Betrieb: [300e8](../3-apps-workloads/300e8
 
 ### cluster_power_manager, cluster_power_manager_target und wake_on_lan
 
+**Control-Planes sind kein Ziel.** `cluster_power_manager_workers` enthält nur Worker, die per WoL gesteuert werden dürfen (heute `worker-1`). controlplane-0 und controlplane-1 sind etcd-Mitglieder: Ein Poweroff nähme bei zwei Mitgliedern die API mit. Damit auch bereits verteilte Zugänge verschwinden, entfernt `cluster_power_manager_target` mit `cluster_power_manager_target_enabled: false` den Shutdown-Schlüssel und die sudoers-Freigabe (auf controlplane-1 gesetzt). Der Eintrag `cluster-power-manager@homeserver` im Schlüsselkommentar bleibt, er ist ein Name, kein Host.
+
 - `cluster_power_manager` läuft auf dem Homeserver und erzeugt das SSH-Schlüsselpaar, mit dem der Watchdog die Worker
   herunterfährt. Autorisiert wird der Public Key erst durch `cluster_power_manager_target` auf den Workern. Das Playbook mit
   `cluster_power_manager` muss also **vor** den Worker-Playbooks laufen.
@@ -147,7 +149,7 @@ Kiosk-Modus per `file://`. Ablauf und Betrieb: [300e8](../3-apps-workloads/300e8
 - Der **automatische Reboot** bei Kernel-/libc-Updates läuft im selben Semaphore-Task, den `nightly_worker_wake` ohnehin bis zu
   `nightly_worker_wake_max_runtime_seconds` abwartet, ein eigener Schritt im Orchestrator-Skript ist nicht nötig. `cordon`+`drain`
   laufen **vor** dem Reboot, damit Pods sauber evakuiert werden statt beim harten Neustart abzureißen. Das Uncordon übernimmt die
-  Play „Uncordon nach Provisioning“ am Ende von `worker-0.yml`/`worker-1.yml`, die immer läuft.
+  Play „Uncordon nach Provisioning“ am Ende von `controlplane-1.yml`/`worker-1.yml`, die immer läuft.
   `worker_apt_update_reboot_timeout_seconds` (300) gilt für den Neustart samt erneuter Erreichbarkeit und für die Wartezeit danach, bis
   sich k3s-Agent und Netzwerk gesetzt haben.
 
@@ -194,6 +196,8 @@ Desktop-PC mit Ollama ([300g0](../../capulus-core/3-apps-workloads/300g0-ollama.
 - **`power_agent_wake_only_targets`.** Der PC steht nicht in `cluster_power_manager_workers`: Der Last-Watchdog würde ihn sonst wie einen Worker behandeln (wecken bei Last, herunterfahren). Das Ziel ist nur für `/wake` im power-agent bekannt. Einträge ohne MAC fallen aus `TARGETS` heraus, solange `host_vars/ollama-pc` fehlt.
 
 ### thermal_watchdog und resource_watchdog
+
+**Server nur mit Alarm.** `resource_watchdog_action` (`poweroff` oder `notify`) unterscheidet Worker von den k3s-Servern. `group_vars/k3s_servers.yml` setzt `notify`: Bei 90 % CPU/RAM über 300 s kommt eine ntfy-Meldung (Priorität 5, höchstens einmal je `resource_watchdog_alert_repeat_seconds`), der Host bleibt in Betrieb. Der Homeserver hat zuvor selbst abgeschaltet, das hätte bei etcd ein Mitglied entfernt. Schutz vor echtem Ressourcendruck liefern auf den Servern die Kubelet-Reserven und die Eviction-Schwelle (`k3s_kubelet_*`) sowie `thermal_watchdog` bei Überhitzung.
 
 - Der `thermal_watchdog` liest `/sys/class/hwmon` **direkt** (ohne Prometheus/k8s) und fährt den Host herunter, wenn der heißeste
   Sensor `THRESHOLD_C` für `SUSTAIN_SECONDS` erreicht (90 s = Mitte der gewünschten 1–2 Minuten), vorher geht eine ntfy-Meldung raus.
@@ -249,9 +253,15 @@ Desktop-PC mit Ollama ([300g0](../../capulus-core/3-apps-workloads/300g0-ollama.
   `/dev/nvme*`) und scannt alle Platten selbst (`smartctl --scan`). Er lauscht auf dem Default-Port `9633` des Ubuntu-Pakets
   `prometheus-smartctl-exporter`, der Cluster scrapt ihn per `VMStaticScrape`.
 
+### Namensschema und Variablenvorrang
+
+Der Inventar-Host und der k3s-Nodename sind getrennt: `k3s_node_name` (Standard `inventory_hostname`) speist `node-name` in der k3s-Config, die Vault-abhängige Variable `hostname` ist dafür nicht mehr zuständig. Ein k3s-Nodename lässt sich nicht ändern, eine Umbenennung wäre ein neuer Node mit verwaisten `local-path`-PVs. Deshalb setzt `controlplane-0` weiter `k3s_node_name: homeserver`.
+
+Werte, die im Vault noch den alten Hostnamen tragen (`k3s_server_host`), werden in unverschlüsselten `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml` überschrieben. Ansible lässt Kindgruppen die Variablen von `all` überstimmen, so ist keine Vault-Änderung nötig. Details: [60010](../../capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md#namensschema-inventar-host-gruppen-und-k3s-nodename).
+
 ### k3s_agent: Host-Firewall
 
-`k3s_agent_ufw_enable` (Standard `false`, auf worker-1 `true`) schaltet UFW auf einem Worker scharf: Vollzugriff nur für `k3s_agent_ufw_trusted_hosts` (homeserver, worker-0), SSH aus dem LAN, Tailscale `41641/udp`, Flannel aus dem LAN, Pod- und Service-Netz, `default deny`. Mit `k3s_agent_ufw_vm_bridge: br0` kommt `ufw route allow in on br0 out on br0` dazu: worker-1 betreibt die ENTW-VM über die Bridge, und weil `net.bridge.bridge-nf-call-iptables=1` gesetzt ist, läuft deren Verkehr durch die iptables-`FORWARD`-Kette; ohne diese Regel (`deny routed`) wäre die VM vom LAN getrennt. Ohne den Schalter legt die Rolle nur die Regeln an, **aktiviert aber UFW nie**; bis zum 2026-10-18 stand worker-1 deshalb mit „inactive“ da, obwohl die Regeln vorgemerkt waren und `ufw` laut systemd `active` meldete. Vor dem Einschalten auf einem Worker: Backup von `/etc/ufw`, Rollback-Timer (`systemd-run --on-active=15min ufw disable`), danach zweite SSH-Session und Prüfung von Node-Status, Exportern und (worker-1) der ENTW-VM. Tailscale-Verkehr läuft über `ts-input` vor UFW und ist von den Regeln nicht betroffen. Auf worker-0 (ohne VM-Bridge, aber mit Docker-Containern) ist der Schalter ebenfalls an; die Rolle entfernt dort die älteren offenen Regeln (LAN mit Vollzugriff, SSH von überall, kubelet aus dem LAN). Dockers veröffentlichte Ports (`3002`, `3003`, `8001`, `18080`) laufen über Dockers eigene NAT-/`FORWARD`-Regeln und sind von den UFW-Eingangsregeln unabhängig.
+`k3s_agent_ufw_enable` (Standard `false`, auf worker-1 `true`) schaltet UFW auf einem Worker scharf: Vollzugriff nur für `k3s_agent_ufw_trusted_hosts` (controlplane-0, controlplane-1), SSH aus dem LAN, Tailscale `41641/udp`, Flannel aus dem LAN, Pod- und Service-Netz, `default deny`. Mit `k3s_agent_ufw_vm_bridge: br0` kommt `ufw route allow in on br0 out on br0` dazu: worker-1 betreibt die ENTW-VM über die Bridge, und weil `net.bridge.bridge-nf-call-iptables=1` gesetzt ist, läuft deren Verkehr durch die iptables-`FORWARD`-Kette; ohne diese Regel (`deny routed`) wäre die VM vom LAN getrennt. Ohne den Schalter legt die Rolle nur die Regeln an, **aktiviert aber UFW nie**; bis zum 2026-10-18 stand worker-1 deshalb mit „inactive“ da, obwohl die Regeln vorgemerkt waren und `ufw` laut systemd `active` meldete. Vor dem Einschalten auf einem Worker: Backup von `/etc/ufw`, Rollback-Timer (`systemd-run --on-active=15min ufw disable`), danach zweite SSH-Session und Prüfung von Node-Status, Exportern und (worker-1) der ENTW-VM. Tailscale-Verkehr läuft über `ts-input` vor UFW und ist von den Regeln nicht betroffen. Auf worker-0 (ohne VM-Bridge, aber mit Docker-Containern) ist der Schalter ebenfalls an; die Rolle entfernt dort die älteren offenen Regeln (LAN mit Vollzugriff, SSH von überall, kubelet aus dem LAN). Dockers veröffentlichte Ports (`3002`, `3003`, `8001`, `18080`) laufen über Dockers eigene NAT-/`FORWARD`-Regeln und sind von den UFW-Eingangsregeln unabhängig.
 
 ### journal_upload
 
@@ -305,7 +315,7 @@ Desktop-PC mit Ollama ([300g0](../../capulus-core/3-apps-workloads/300g0-ollama.
     serialisiert `"{{ x | int }}"` als JSON-String, und Semaphores strikter Go-Decoder antwortet mit HTTP 400 (z. B. `ssh_key_id`,
     `project_id`).
   - **Repository** (`git_url`, `git_branch`) wird bei Abweichung per PUT nachgezogen. Ohne das behielt ein vorhandenes Repository
-    `home-server-git` nach der Aufspaltung die URL von capulus-core, während die Templates schon auf `site.yml` und `worker-0.yml`
+    `home-server-git` nach der Aufspaltung die URL von capulus-core, während die Templates schon auf `site.yml` und `controlplane-1.yml`
     zeigten, die dort nicht mehr liegen: Semaphore fand das Playbook nicht (Stand 2026-10-19, Nachprüfung
     [600b0](../../capulus-core/6-hintergruende/600b0-nachpruefung-repo-aufspaltung.md)).
   - **Schedules** (`cron`) sind self-healing: existiert der Name schon, wird der komplette Body per PUT neu gesetzt. Sie laufen in
@@ -379,6 +389,20 @@ Bedienung, Einrichtung und Testplan: [10020](../../capulus-core/1-benachrichtigu
   vom Alertmanager nur `/watchdog` und ist der Totmann bei einem Totalausfall des Clusters. Ist der Token im Modus `enforce` falsch, bleibt der Timer unberührt, und der Pi ruft nach `WATCHDOG_TIMEOUT` selbst an (ein lauter Fehler, kein stiller). Einführung und Rotation: [10020](../../capulus-core/1-benachrichtigungen/10020-telefon-alarm.md#zugriffsschutz-token).
 
 ## Sonstiges
+
+### k3s: embedded etcd
+
+Planung und Runbook: [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md#ap3-etcd-und-server-join).
+
+- **Zwei Mitglieder sind nicht ausfallsicherer als eins.** Die k3s-Doku verlangt eine ungerade Zahl Server. Fällt bei zwei Mitgliedern einer aus oder startet neu, hat der andere kein Quorum und die API ist weg, die Pods laufen weiter. Deshalb prüft `k3s_reboot_guard` vor jedem Neustart und Upgrade den Peer, und die Snapshots sind der Weg zurück.
+- **Timeouts 500/5000 ms.** etcd empfiehlt Heartbeat etwa 0,5–1,5 × RTT und Election-Timeout mindestens 10 × RTT, beides auf allen Mitgliedern gleich. Über Tailscale mit DERP-Relay sind bis ca. 300 ms RTT realistisch. Die LAN-Defaults (100/1000 ms) würden bei ControlPlane-2 zu Leaderwechseln führen. Preis der größeren Werte: eine Leaderwahl dauert bis zu 5 s länger. Weil alle Mitglieder dieselben Werte brauchen, stehen sie schon jetzt in der Config.
+- **Der Server-Token ist `server/token`**, nicht `node-token` (beide sind gleich, solange kein `agent-token` gesetzt ist). Die Rolle liest ihn zur Laufzeit vom Primärserver und legt die Config des Beitretenden mit `0600` ab. Im Dry-Run und im Diff wird die Datei mit `no_log` ausgeblendet.
+- **Kein automatischer Neustart.** Wie bisher schreibt die Rolle nur die Config. `cluster-init` und `tls-san` wirken erst nach einem bewussten `systemctl restart k3s`. Dadurch ist der Zeitpunkt der Konvertierung eine Entscheidung im Wartungsfenster, auch wenn der tägliche Semaphore-Lauf die Config schon früher schreibt.
+- **`k3s_version` ist in `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml` festgeschrieben**, nicht in `all.yml`. Dort leer (`""` mit `auto_upgrade: true`) hieße „bei jedem Lauf die neueste Version im Channel“ und liefe auf den Servern auseinander. Ein Pin in `all.yml` gälte auch für `prod-vm` und `entw-vm`.
+- **Taint `PreferNoSchedule`** statt `NoSchedule`: Die DaemonSets node-exporter und ServiceLB hätten sonst eigene Tolerations gebraucht, ohne node-exporter fehlen die Hardware-Metriken. Der weiche Taint ist nur ein Score-Malus, bei Platzmangel landen Pods trotzdem dort (Alarm in AP4). Ein `node-taint` in der Config wirkt nur bei der Registrierung, der neu beigetretene Node bekommt ihn deshalb sofort.
+- **UFW:** `k3s_agent/tasks/ufw.yml` löscht die offene 6443-Regel. Auf controlplane-1 legt die Rolle `k3s` ihre Regeln mit Quelladresse davor an und importiert die Agent-Firewall erst danach, sonst könnten sich andere Server aussperren. 2379–2380 sind nur von den anderen Servern offen (`k3s_ufw_etcd_extra_peers` für ControlPlane-2).
+- **Eigene `resolv.conf` für kubelet und CoreDNS.** Auf controlplane-1 lauteten die Nameserver bisher `1.1.1.1`, `8.8.8.8` und die IPv6-Adresse der Fritzbox, ohne den dnsmasq (die dnsmasq-Rolle läuft nur auf controlplane-0). Seit dem zweiten CoreDNS-Replikat (`dnsPolicy: Default`) hatten die beiden CoreDNS-Pods unterschiedliche Upstream-Listen (controlplane-0 mit dnsmasq, controlplane-1 ohne). Welche Namen der dnsmasq beantwortet, lässt sich aus dem Cluster heraus nicht verlässlich vorhersagen: Der Kurzname `ugreen-nas` (`address=` im dnsmasq) löst auf dem Host auf, aus einem Pod aber auch bei direkter Frage an `192.168.178.94` nicht (`NXDOMAIN`, getestet 2026-11-05). Die Ursache ist offen, im Cluster nutzt niemand den Kurznamen (Scrape-Ziele und NFS-Pfade verwenden die IP). `systemd-resolved` schreibt in `/run/systemd/resolve/resolv.conf` den dnsmasq (`DNS=`), die Gateway-Adresse (`FallbackDNS=`) und die Netplan-Nameserver. Das sind mehr als drei Einträge, Pods nehmen höchstens drei, kubelet meldete das bei jedem CoreDNS-Sync als `DNSConfigForming … Nameserver limits were exceeded` (angewendet wurde `192.168.178.94 1.1.1.1 8.8.8.8`). Mit `k3s_resolv_nameservers` schreibt die Rolle genau diese drei in `/etc/rancher/k3s/resolv.conf`, das Verhalten bleibt gleich und die Warnung entfällt. Der Pfad (`resolv-conf`) ist ein kubelet-Argument und wirkt erst nach einem Neustart von k3s, CoreDNS und andere Pods lesen die Datei beim Start. Nachteil: Die Datei folgt DHCP-Änderungen nicht mehr, die Nameserver stehen in der Rolle.
+- **Nodename `controlplane-1` ist neu.** Nach dem Entfernen von `worker-0` registriert sich der Server unter neuem Namen. PVs mit Affinität auf `worker-0` wären verwaist, das Runbook verlangt dazu eine Inventur.
 
 ### k3s: Modus der Kubeconfig
 

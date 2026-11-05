@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Läuft gegen | worker-0, worker-1 |
+| Läuft gegen | controlplane-1, worker-1 |
 | Tags | `power-management`, `wake-on-lan` |
 | Quellcode | [roles/wake_on_lan](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/wake_on_lan) |
 

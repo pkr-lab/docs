@@ -1,10 +1,10 @@
 # Rolle `common`
 
-Basis-OS, UFW, Pakete, sysctl, chrony, Swap aus, optional statische IP.
+Basis-OS, UFW, Pakete, sysctl, chrony, Swap aus, optional statische IP. Ein automatischer Neustart (`auto_reboot_if_required`) läuft auf k3s-Servern nur, wenn [k3s_reboot_guard](k3s_reboot_guard.md) ihn freigibt.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver, prod-vm, entw-vm |
+| Läuft gegen | controlplane-0, prod-vm, entw-vm |
 | Tags | `base`, `common` |
 | Quellcode | [roles/common](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/common) |
 

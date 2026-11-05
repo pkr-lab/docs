@@ -28,7 +28,7 @@ Die App hat keine Konfigurationsdatei und keine Feature-Flags. Alle Adressen und
 | `News.maxSummaryLength` | 160 | Zusammenfassung wird gekürzt |
 | `Keychain.service` | `com.yourname.homeserver-dashboard` | Dienstname aller Keychain-Einträge |
 
-Die Host-Karten der Übersicht (Homeserver, NAS, worker-0, worker-1) werden nicht in der App festgelegt, sondern vom Backend geliefert (`config.hosts` in den Helm-Values von `carplay-api`, siehe [carplay-api: Konfiguration](../capulus-core/3-apps-workloads/300d0-carplay-api.md#konfiguration-valuesyaml)). Die App zeigt nur die Hosts, die online sind.
+Die Host-Karten der Übersicht (Homeserver, NAS, ControlPlane-1, Worker 1) werden nicht in der App festgelegt, sondern vom Backend geliefert (`config.hosts` in den Helm-Values von `carplay-api`, siehe [carplay-api: Konfiguration](../capulus-core/3-apps-workloads/300d0-carplay-api.md#konfiguration-valuesyaml)). Die App zeigt nur die Hosts, die online sind.
 
 ---
 
