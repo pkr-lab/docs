@@ -4,7 +4,7 @@ Cluster-Beitritt (TECH) per Join-Token vom Control-Plane.
 
 | | |
 |---|---|
-| Läuft gegen | controlplane-1 (bis zur Umstellung auf Server, siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md)), worker-1 |
+| Läuft gegen | worker-1 (controlplane-1 nutzt nur die Voraussetzungen und die Firewall dieser Rolle, siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md)) |
 | Tags | – |
 | Quellcode | [roles/k3s_agent](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/k3s_agent) |
 
@@ -21,6 +21,10 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `k3s_agent_ufw_enable` | `false` | – |
 | `k3s_agent_ufw_trusted_hosts` | `[]` | – |
 | `k3s_agent_ufw_vm_bridge` | `` | – |
+
+## Aufteilung der Tasks
+
+Die Voraussetzungen (`tasks/prerequisites.yml`: nfs-common, Hostname, Swap, Module, sysctl) und die Host-Firewall (`tasks/ufw.yml`) liegen in eigenen Dateien. Die Rolle `k3s` nutzt sie im Modus `join` für controlplane-1 per `import_role … tasks_from`, statt sie zu kopieren. Die Variablen `k3s_agent_*` behalten ihren Namen, auch wenn sie auf einem Server gelten (`k3s_agent_hostname` ist dort der OS-Hostname).
 
 ## Ablauf
 
