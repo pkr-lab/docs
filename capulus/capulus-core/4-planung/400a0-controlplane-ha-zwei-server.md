@@ -121,12 +121,18 @@ Die Rolle `k3s` bekommt die Modi `init` und `join` ([k3s](../../capulus-ansible/
 
 1. **PV-Inventur.** Der Node `worker-0` verschwindet, jede gebundene `local-path`-PV mit Affinität auf `worker-0` wäre danach verwaist. Auf controlplane-0:
    ```bash
-   kubectl get pv -o json | jq -r '.items[] | select(.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]=="worker-0") | [.metadata.name,.status.phase,(.spec.claimRef.namespace // "-"),(.spec.claimRef.name // "-"),.spec.storageClassName] | @tsv'
+   kubectl get pv -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,NS:.spec.claimRef.namespace,CLAIM:.spec.claimRef.name,SC:.spec.storageClassName,NODE:.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0] | awk 'NR==1 || $6=="worker-0"'
    kubectl get pods -A -o wide --field-selector spec.nodeName=worker-0
    ```
-   Alle Zeilen müssen `Released`, `Available` oder `Failed` sein, und auf worker-0 darf kein Pod mit PVC laufen. Eine `Bound`-PV auf worker-0 stoppt das Vorhaben: erst die Daten umziehen. Auf worker-0 war `/var/lib/rancher/k3s/storage` leer.
+   In der Spalte `STATUS` darf kein `Bound` stehen, und auf worker-0 darf kein Pod mit PVC laufen. Eine `Bound`-PV auf worker-0 stoppt das Vorhaben: erst die Daten umziehen. Auf worker-0 war `/var/lib/rancher/k3s/storage` leer.
 2. **Platte.** controlplane-1 hat eine NVMe-SSD (`ROTA=0`), 46 GB frei.
-3. **Optional, für die NAS-Kopie:** NFS-Export für die Snapshots auf der NAS anlegen (Benutzer-Aktion), danach `k3s_snapshot_copy_enabled: true`, `k3s_snapshot_nfs_server` und `k3s_snapshot_nfs_export` in den `host_vars` beider Server setzen und `make k3s` bzw. `make controlplane-1` ausführen. Die Kopie ist keine Voraussetzung für die Umstellung.
+3. **NAS-Verzeichnis für die Snapshots.** Die Kopie nutzt den bestehenden Export `/volume1/k8s-storage` der NAS (`192.168.178.97`, die Server `.94`, `.95` und `.96` sind dort bereits zugelassen) mit dem Unterverzeichnis `k3s-etcd-snapshots`. Anlegen und testen, auf controlplane-0:
+   ```bash
+   sudo mkdir -p /mnt/nas-test && sudo mount -t nfs 192.168.178.97:/volume1/k8s-storage /mnt/nas-test
+   sudo mkdir -p /mnt/nas-test/k3s-etcd-snapshots && sudo touch /mnt/nas-test/k3s-etcd-snapshots/.test && ls -la /mnt/nas-test/k3s-etcd-snapshots
+   sudo rm /mnt/nas-test/k3s-etcd-snapshots/.test; sudo umount /mnt/nas-test
+   ```
+   Die Werte stehen in `group_vars/k3s_servers.yml` (`k3s_snapshot_copy_enabled`, `k3s_snapshot_nfs_server`, `k3s_snapshot_nfs_export`). Der Rsync-Aufruf kopiert ohne Eigentümer und Rechte, ein Export mit `root_squash` genügt.
 
 #### Ablauf
 
@@ -136,7 +142,7 @@ Die Rolle `k3s` bekommt die Modi `init` und `join` ([k3s](../../capulus-ansible/
    sudo systemctl stop k3s
    sudo tar -czf /root/k3s-backup-$(date +%Y%m%d-%H%M).tar.gz -C / etc/rancher/k3s var/lib/rancher/k3s/server/db var/lib/rancher/k3s/server/token var/lib/rancher/k3s/server/node-token var/lib/rancher/k3s/server/tls var/lib/rancher/k3s/server/cred
    sudo systemctl start k3s
-   sudo ls -lh /root/k3s-backup-*.tar.gz
+   sudo sh -c 'ls -lh /root/k3s-backup-*.tar.gz'
    ```
    Das Archiv danach vom Host wegkopieren (Workstation oder NAS).
 3. **PR mergen, Config schreiben.** Dry-Run, dann ausrollen. Die Rolle schreibt nur die Config (`cluster-init`, etcd-Argumente, Snapshots, `tls-san`) und startet k3s nicht neu:
