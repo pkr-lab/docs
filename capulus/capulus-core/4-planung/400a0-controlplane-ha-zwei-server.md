@@ -2,7 +2,7 @@
 
 Plan für die Umstellung des TECH-Clusters von einem k3s-Server mit SQLite auf **zwei dauerhaft laufende Control-Planes** mit embedded etcd. ControlPlane-0 ist der bisherige Homeserver, ControlPlane-1 die Hardware des bisherigen `worker-0`. Eine dritte Control-Plane (ControlPlane-2) an einem anderen Standort wird nur vorbereitet. `worker-1` bleibt ein per Wake-on-LAN gesteuerter Agent.
 
-> **Stand (2026-11-05): in Umsetzung.** AP1 bis AP3 sind ausgerollt: controlplane-0 und controlplane-1 bilden einen etcd-Cluster mit zwei Mitgliedern. AP4 ist vorbereitet, AP5 bis AP7 sind offen. Dieses Doc beschreibt den Plan und wird mit jedem Arbeitspaket ergänzt. Nach der Umsetzung wandert der Ist-Zustand in `b0000-k3s.md` und die Rollen-Docs.
+> **Stand (2026-11-05): in Umsetzung.** AP1 bis AP3 sind ausgerollt: controlplane-0 und controlplane-1 bilden einen etcd-Cluster mit zwei Mitgliedern. AP4 ist ausgerollt, AP5 läuft in Wellen, AP6 und AP7 sind offen. Dieses Doc beschreibt den Plan und wird mit jedem Arbeitspaket ergänzt. Nach der Umsetzung wandert der Ist-Zustand in `b0000-k3s.md` und die Rollen-Docs.
 
 Bezug: [b0000](../b-kubernetes-gitops/b0000-k3s.md) (k3s-Referenz), [20020](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md) (Power-Manager), [20030](../../capulus-ansible/2-betrieb-hardware/20030-nightly-worker-update.md) (nächtliches Update), [40090](40090-standby-cluster-ha-paar.md) (Standby-Cluster, siehe [Abgrenzung](#abgrenzung-zum-standby-cluster-40090)).
 
@@ -68,7 +68,7 @@ Die Reihenfolge ist zwingend, weil die Umstellung SQLite → etcd eine Einbahnst
 | 1 | Namensschema und Inventar (nur Code, keine Node-Änderung) | ausgerollt |
 | 2 | Entkopplung vom Power-Management, Watchdog-Umstellung | ausgerollt (2026-11-05) |
 | 3 | etcd und Server-Join, Runbook | durchgeführt (2026-11-05) |
-| 4 | Monitoring und Alarme | Code vorbereitet |
+| 4 | Monitoring und Alarme | ausgerollt |
 | 5 | Verlagerung einzelner Apps nach ControlPlane-1 | offen, nach Messwerten |
 | 6 | Umbenennung `homeserver` → `controlplane-0` | offen, Entscheidung des Nutzers nötig |
 | 7 | Vorbereitung ControlPlane-2 | offen |
@@ -233,7 +233,24 @@ Begründungen der Regeln: [60060](../6-hintergruende/60060-monitoring-und-alerti
 | smartctl-Scrape für controlplane-1 | Der Node läuft jetzt dauerhaft |
 | Sprachnamen im alert-caller: „Control Plane null/eins“ | Der Telefon-Alarm nannte `192.168.178.95` „Worker null“. Die Quelle `caller.py` gilt auch für die Alert-Caller-VM: Die Rolle `alert_caller` pinnt Tag und SHA-256 in `alert_caller_core_ref`, nach dem Release ist dort ein Bump nötig |
 
-### AP5 bis AP7
+### AP5: Apps nach controlplane-1
+
+Muster und Begründung: [60040](../6-hintergruende/60040-helm-charts-tech.md#scheduling-auf-controlplane-1-toleration-und-bevorzugte-affinity).
+
+**Messung vom 2026-11-05** (vor Welle 1): controlplane-1 hat 3638 MiB zuweisbaren Speicher (7292 MiB abzüglich 1 GiB `system-reserved`, 1,5 GiB `kube-reserved` und 15 % Eviction-Schwelle). Das Working Set lag bei 2518 MiB, davon ca. 1,2 GiB `k3s-server`. `MemAvailable` lag bei 5172 MB. Auf dem Node liefen nur fünf DaemonSet-Pods (Requests 128 Mi, Limits 256 Mi). Der tatsächliche Verbrauch der Kandidaten ist klein: ticket-gate 6 Mi, pacman 11 Mi, alamos-relay und alamos-apager je 14 Mi, ntfy-bridge 16 Mi, cloudflared 17 Mi je Pod, headlamp 17 Mi, CoreDNS 41 Mi, kubeseal-webgui 104 Mi, uptime-kuma 179 Mi, zusammen etwa 0,5 GiB gegenüber Limits von etwa 1,7 GiB.
+
+**Fund auf dem Host:** Auf controlplane-1 läuft außerhalb von Kubernetes ein Docker mit sieben Containern: `tinyteller-backend`/`-frontend`, `day-pilot-frontend`/`-backend`/`-db`/`-cache` und `node-exporter-cadvisor`. Mehrere melden `unhealthy`. Sie stehen in keinem Repo und kosten RAM (dockerd, cadvisor, Backends, Postgres, Redis). Seit controlplane-1 24/7 läuft, laufen sie ebenfalls dauerhaft. Docker setzt eigene iptables-Regeln neben denen von k3s und Flannel.
+
+**CoreDNS:** Das Deployment gehört dem k3s-Addon-Controller (`objectset.rio.cattle.io/owner-name: coredns`, Manifest `/var/lib/rancher/k3s/server/manifests/coredns.yaml`, `replicas: 1`). Eine manuelle Skalierung kann beim Neuanwenden des Addons zurückgesetzt werden. Das Deployment hat bereits `topologySpreadConstraints` auf `kubernetes.io/hostname` (`DoNotSchedule`), ein zweites Replikat läge deshalb automatisch auf dem anderen Server.
+
+| Welle | Apps | Stand |
+|---|---|---|
+| 1 | ticket-gate, github-release-watcher, pacman, ntfy-bridge, alamos-apager, alamos-relay | Code vorbereitet |
+| 2 | cloudflared (verteilt auf beide Server), headlamp, kubeseal-webgui (bevorzugt controlplane-1) | Code vorbereitet |
+| 3 | CoreDNS (zweites Replikat) | offen, siehe oben |
+| 4 | uptime-kuma | offen, braucht Datenmigration |
+
+### AP6 und AP7
 
 Die Inhalte stehen im jeweiligen Abschnitt, sobald das Paket umgesetzt ist. Vorab die Randbedingungen, die schon feststehen:
 
