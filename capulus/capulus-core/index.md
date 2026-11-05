@@ -358,6 +358,7 @@ Pläne und Analysen. Ein Doc trägt in seiner Statuszeile, wie weit es umgesetzt
 | [PROD-VM startet nicht mehr, Basis-Image ausgetauscht](5-incidents/50010-prod-vm-basis-image-ersetzt.md) | Vorfall vom 23.09.2026: Ursache, Behebung und Lehren |
 | [Pi-hole-Update legt DNS und Tunnel lahm](5-incidents/50020-pihole-update-dns-deadlock.md) | Vorfall vom 05.10.2026: DNS-Deadlock beim Image-Pull, Notfall-Ablauf und Umstellung auf RollingUpdate |
 | [Infotafel: altes Bildformat, keine neuen Bilder, Slides zu schnell übersprungen](5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md) | Vorfall vom 22.10.2026: fehlendes EDID, Tailscale-Routing zum NAS, Race Condition beim Bilder-Sync |
+| [Kernel 7.0.0-42 verweigert Signale in Containern, Zammad-Datenbank startet nicht](5-incidents/50040-kernel-7042-apparmor-signale.md) | Vorfall vom 05.11.2026: AppArmor verweigert Signale zwischen Prozessen eines Containers, Rollback auf Kernel 7.0.0-38, Prüfbefehle |
 
 ### Hintergründe (`6-hintergruende/`)
 
