@@ -41,7 +41,7 @@ Die Tags je Rolle stehen auf den [Rollen-Seiten](rollen/index.md).
 | `make dnsmasq` | Run only the `dnsmasq` role (split-DNS for *.homeserver). |
 | `make tailscale` | Run only the `tailscale` role (VPN). |
 | `make k3s` | Run only the `k3s` role (Kubernetes + Helm) on controlplane-0. |
-| `make k3s-agent` | Run only the k3s-agent role on controlplane-1 (requires controlplane-0 k3s running). |
+| `make k3s-agent` | Run only the k3s-agent role on worker-1 (requires controlplane-0 k3s running). |
 | `make argocd` | Run only the `argocd` role (GitOps controller). |
 | `make semaphore` | Bootstrap Semaphore Secret on the home-server. |
 | `make semaphore-targets` | Push Semaphore SSH key to all managed targets. |
@@ -62,6 +62,10 @@ Die Tags je Rolle stehen auf den [Rollen-Seiten](rollen/index.md).
 | `make libvirt-bridge` | NUR das Bridge-Netzwerk (libvirt_host, riskant - siehe Rollenkommentar). Erst mit Wartungsfenster + Rollback-Plan. |
 | `make worker-1-libvirt-host` | Re-deploy only the libvirt_host role auf worker-1 (ENTW-VM, docs/4-planung/40080 Phase 1). Braucht libvirt_host_enabled: true in host_vars/worker-1/vars.yml. |
 | `make worker-1-libvirt-bridge` | NUR das Bridge-Netzwerk auf worker-1 (weniger kritisch als controlplane-0, aber trotzdem bewusster Schritt). |
+| `make k3s-servers-update` | apt-Update und Neustart der k3s-Server nacheinander (nur mit gesundem etcd-Peer, von der Workstation). |
+| `make k3s-servers-update-check` | Dry-run des Server-Updates (keine Änderungen). |
+| `make k3s-upgrade` | k3s auf die Version aus `k3s_version` heben: erst die Server nacheinander, dann die Agents. |
+| `make k3s-upgrade-check` | Dry-run des k3s-Upgrades (keine Änderungen). |
 | `make nightly-worker-wake` | Re-deploy only the nightly_worker_wake role on controlplane-0 (01:00 Uhr WoL+Update+Poweroff-Zyklus). |
 | `make worker-apt-update` | Manuelles apt-Update auf controlplane-1 + worker-1 (läuft normalerweise nachts automatisch über nightly-worker-wake). |
 | `make alarm-kiosks` | Alarmmonitor-Kiosks einrichten (Raspberry Pis, ALAMOS AMweb). |

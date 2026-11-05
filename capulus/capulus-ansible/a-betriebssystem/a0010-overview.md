@@ -38,7 +38,7 @@ Testumgebung.
 | **PROD** | KVM/libvirt-VM `prod-vm` auf dem homeserver | `.99` | 6 vCPU / 24 GiB / 100 GiB | `10.46.0.0/16` / `10.47.0.0/16` | keine eigene, vom TECH-Hub verwaltet | `argocd/apps/prod/` |
 | **ENTW** | KVM/libvirt-VM `entw-vm` auf `worker-1` | `.100` | 3 vCPU / 12 GiB / 20 GiB | `10.44.0.0/16` / `10.45.0.0/16` | **eigene, isolierte Instanz**, Branch `entw` | `argocd/apps/entw/` |
 
-Namensschema: Im Inventar heißen die TECH-Hosts `controlplane-0` (bisher `homeserver`), `controlplane-1` (bisher `worker-0`) und `worker-1`. Die k3s-Nodenamen bleiben vorerst `homeserver` und `worker-0`, siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md).
+Nach der Umstellung auf zwei Control-Planes ([400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md#ap3-etcd-und-server-join)) ist controlplane-1 ein dauerhaft laufender k3s-Server mit embedded etcd, nicht mehr ein per WoL geweckter Agent. Namensschema: Im Inventar heißen die TECH-Hosts `controlplane-0` (bisher `homeserver`), `controlplane-1` (bisher `worker-0`) und `worker-1`. Die k3s-Nodenamen bleiben vorerst `homeserver` und `worker-0`, siehe [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md).
 
 Alle IPs liegen im LAN `192.168.178.0/24`. Die VMs hängen über eine Bridge (`br0`) direkt im LAN. Von
 den Servern sind nur `homeserver`, `worker-0` und `worker-1` Tailscale-Mitglieder (dazu kommen einzelne Kiosk-Geräte);

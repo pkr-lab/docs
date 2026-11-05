@@ -1,6 +1,6 @@
 # Rolle `common`
 
-Basis-OS, UFW, Pakete, sysctl, chrony, Swap aus, optional statische IP.
+Basis-OS, UFW, Pakete, sysctl, chrony, Swap aus, optional statische IP. Ein automatischer Neustart (`auto_reboot_if_required`) läuft auf k3s-Servern nur, wenn [k3s_reboot_guard](k3s_reboot_guard.md) ihn freigibt.
 
 | | |
 |---|---|

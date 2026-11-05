@@ -67,7 +67,7 @@ Die Reihenfolge ist zwingend, weil die Umstellung SQLite → etcd eine Einbahnst
 |---|---|---|
 | 1 | Namensschema und Inventar (nur Code, keine Node-Änderung) | Code vorbereitet |
 | 2 | Entkopplung vom Power-Management, Watchdog-Umstellung | ausgerollt (2026-11-05) |
-| 3 | etcd und Server-Join, Runbook | offen |
+| 3 | etcd und Server-Join, Runbook | Code vorbereitet, Wartungsfenster offen |
 | 4 | Monitoring und Alarme | offen |
 | 5 | Verlagerung einzelner Apps nach ControlPlane-1 | offen, nach Messwerten |
 | 6 | Umbenennung `homeserver` → `controlplane-0` | offen, Entscheidung des Nutzers nötig |
@@ -100,11 +100,122 @@ Folgen, die beim Ausrollen zu beachten sind:
 
 Beim Ausrollen gilt die Reihenfolge: erst `site.yml` (Power-Manager-Liste ohne worker-0), dann controlplane-1 (Schlüssel entfernen), sonst fährt der alte Power-Manager controlplane-1 wieder herunter.
 
-### AP3 bis AP7
+### AP3: etcd und Server-Join
+
+Die Rolle `k3s` bekommt die Modi `init` und `join` ([k3s](../../capulus-ansible/rollen/k3s.md)). controlplane-0 wird `init` (SQLite → embedded etcd), controlplane-1 wird `join`. `k3s_version` ist in `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml` auf die laufende Version festgeschrieben, nicht in `all.yml`: Dort gilt sie auch für `prod-vm` und `entw-vm`, deren Version unbekannt ist, ein Pin würde sie herunterstufen.
+
+| Änderung | Begründung |
+|---|---|
+| etcd-Timeouts 500/5000 ms schon jetzt | Alle Mitglieder müssen gleich konfiguriert sein. So braucht der spätere Beitritt von ControlPlane-2 keinen Neustart der anderen Server |
+| Snapshots alle 6 h, Retention 28 pro Server, Kopie auf die NAS per NFS-Mount und Timer | Zwei Mitglieder tragen kein Ausfallrisiko des Datastores: Die Snapshots sind der Weg zurück. Die Kopie liegt außerhalb der Hosts |
+| `tls-san` aus allen Servern (IP, Inventarname, Nodename) plus `k3s_tls_san_extra` | Clients sollen jeden Server ansprechen können, später auch die Tailscale-Adresse von ControlPlane-2 |
+| UFW: 6443 nur aus LAN/Tailnet/Trusted Hosts, 2379–2380 nur von den anderen Servern | Die offene 6443-Regel auf controlplane-1 wird erst nach dem Anlegen der Regeln mit Quelladresse gelöscht, niemand sperrt sich aus |
+| Taint `PreferNoSchedule` und höhere `kube-reserved` (1,5 Gi) auf controlplane-1 | Weicher Taint: ungepinnte Pods meiden den Node, DaemonSets laufen weiter. etcd und API kosten dort 1 bis 1,5 GiB |
+| Rolle `k3s_reboot_guard`, `k3s-servers-update.yml`, `k3s-upgrade.yml` | Nie zwei Server gleichzeitig neu starten oder aktualisieren |
+
+**Wichtig vor dem Merge:** Der tägliche Semaphore-Lauf (06:00) schreibt nach dem Merge `cluster-init` in die Config von controlplane-0. Ein ungeplanter Neustart von k3s (oder des Hosts) würde dann die Konvertierung auslösen. Den PR deshalb erst am Beginn des Wartungsfensters mergen. Der PR für `ops/token-register.yaml` (`live_check_ref: controlplane-1`) erst nach dem Umbenennen des Tailscale-Geräts, sonst schlägt die Ablaufprüfung fehl.
+
+**Mit zwei Mitgliedern ist die API bei jedem Neustart eines Servers kurz weg**, nicht nur bei Ausfällen. Die Pods laufen weiter, `kubectl` antwortet erst wieder, wenn beide Server laufen.
+
+#### Voraussetzungen (vor dem Wartungsfenster)
+
+1. **PV-Inventur.** Der Node `worker-0` verschwindet, jede gebundene `local-path`-PV mit Affinität auf `worker-0` wäre danach verwaist. Auf controlplane-0:
+   ```bash
+   kubectl get pv -o json | jq -r '.items[] | select(.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]=="worker-0") | [.metadata.name,.status.phase,(.spec.claimRef.namespace // "-"),(.spec.claimRef.name // "-"),.spec.storageClassName] | @tsv'
+   kubectl get pods -A -o wide --field-selector spec.nodeName=worker-0
+   ```
+   Alle Zeilen müssen `Released`, `Available` oder `Failed` sein, und auf worker-0 darf kein Pod mit PVC laufen. Eine `Bound`-PV auf worker-0 stoppt das Vorhaben: erst die Daten umziehen. Auf worker-0 war `/var/lib/rancher/k3s/storage` leer.
+2. **Platte.** controlplane-1 hat eine NVMe-SSD (`ROTA=0`), 46 GB frei.
+3. **Optional, für die NAS-Kopie:** NFS-Export für die Snapshots auf der NAS anlegen (Benutzer-Aktion), danach `k3s_snapshot_copy_enabled: true`, `k3s_snapshot_nfs_server` und `k3s_snapshot_nfs_export` in den `host_vars` beider Server setzen und `make k3s` bzw. `make controlplane-1` ausführen. Die Kopie ist keine Voraussetzung für die Umstellung.
+
+#### Ablauf
+
+1. **Fenster ankündigen.** ntfy-Nachricht an `Home-Lab-System`. In Alertmanager (Grafana → Alerting → Silences) eine Silence für `alertname=worker-0Down` setzen, sonst ruft der Alarm-Anrufer an, sobald worker-0 abgeschaltet wird.
+2. **Backup auf controlplane-0** (k3s stoppen, damit `state.db` konsistent ist; die Pods laufen weiter):
+   ```bash
+   sudo systemctl stop k3s
+   sudo tar -czf /root/k3s-backup-$(date +%Y%m%d-%H%M).tar.gz -C / etc/rancher/k3s var/lib/rancher/k3s/server/db var/lib/rancher/k3s/server/token var/lib/rancher/k3s/server/node-token var/lib/rancher/k3s/server/tls var/lib/rancher/k3s/server/cred
+   sudo systemctl start k3s
+   sudo ls -lh /root/k3s-backup-*.tar.gz
+   ```
+   Das Archiv danach vom Host wegkopieren (Workstation oder NAS).
+3. **PR mergen, Config schreiben.** Dry-Run, dann ausrollen. Die Rolle schreibt nur die Config (`cluster-init`, etcd-Argumente, Snapshots, `tls-san`) und startet k3s nicht neu:
+   ```bash
+   ansible-playbook -i inventory/hosts.yml site.yml --tags k3s --check --diff --ask-vault-pass
+   make k3s
+   ```
+   Im Diff nur `/etc/rancher/k3s/config.yaml` und die Firewall-Regeln für 2379–2380. Kein Installer-Lauf, denn die Version stimmt bereits.
+4. **Bewusster Neustart (Konvertierung)** auf controlplane-0. Die API ist ein bis drei Minuten weg:
+   ```bash
+   sudo systemctl restart k3s
+   sudo journalctl -u k3s -n 80 --no-pager | grep -i -E "etcd|cluster-init|migrat"
+   kubectl get nodes
+   sudo ls /var/lib/rancher/k3s/server/db/
+   kubectl get --raw=/readyz/etcd
+   kubectl get nodes -l node-role.kubernetes.io/etcd
+   curl -s http://127.0.0.1:2381/metrics | grep -E "^etcd_server_(has_leader|is_leader)"
+   sudo k3s etcd-snapshot save --name vor-join
+   sudo k3s etcd-snapshot ls
+   ```
+   Erwartet: Verzeichnis `etcd/` neben `state.db`, der Node hat die Rollen `control-plane,etcd,master`, `etcd_server_has_leader 1`, ein Snapshot `vor-join` wird gelistet. Erst weitermachen, wenn das stimmt.
+5. **worker-0 aus dem Cluster nehmen.** Auf controlplane-0:
+   ```bash
+   kubectl drain worker-0 --ignore-daemonsets --delete-emptydir-data --timeout=180s
+   ```
+   Auf worker-0:
+   ```bash
+   sudo /usr/local/bin/k3s-agent-uninstall.sh
+   ```
+   Wieder auf controlplane-0:
+   ```bash
+   kubectl delete node worker-0
+   ```
+6. **controlplane-1 als Server beitreten lassen** (Workstation). Beim ersten Lauf kann der Dry-Run spät scheitern, weil k3s noch nicht installiert ist. Die Rolle bricht ab, falls noch `k3s-agent.service` existiert:
+   ```bash
+   ansible-playbook -i inventory/hosts.yml controlplane-1.yml --check --diff --ask-vault-pass
+   make controlplane-1
+   ```
+   Die Rolle setzt den OS-Hostnamen auf `controlplane-1`, installiert k3s als Server in derselben Version, wartet auf `Ready`, `/readyz/etcd` und zwei etcd-Mitglieder. Danach hebt der Uncordon-Play ein evtl. gesetztes Cordon auf. Der Tailscale-Name des Geräts wird dabei ebenfalls auf `controlplane-1` umbenannt.
+7. **Verifikation** auf controlplane-0:
+   ```bash
+   kubectl get nodes -o wide
+   kubectl get nodes -l node-role.kubernetes.io/etcd
+   kubectl describe node controlplane-1 | grep -A2 Taints
+   kubectl -n kube-system get pods -o wide
+   curl -s http://127.0.0.1:2381/metrics | grep -E "^etcd_server_(has_leader|is_leader)"
+   sudo k3s etcd-snapshot ls
+   ```
+   Erwartet: zwei Nodes (`homeserver` und `controlplane-1`) mit `control-plane,etcd,master`, beide `Ready`, Taint `capulus.homeserver/protected=true:PreferNoSchedule` auf controlplane-1. Der k3s-Nodename von controlplane-0 bleibt `homeserver` (Entscheidung in AP6).
+8. **Neustarttest.** `ssh ubuntu@controlplane-1 sudo reboot`. Während des Neustarts ist die API weg (zwei Mitglieder, ein Quorum von zwei), Pods laufen weiter. Prüfen über einen Dienst (zum Beispiel die Vaultwarden- oder ArgoCD-Oberfläche) und danach `kubectl get nodes`.
+9. **Zertifikat von controlplane-0 rotieren**, damit die neuen Namen und die IP von controlplane-1 im Serving-Zertifikat stehen. Nicht blockierend für den Beitritt. Das Verfahren stammt aus Community-Quellen, nicht aus der offiziellen Doku:
+   ```bash
+   sudo cp -a /var/lib/rancher/k3s/server/tls /root/k3s-tls-backup-$(date +%Y%m%d)
+   kubectl -n kube-system delete secret k3s-serving
+   sudo mv /var/lib/rancher/k3s/server/tls/dynamic-cert.json /root/dynamic-cert.json.bak
+   sudo systemctl restart k3s
+   echo | openssl s_client -connect 192.168.178.94:6443 2>/dev/null | openssl x509 -noout -ext subjectAltName
+   ```
+   Erwartet: `192.168.178.95`, `controlplane-0`, `controlplane-1` stehen in der Liste. Erscheint nichts Neues, ist das Zertifikat nicht neu erzeugt worden: das TLS-Backup zurückspielen und den Fund melden, nicht wiederholen.
+10. **Aufräumen.** Alertmanager-Silence entfernen, ntfy-Nachricht „Wartung beendet“, PR für `ops/token-register.yaml` mergen.
+
+#### Rollback
+
+| Zeitpunkt | Vorgehen |
+|---|---|
+| Vor Schritt 4 (Neustart) | Das Backup ist nicht nötig. `cluster-init` aus der Config entfernen (Rolle mit `k3s_mode: single`) und k3s weiterlaufen lassen |
+| Nach Schritt 4, vor dem Beitritt | `sudo systemctl stop k3s`, `sudo mv /var/lib/rancher/k3s/server/db/etcd /root/etcd-verworfen`, `cluster-init` und die etcd-Schlüssel aus der Config nehmen, die Dateien aus dem Backup zurückspielen (`state.db`), k3s starten. Alle Änderungen seit dem Backup gehen verloren |
+| Nach dem Beitritt | Kein Weg zurück zu SQLite. Wiederherstellung aus einem etcd-Snapshot: k3s auf **beiden** Servern stoppen, auf controlplane-0 `sudo k3s server --cluster-reset --cluster-reset-restore-path=<Snapshot>`, k3s starten; auf controlplane-1 `sudo rm -rf /var/lib/rancher/k3s/server/db/` und starten |
+| Verlust eines Servers | Der verbleibende Server hat kein Quorum. Auf ihm `sudo systemctl stop k3s`, `sudo k3s server --cluster-reset`, starten. Der neue oder reparierte zweite Server tritt wie in Schritt 6 neu bei (vorher `kubectl delete node <name>`) |
+
+#### Updates und Upgrades danach
+
+- `make k3s-servers-update-check` und `make k3s-servers-update` aktualisieren die Server nacheinander (apt, Neustart nur nach etcd-Prüfung). Nur von der Workstation, nicht in Semaphore.
+- `make k3s-upgrade-check` und `make k3s-upgrade` heben k3s auf `k3s_version`: erst controlplane-0, dann controlplane-1, dann die Agents. Die Version vorher in beiden `group_vars`-Dateien ändern.
+
+### AP4 bis AP7
 
 Die Inhalte stehen im jeweiligen Abschnitt, sobald das Paket umgesetzt ist. Vorab die Randbedingungen, die schon feststehen:
 
-- **AP3:** Vor dem Join müssen die PV-Inventur (jede PV mit nodeAffinity auf `worker-0` wird verwaist, weil `controlplane-1` ein neuer Node ist) und die Plattenprüfung (etcd braucht eine SSD) erledigt sein.
 - **AP5:** Die Summe der Memory-Limits aller verschobenen Apps bleibt unter ca. 2 GiB, weil ControlPlane-1 nach Abzug von System, k3s-Server und etcd nur etwa 4 GiB für Apps behält.
 - **AP6:** Ein k3s-Nodename ist nicht änderbar. Optionen (Label-Override, PVs neu anlegen, Nodenamen `homeserver` behalten) werden mit Empfehlung vorgelegt, umgesetzt wird erst nach der Entscheidung des Nutzers.
 

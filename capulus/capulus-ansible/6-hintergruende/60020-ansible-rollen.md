@@ -390,6 +390,19 @@ Bedienung, Einrichtung und Testplan: [10020](../../capulus-core/1-benachrichtigu
 
 ## Sonstiges
 
+### k3s: embedded etcd
+
+Planung und Runbook: [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-zwei-server.md#ap3-etcd-und-server-join).
+
+- **Zwei Mitglieder sind nicht ausfallsicherer als eins.** Die k3s-Doku verlangt eine ungerade Zahl Server. Fällt bei zwei Mitgliedern einer aus oder startet neu, hat der andere kein Quorum und die API ist weg, die Pods laufen weiter. Deshalb prüft `k3s_reboot_guard` vor jedem Neustart und Upgrade den Peer, und die Snapshots sind der Weg zurück.
+- **Timeouts 500/5000 ms.** etcd empfiehlt Heartbeat etwa 0,5–1,5 × RTT und Election-Timeout mindestens 10 × RTT, beides auf allen Mitgliedern gleich. Über Tailscale mit DERP-Relay sind bis ca. 300 ms RTT realistisch. Die LAN-Defaults (100/1000 ms) würden bei ControlPlane-2 zu Leaderwechseln führen. Preis der größeren Werte: eine Leaderwahl dauert bis zu 5 s länger. Weil alle Mitglieder dieselben Werte brauchen, stehen sie schon jetzt in der Config.
+- **Der Server-Token ist `server/token`**, nicht `node-token` (beide sind gleich, solange kein `agent-token` gesetzt ist). Die Rolle liest ihn zur Laufzeit vom Primärserver und legt die Config des Beitretenden mit `0600` ab. Im Dry-Run und im Diff wird die Datei mit `no_log` ausgeblendet.
+- **Kein automatischer Neustart.** Wie bisher schreibt die Rolle nur die Config. `cluster-init` und `tls-san` wirken erst nach einem bewussten `systemctl restart k3s`. Dadurch ist der Zeitpunkt der Konvertierung eine Entscheidung im Wartungsfenster, auch wenn der tägliche Semaphore-Lauf die Config schon früher schreibt.
+- **`k3s_version` ist in `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml` festgeschrieben**, nicht in `all.yml`. Dort leer (`""` mit `auto_upgrade: true`) hieße „bei jedem Lauf die neueste Version im Channel“ und liefe auf den Servern auseinander. Ein Pin in `all.yml` gälte auch für `prod-vm` und `entw-vm`.
+- **Taint `PreferNoSchedule`** statt `NoSchedule`: Die DaemonSets node-exporter und ServiceLB hätten sonst eigene Tolerations gebraucht, ohne node-exporter fehlen die Hardware-Metriken. Der weiche Taint ist nur ein Score-Malus, bei Platzmangel landen Pods trotzdem dort (Alarm in AP4). Ein `node-taint` in der Config wirkt nur bei der Registrierung, der neu beigetretene Node bekommt ihn deshalb sofort.
+- **UFW:** `k3s_agent/tasks/ufw.yml` löscht die offene 6443-Regel. Auf controlplane-1 legt die Rolle `k3s` ihre Regeln mit Quelladresse davor an und importiert die Agent-Firewall erst danach, sonst könnten sich andere Server aussperren. 2379–2380 sind nur von den anderen Servern offen (`k3s_ufw_etcd_extra_peers` für ControlPlane-2).
+- **Nodename `controlplane-1` ist neu.** Nach dem Entfernen von `worker-0` registriert sich der Server unter neuem Namen. PVs mit Affinität auf `worker-0` wären verwaist, das Runbook verlangt dazu eine Inventur.
+
 ### k3s: Modus der Kubeconfig
 
 - **`write-kubeconfig-mode: "0600"`.** `/etc/rancher/k3s/k3s.yaml` enthält ein Client-Zertifikat samt Schlüssel der Gruppe `system:masters` (cluster-admin). Mit `0644` machte ein Lesezugriff jeden lokalen Account

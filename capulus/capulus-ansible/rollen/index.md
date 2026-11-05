@@ -17,7 +17,8 @@
 | [`dnsmasq`](dnsmasq.md) | controlplane-0 | Split-DNS `*.homeserver` (inkl. `*.dev.homeserver` → ENTW und PROD-Einzelhosts), Weiterleitung an Pi-hole |
 | [`journal_upload`](journal_upload.md) | alle Ansible-Hosts | journald → VictoriaLogs |
 | [`k3s`](k3s.md) | controlplane-0, prod-vm, entw-vm | Kubernetes-Server und Helm, je Cluster eigene CIDRs |
-| [`k3s_agent`](k3s_agent.md) | controlplane-1, worker-1 | Cluster-Beitritt (TECH) per Join-Token vom Control-Plane |
+| [`k3s_agent`](k3s_agent.md) | worker-1 (Voraussetzungen und Firewall auch für controlplane-1) | Cluster-Beitritt (TECH) per Join-Token vom Control-Plane |
+| [`k3s_reboot_guard`](k3s_reboot_guard.md) | controlplane-0, controlplane-1 | gibt Neustarts und Upgrades der k3s-Server nur bei gesundem Peer und etcd frei |
 | [`libvirt_host`](libvirt_host.md) | controlplane-0, worker-1 | KVM/libvirt, Bridge `br0`, legt `prod-vm` bzw. `entw-vm` an |
 | [`nightly_worker_wake`](nightly_worker_wake.md) | controlplane-0 | 01:00-Timer: Worker wecken, Update anstoßen, wieder herunterfahren |
 | [`node_exporter`](node_exporter.md) | prod-vm, entw-vm, Banana Pi, Kiosks | Host-Metriken für Nicht-k3s-Hosts bzw. VMs |
@@ -78,7 +79,7 @@ make lint                                   # yamllint und ansible-lint
 | [`dnsmasq`](dnsmasq.md) | `make dnsmasq` | `dnsmasq` |
 | [`crowdsec`](crowdsec.md) | `make crowdsec` | `crowdsec`, `crowdsec-firewall-bouncer` |
 | [`k3s`](k3s.md) | `make k3s`, `make prod`, `make entw` | `k3s` |
-| [`k3s_agent`](k3s_agent.md) | `make k3s-agent`, `make controlplane-1`, `make worker-1` | `k3s-agent` |
+| [`k3s_agent`](k3s_agent.md) | `make k3s-agent`, `make worker-1` | `k3s-agent` |
 | [`argocd`](argocd.md) | `make argocd`, `make render-bootstrap CORE_DIR=…` | Namespace `argocd` |
 | [`libvirt_host`](libvirt_host.md) | `make libvirt-host`, `make worker-1-libvirt-host`, `make libvirt-bridge` (riskant) | `libvirtd`, `libvirt-guests` |
 | [`semaphore_secrets`](semaphore_secrets.md), [`semaphore_targets`](semaphore_targets.md), [`semaphore_bootstrap`](semaphore_bootstrap.md) | `make semaphore`, `make semaphore-targets`, `make semaphore-bootstrap` | Namespace `semaphore` |
