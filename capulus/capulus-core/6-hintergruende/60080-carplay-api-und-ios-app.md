@@ -61,7 +61,7 @@ Der Verzeichnisname `carplay-api` ist historisch (aus der CarPlay-Vorversion), d
 - **power-agent:** Ein privilegierter Dienst direkt auf dem Homeserver ([60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#power_agent)). Der Pod hat bewusst **keinen** Host-Zugriff (sysfs-Backlight, `sudo poweroff`, SSH-Key des
   `cluster_power_manager`), deshalb wird jede Helligkeits-/Wake-/Shutdown-Anfrage an den Agenten weitergereicht, authentifiziert mit dessen eigenem Token. Die URL (`config.powerAgent.url`) zeigt auf die Adresse der Pod-Bridge `cni0` des homeservers (`http://10.42.2.1:9101`, das Pod-Netz `10.42.2.0/24` ist dem Node fest zugewiesen), nicht auf die LAN-Adresse: Der Agent lauscht dort ausschließlich ([60020](../../capulus-ansible/6-hintergruende/60020-ansible-rollen.md#power_agent)), der Token läuft im Klartext, verlässt den Node aber nie. Der `PowerHandler` gibt den vom
   Agenten gemeldeten Statuscode zurück, damit z. B. ein nicht erreichbarer Homeserver-Bildschirm als echter Fehler in der App ankommt statt als irreführendes 200. Der Homeserver ist die dauerhaft laufende
-  Steuerungsebene und hat **keinen WoL-Pfad** (nur worker-0/worker-1 lassen sich wecken, [20020](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)). Sein Shutdown nimmt den ganzen Cluster samt dieser API mit,
+  Steuerungsebene und hat **keinen WoL-Pfad** (nur worker-1 lässt sich wecken; controlplane-1 läuft dauerhaft und erscheint nur als Statuskarte, [20020](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)). Sein Shutdown nimmt den ganzen Cluster samt dieser API mit,
   deshalb hat er einen zusätzlichen Bestätigungsschritt.
 
 ### Abhängigkeiten und Schwachstellen (Incident 016, 2026-10-17)

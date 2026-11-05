@@ -96,7 +96,7 @@ Schutz ist die LAN/Tailscale-Netzwerkgrenze, nicht Kryptografie.
 ## Ansible-Rolle `journal_upload`
 
 `capulus-ansible/roles/journal_upload/` — in **allen** Playbooks eingebunden, die
-einen Host provisionieren (`site.yml`, `worker-0.yml`, `worker-1.yml`,
+einen Host provisionieren (`site.yml`, `controlplane-1.yml`, `worker-1.yml`,
 `xibo-kiosks.yml`, `banana-pi-kiosks.yml`, `alarm-kiosks.yml`).
 
 **Bewusst `systemd-journal-upload` (Paket `systemd-journal-remote`) statt

@@ -4,7 +4,7 @@ ArgoCD per Helm, Bootstrap-ApplicationSet und -Projects, Namespace-Labels, Netwo
 
 | | |
 |---|---|
-| Läuft gegen | homeserver (Hub), entw-vm |
+| Läuft gegen | controlplane-0 (Hub), entw-vm |
 | Tags | `argocd`, `gitops` |
 | Quellcode | [roles/argocd](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/argocd) |
 

@@ -1,10 +1,12 @@
 # Rolle `worker_apt_update`
 
-apt-Update der Worker (haben keine `common`-Rolle).
+apt-Update der Worker (haben keine `common`-Rolle) und der k3s-Server (`make k3s-servers-update`).
+
+Auf k3s-Servern prüft vor einem nötigen Neustart die Rolle [k3s_reboot_guard](k3s_reboot_guard.md): Der andere Server muss `Ready` sein, `/readyz/etcd` muss `ok` melden und der Peer muss mindestens 300 Sekunden laufen. Sonst wird **nicht** neu gestartet und eine Warnung ausgegeben. Nach dem Neustart wartet die Rolle über den Peer auf `Ready` und hebt das Cordon auf. Das Playbook `k3s-servers-update.yml` läuft mit `serial: 1` und `any_errors_fatal`.
 
 | | |
 |---|---|
-| Läuft gegen | worker-0, worker-1 |
+| Läuft gegen | controlplane-1, worker-1, controlplane-0 (nur über `k3s-servers-update.yml`) |
 | Tags | `apt-update`, `updates` |
 | Quellcode | [roles/worker_apt_update](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/worker_apt_update) |
 

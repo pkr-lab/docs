@@ -239,7 +239,7 @@ NAME         STATUS   ROLES                  AGE   VERSION
 homeserver   Ready    control-plane,master   5m    v1.36.4+k3s1
 ```
 
-Nach `make worker-0` (beide Nodes):
+Nach `make controlplane-1` (beide Nodes):
 
 ```
 NAME          STATUS   ROLES                  AGE   VERSION
@@ -378,7 +378,7 @@ Nachdem `make install` auf homeserver abgeschlossen ist, kann worker-0
 **worker-0 provisionieren:**
 
 ```bash
-make worker-0
+make controlplane-1
 ```
 
 Das Playbook führt in dieser Reihenfolge aus:
@@ -417,7 +417,7 @@ worker-0   Ready    <none>                 2m    v1.36.4+k3s1    192.168.178.95
 
 **Weiterer Worker (worker-1):** folgt demselben Muster über
 `make worker-1` (Playbook `capulus-ansible/worker-1.yml`) — inhaltlich identisch zu
-`worker-0.yml`, beide sind reine k3s-Compute-Nodes. Details siehe
+`controlplane-1.yml`, beide sind reine k3s-Compute-Nodes. Details siehe
 [capulus-core/b-kubernetes-gitops/b0000-k3s.md](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md).
 
 ---

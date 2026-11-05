@@ -66,8 +66,8 @@ im Cluster), ist aus Pods über die Adresse der Bridge `cni0` des homeservers
 
 - die Bildschirmhelligkeit über `/sys/class/backlight/intel_backlight/`
   liest/schreibt (HP ProBook 450 G9, siehe `capulus-ansible/a-betriebssystem/a0010-overview.md`),
-- `wakeonlan` für worker-0/worker-1 auslöst,
-- worker-0/worker-1 über denselben SSH-Key wie `cluster_power_manager`
+- `wakeonlan` für worker-1 auslöst,
+- worker-1 über denselben SSH-Key wie `cluster_power_manager`
   herunterfährt (forced command, nur `sudo poweroff` möglich — siehe
   [capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md)), und
 - den Homeserver selbst herunterfährt — kein harter `poweroff`, sondern

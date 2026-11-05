@@ -42,7 +42,7 @@ ansible-vault encrypt_string 'tskey-auth-DEIN_KEY' --name 'tailscale_auth_key'
 
 ```bash
 make install
-make worker-0
+make controlplane-1
 make worker-1
 make libvirt-host
 make worker-1-libvirt-host
@@ -52,7 +52,7 @@ make alarm-kiosks
 make xibo-kiosks
 ```
 
-`make worker-0` und `make worker-1` brauchen den Join-Token, den `make install` erzeugt. `libvirt-host` braucht `libvirt_host_enabled: true`. Nach `make prod` wird der PROD-Cluster im ArgoCD-Hub registriert, siehe [bootstrap-prod](../capulus-core/komponenten/bootstrap-prod.md). Die Kiosk-Playbooks sind optional und laufen nur manuell.
+`make controlplane-1` und `make worker-1` brauchen den Join-Token, den `make install` erzeugt. `libvirt-host` braucht `libvirt_host_enabled: true`. Nach `make prod` wird der PROD-Cluster im ArgoCD-Hub registriert, siehe [bootstrap-prod](../capulus-core/komponenten/bootstrap-prod.md). Die Kiosk-Playbooks sind optional und laufen nur manuell.
 
 ## Lint und Syntax-Check
 
@@ -69,7 +69,7 @@ Fehlersuche: [a0040 Troubleshooting](a-betriebssystem/a0040-troubleshooting.md).
 |---|---|---|
 | `make ping` schlägt fehl | SSH-Zugang, IP, Schlüssel | [a0020: Fehlersuche](a-betriebssystem/a0020-prerequisites.md#fehlersuche) |
 | Playbook bricht bei der Vault-Entschlüsselung ab | Passwort fehlt oder falsch | [Nutzung: Fehlersuche](nutzung.md#fehlersuche) |
-| `make worker-0` meldet Token-Fehler | `make install` hat noch keinen Join-Token erzeugt | zuerst `make install` |
+| `make controlplane-1` meldet Token-Fehler | `make install` hat noch keinen Join-Token erzeugt | zuerst `make install` |
 | `make libvirt-host` tut nichts | `libvirt_host_enabled: false` | auf `true` setzen |
 | `make prod` scheitert | VM läuft nicht | `make libvirt-host`, [libvirt_host](rollen/libvirt_host.md#fehlersuche) |
 | Ablauf der Erstinstallation hakt | siehe Schritt-für-Schritt-Anleitung | [a0030: Fehlersuche](a-betriebssystem/a0030-installation.md#fehlersuche), [Troubleshooting](a-betriebssystem/a0040-troubleshooting.md) |

@@ -4,7 +4,7 @@ Druckserver, QPDL-Treiber-Build, zweite Warteschlange.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `cups-print-server`, `printer` |
 | Quellcode | [roles/cups_print_server](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cups_print_server) |
 

@@ -10,7 +10,7 @@ Alle Befehle laufen im Verzeichnis von capulus-ansible. Das Vault-Passwort wird 
 | Änderungen ansehen, ohne sie anzuwenden | `make check` bzw. `make <ziel>-check` |
 | Eine Rolle gezielt ausrollen | `make <rolle>` (z. B. `make dnsmasq`, `make argocd`, `make power-agent`) |
 | Alles ausrollen | `make install` |
-| Worker einbinden oder aktualisieren | `make worker-0`, `make worker-1` |
+| Worker einbinden oder aktualisieren | `make controlplane-1`, `make worker-1` |
 | PROD- oder ENTW-Cluster ausrollen | `make prod`, `make entw` |
 | Vault-Variablen bearbeiten | `make vault-edit`, `make user-inventory-edit` |
 | ArgoCD-Bootstrap in capulus-core neu erzeugen | `make render-bootstrap CORE_DIR=../capulus-core` |
@@ -34,36 +34,40 @@ Die Tags je Rolle stehen auf den [Rollen-Seiten](rollen/index.md).
 | `make deps` | Install required Ansible Galaxy collections. |
 | `make ping` | Verify Ansible can reach the server. |
 | `make check` | Dry-run the full playbook (no changes applied). |
-| `make ssh-hardening` | Apply the ssh_hardening role (key-only SSH) on homeserver, workers, prod-vm, entw-vm and the kiosk Pis. |
+| `make ssh-hardening` | Apply the ssh_hardening role (key-only SSH) on the k3s servers, worker-1, prod-vm, entw-vm and the kiosk Pis. |
 | `make install` | Provision the home server end-to-end. |
 | `make common` | Run only the `common` role (base OS, firewall, packages). |
 | `make crowdsec` | Run only the `crowdsec` role (SSH + Traefik brute-force protection). |
 | `make dnsmasq` | Run only the `dnsmasq` role (split-DNS for *.homeserver). |
 | `make tailscale` | Run only the `tailscale` role (VPN). |
-| `make k3s` | Run only the `k3s` role (Kubernetes + Helm) on homeserver. |
-| `make k3s-agent` | Join worker-0 as k3s worker node (requires homeserver k3s running). |
+| `make k3s` | Run only the `k3s` role (Kubernetes + Helm) on controlplane-0. |
+| `make k3s-agent` | Run only the k3s-agent role on worker-1 (requires controlplane-0 k3s running). |
 | `make argocd` | Run only the `argocd` role (GitOps controller). |
 | `make semaphore` | Bootstrap Semaphore Secret on the home-server. |
 | `make semaphore-targets` | Push Semaphore SSH key to all managed targets. |
 | `make semaphore-bootstrap` | Provision Projects/Inventories/Templates in Semaphore via API. |
 | `make semaphore-bootstrap-local` | Bootstrap Semaphore natively on the home server (no SSH). |
-| `make worker-0` | Deploy k3s agent + watchdogs on worker-0 (192.168.178.95). |
-| `make worker-0-check` | Dry-run the worker-0 playbook (no changes applied). |
+| `make controlplane-1` | Deploy k3s node + watchdogs on controlplane-1 (192.168.178.95). |
+| `make controlplane-1-check` | Dry-run the controlplane-1 playbook (no changes applied). |
 | `make worker-1` | Deploy k3s agent + watchdogs on worker-1 (192.168.178.96). |
 | `make worker-1-check` | Dry-run the worker-1 playbook (no changes applied). |
-| `make prod` | Deploy PROD-Cluster (k3s) in der KVM-VM auf homeserver (192.168.178.99, docs/4-planung/40080 Phase 2.5). VM muss laufen (make libvirt-host). |
+| `make prod` | Deploy PROD-Cluster (k3s) in der KVM-VM auf controlplane-0 (192.168.178.99, docs/4-planung/40080 Phase 2.5). VM muss laufen (make libvirt-host). |
 | `make prod-check` | Dry-run des PROD-Playbooks. |
 | `make entw` | Deploy ENTW-Cluster (k3s + ArgoCD) in der KVM-VM auf worker-1 (192.168.178.100, docs/4-planung/40080 Phase 1.2). VM muss laufen (make worker-1-libvirt-host). |
 | `make entw-check` | Dry-run des ENTW-Playbooks. |
-| `make cluster-power-manager` | Re-deploy only the cluster_power_manager role on homeserver (WoL scale-up/down). |
-| `make power-agent` | Re-deploy only the power_agent role on homeserver (brightness + manual WoL/poweroff HTTP API). |
-| `make cups-print-server` | Re-deploy only the cups_print_server role on homeserver (USB-Drucker per IPP/AirPrint). |
+| `make cluster-power-manager` | Re-deploy only the cluster_power_manager role on controlplane-0 (WoL scale-up/down). |
+| `make power-agent` | Re-deploy only the power_agent role on controlplane-0 (brightness + manual WoL/poweroff HTTP API). |
+| `make cups-print-server` | Re-deploy only the cups_print_server role on controlplane-0 (USB-Drucker per IPP/AirPrint). |
 | `make libvirt-host` | Re-deploy only the libvirt_host role (PROD-VM, docs/4-planung/40080 Baustein 5). Braucht libvirt_host_enabled: true in group_vars/all.yml. |
 | `make libvirt-bridge` | NUR das Bridge-Netzwerk (libvirt_host, riskant - siehe Rollenkommentar). Erst mit Wartungsfenster + Rollback-Plan. |
 | `make worker-1-libvirt-host` | Re-deploy only the libvirt_host role auf worker-1 (ENTW-VM, docs/4-planung/40080 Phase 1). Braucht libvirt_host_enabled: true in host_vars/worker-1/vars.yml. |
-| `make worker-1-libvirt-bridge` | NUR das Bridge-Netzwerk auf worker-1 (weniger kritisch als homeserver, aber trotzdem bewusster Schritt). |
-| `make nightly-worker-wake` | Re-deploy only the nightly_worker_wake role on homeserver (01:00 Uhr WoL+Update+Poweroff-Zyklus). |
-| `make worker-apt-update` | Manuelles apt-Update auf worker-0 + worker-1 (läuft normalerweise nachts automatisch über nightly-worker-wake). |
+| `make worker-1-libvirt-bridge` | NUR das Bridge-Netzwerk auf worker-1 (weniger kritisch als controlplane-0, aber trotzdem bewusster Schritt). |
+| `make k3s-servers-update` | apt-Update und Neustart der k3s-Server nacheinander (nur mit gesundem etcd-Peer, von der Workstation). |
+| `make k3s-servers-update-check` | Dry-run des Server-Updates (keine Änderungen). |
+| `make k3s-upgrade` | k3s auf die Version aus `k3s_version` heben: erst die Server nacheinander, dann die Agents. |
+| `make k3s-upgrade-check` | Dry-run des k3s-Upgrades (keine Änderungen). |
+| `make nightly-worker-wake` | Re-deploy only the nightly_worker_wake role on controlplane-0 (01:00 Uhr WoL+Update+Poweroff-Zyklus). |
+| `make worker-apt-update` | Manuelles apt-Update auf controlplane-1 + worker-1 (läuft normalerweise nachts automatisch über nightly-worker-wake). |
 | `make alarm-kiosks` | Alarmmonitor-Kiosks einrichten (Raspberry Pis, ALAMOS AMweb). |
 | `make alarm-kiosks-check` | Dry-run des Alarmmonitor-Kiosk-Playbooks (keine Änderungen). |
 | `make xibo-kiosks` | xibosignage-Displays einrichten (Raspberry Pi 3B+, Bilder-Slideshow, Tailscale). |
@@ -84,7 +88,7 @@ Die Tags je Rolle stehen auf den [Rollen-Seiten](rollen/index.md).
 
 ## Semaphore
 
-Semaphore läuft im TECH-Cluster und führt dieselben Playbooks per Zeitplan oder Klick aus. Die Rolle `semaphore_bootstrap` legt Projekte, Inventories, Templates und Zeitpläne per API an. Die Projekte lesen dieses Repo (`semaphore_ansible_repo_url`), die Playbook-Pfade sind `site.yml`, `worker-0.yml` und so weiter. Hintergrund: [b0030 Semaphore](b-kubernetes-gitops/b0030-semaphore.md).
+Semaphore läuft im TECH-Cluster und führt dieselben Playbooks per Zeitplan oder Klick aus. Die Rolle `semaphore_bootstrap` legt Projekte, Inventories, Templates und Zeitpläne per API an. Die Projekte lesen dieses Repo (`semaphore_ansible_repo_url`), die Playbook-Pfade sind `site.yml`, `controlplane-1.yml` und so weiter. Hintergrund: [b0030 Semaphore](b-kubernetes-gitops/b0030-semaphore.md).
 
 ## ArgoCD-Bootstrap erzeugen
 

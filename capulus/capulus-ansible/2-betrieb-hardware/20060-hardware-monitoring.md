@@ -2,7 +2,7 @@
 
 Drei Grafana-Dashboards zeigen den Zustand der gesamten Hardware: CPU, RAM,
 Netzwerk, Datenträger (Füllstand, I/O, S.M.A.R.T.), Temperaturen und
-Stromversorgung — für **homeserver, worker-0, worker-1, das UGREEN NAS, die
+Stromversorgung — für **homeserver, controlplane-1, worker-1, das UGREEN NAS, die
 beiden KVM-VMs (prod-vm, entw-vm)** und die Raspberry Pis. Sie liegen im
 Grafana-Ordner **Hardware** (`https://grafana-tech.pke-lab.de`) und lösen das
 frühere Dashboard "Home Server Auslastung" ab.
@@ -54,7 +54,7 @@ Objekt, Farbe nach Schwellwert:
 | Waben-Panel | Was ein Sechseck ist | Wert / Farbe |
 |---|---|---|
 | **Server** | ein Server / eine VM / das NAS / ein Pi | schlechtester Wert aus CPU-, RAM- und Dateisystem-Auslastung: grün < 70 %, gelb ≥ 70 %, rot ≥ 90 % |
-| | *blau "schläft"* | Node ist gecordont **und** nicht erreichbar = absichtlich aus (`cluster_power_manager`, worker-0) |
+| | *blau "schläft"* | Node ist gecordont **und** nicht erreichbar = absichtlich aus (`cluster_power_manager`, worker-1) |
 | | *rot "offline"* | Node ist nicht erreichbar, aber nicht gecordont |
 | **Füllstand** | ein Dateisystem | belegter Anteil: grün < 75 %, gelb ≥ 75 %, rot ≥ 90 % (sortiert: volle zuerst) |
 | **Laufwerke** | eine physische Platte (S.M.A.R.T.) | Temperatur (gelb ≥ 45 °C, rot ≥ 55 °C); **rot "FAILED"**, wenn der S.M.A.R.T.-Selbsttest fehlschlägt |
@@ -106,16 +106,16 @@ Objekt, Farbe nach Schwellwert:
 
 Alle Panels filtern über zwei Labels, die **jede** Quelle beim Scrapen
 mitbekommt — nicht über `instance` (das ist bei den k3s-Nodes weiterhin
-`IP:9100`, weil Alert-Regeln wie `worker-0Down` darauf matchen):
+`IP:9100`, weil Alert-Regeln wie `worker-1Down` und `ControlPlane1Down` darauf matchen):
 
 | Label | Werte | Zweck |
 |---|---|---|
-| `host` | `homeserver`, `worker-0`, `worker-1`, `ugreen-nas`, `prod-vm`, `entw-vm`, `infotafel`, `vereinsheim-alarmmonitor` | Name des Servers in den Dashboards |
+| `host` | `homeserver`, `controlplane-1`, `worker-1`, `ugreen-nas`, `prod-vm`, `entw-vm`, `infotafel`, `vereinsheim-alarmmonitor` | Name des Servers in den Dashboards |
 | `kind` | `server`, `vm`, `nas`, `pi` | Typ-Spalte in der Übersicht |
 
 | Host | node_exporter | S.M.A.R.T. | Wo definiert |
 |---|---|---|---|
-| homeserver, worker-0, worker-1 | DaemonSet `prometheus-node-exporter` (Relabeling `host` = k8s-Nodename, `kind: server`) | Ansible-Rolle [`smartctl_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/smartctl_exporter) (Port 9633) → `vmstaticscrape-smartctl.yaml` | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/values.yaml) `prometheus-node-exporter.vmScrape` |
+| homeserver, controlplane-1, worker-1 | DaemonSet `prometheus-node-exporter` (Relabeling `host` = k8s-Nodename, `kind: server`) | Ansible-Rolle [`smartctl_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/smartctl_exporter) (Port 9633) → `vmstaticscrape-smartctl.yaml` | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/values.yaml) `prometheus-node-exporter.vmScrape` |
 | ugreen-nas | Docker-Container auf dem NAS (Port 9100) | Docker-Container (Port 9633), siehe [NAS-Storage](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards) | `vmstaticscrape-ugreen-nas.yaml` |
 | **prod-vm** (192.168.178.99), **entw-vm** (192.168.178.100) | Ansible-Rolle [`node_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/node_exporter) (Port 9100) in `prod.yml`/`entw.yml` | — (virtuelle Platten, kein SMART) | `vmstaticscrape-vms.yaml` |
 | infotafel (Pi) | `node_exporter` (Port 9100) | — | `vmstaticscrape-infotafel.yaml` |
@@ -158,10 +158,10 @@ beide aus dem Ubuntu-Repo, Dienste laufen per systemd):
 ansible-playbook -i inventory/hosts.yml prod.yml --tags node-exporter --ask-vault-pass
 ansible-playbook -i inventory/hosts.yml entw.yml --tags node-exporter --ask-vault-pass
 
-# S.M.A.R.T.-Exporter auf den physischen Nodes (worker-0 nur, wenn er gerade wach ist)
+# S.M.A.R.T.-Exporter auf den physischen Nodes (worker-1 nur, wenn er gerade wach ist)
 ansible-playbook -i inventory/hosts.yml site.yml     --tags smartctl-exporter --limit homeserver --ask-vault-pass
 ansible-playbook -i inventory/hosts.yml worker-1.yml --tags smartctl-exporter --ask-vault-pass
-ansible-playbook -i inventory/hosts.yml worker-0.yml --tags smartctl-exporter --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml controlplane-1.yml --tags smartctl-exporter --ask-vault-pass
 ```
 
 Ohne `--tags` installieren die Playbooks die Rollen ohnehin bei jedem
@@ -183,12 +183,7 @@ finden ihn über das Label automatisch. Hat der Host physische Platten:
 zusätzlich die Rolle `smartctl_exporter` und ein Ziel in
 `vmstaticscrape-smartctl.yaml`.
 
-**worker-0** ist bewusst *nicht* im S.M.A.R.T.-Scrape: der Node schläft laut
-[Cluster Power Manager](20020-cluster-power-manager.md) meist, ein dauerhaft
-"down" Ziel würde den `TargetDown`-Alert der Default-Regeln zusätzlich
-auslösen (beim node-exporter-Job passiert das bereits). Wer seine Platten
-sehen will, ergänzt `192.168.178.95:9633` (`host: worker-0`) in
-`vmstaticscrape-smartctl.yaml`.
+**controlplane-1** läuft dauerhaft und steht im S.M.A.R.T.-Scrape (`192.168.178.95:9633`, `host: controlplane-1`). **worker-1** ist bewusst *nicht* enthalten: Der Node schläft laut [Cluster Power Manager](20020-cluster-power-manager.md) meist, ein dauerhaft "down" Ziel würde den `TargetDown`-Alert der Default-Regeln zusätzlich auslösen. Wer seine Platten sehen will, ergänzt `192.168.178.96:9633` (`host: worker-1`) in `vmstaticscrape-smartctl.yaml`.
 
 ---
 

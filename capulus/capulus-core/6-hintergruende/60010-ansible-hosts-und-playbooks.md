@@ -22,11 +22,26 @@ Aufbau von `capulus-ansible/inventory/hosts.yml`:
 
 | Stelle | Begründung |
 |---|---|
-| `homeservers` ist selbst Mitglied von `semaphore_targets` | Semaphore kann so dieses Repo auch gegen den Homeserver selbst ausrollen (rekursives Template „Deploy Home Server“, [b0030](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)). Alle Mitglieder von `semaphore_targets` bekommen den öffentlichen Semaphore-SSH-Schlüssel in `authorized_keys`, damit die UI Playbooks gegen sie ausführen kann. |
+| `controlplane-0` und `controlplane-1` sind Mitglieder von `semaphore_targets` | Semaphore kann so dieses Repo auch gegen die Control-Planes selbst ausrollen (rekursives Template „Deploy Home Server“, [b0030](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)). Alle Mitglieder von `semaphore_targets` bekommen den öffentlichen Semaphore-SSH-Schlüssel in `authorized_keys`, damit die UI Playbooks gegen sie ausführen kann. |
 | `ugreen_nas` steht nur zur Dokumentation im Inventar | Das UGREEN NAS (RAID1, NFS-Export für die `nas`-StorageClass, [20000](../2-betrieb-hardware/20000-nas-storage.md)) läuft mit der eigenen Firmware UGOS. Es läuft kein Playbook dagegen, RAID und NFS werden von Hand über die Web-UI eingerichtet. Der Eintrag dient als Referenz (DNS, spätere Backup-Rolle auf einer extern angeschlossenen Platte). |
 | `entw` und `prod` | Eigenständige k3s-Server in KVM-VMs (ENTW auf worker-1, PROD auf dem Homeserver). Die Hintergründe stehen unten bei [ENTW](#entw-cluster-entw-vm) und [PROD](#prod-cluster-prod-vm), die Planung in [40080](../4-planung/40080-multi-cluster-entw-prod-tech.md) (Baustein 5). |
 | `ansible_user: pela` bei `infotafel` und `vereinsheim-alarmmonitor` | So heißt der Benutzer auf diesen Geräten, die Raspberry-Pi-OS-Konvention `pi` gilt hier nicht. `xibo_kiosk_user: pela` überschreibt deshalb den Rollen-Default `pi`. Für andere Benutzer als `pi` legt Raspberry Pi OS keinen `NOPASSWD`-Sudoers-Eintrag an, das Fehlerbild steht in [300e0](../3-apps-workloads/300e0-xibosignage.md). |
 | `ansible_host` von `vereinsheim-alarmmonitor` ist die Tailscale-IP | Das Gerät wurde vorzeitig auf Phase 2 umgestellt, weil der LAN-Pfad zum Pi defekt war. Die Re-Provisionierung geht deshalb nur noch per `make banana-pi-kiosks` aus dem Tailnet, nicht über die Semaphore-UI ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). |
+
+### Namensschema: Inventar-Host, Gruppen und k3s-Nodename
+
+Planung und Entscheidungen: [400a0](../4-planung/400a0-controlplane-ha-zwei-server.md).
+
+| Begriff | Wert | Begründung |
+|---|---|---|
+| Inventar-Hosts im TECH-Cluster | `controlplane-0` (`.94`), `controlplane-1` (`.95`), `worker-1` (`.96`) | Kubernetes und Linux erlauben keine Großbuchstaben, in Docs und Anzeigen steht „ControlPlane-0/1/2“ |
+| Gruppen | `k3s_servers` (alle Server), `k3s_primary` (nur `controlplane-0`), `k3s_agents` (nur `worker-1`) | `k3s_primary` ersetzt `homeservers` überall dort, wo genau ein Host gemeint ist (`site.yml`, Delegationen, Uncordon-Plays) |
+| k3s-Nodename | Variable `k3s_node_name`, Standard `inventory_hostname`; `controlplane-0` setzt `homeserver` | Ein k3s-Nodename lässt sich nicht ändern. Eine Umbenennung wäre ein neuer Node, `local-path`-PVs und Chart-`nodeSelector` zeigen auf den alten Namen. Die Entscheidung dazu steht im Planungsdoc (AP6) |
+| `k3s_server_host` | `controlplane-0`, gesetzt in `group_vars/k3s_servers.yml` und `group_vars/k3s_agents.yml` | Der Wert im Vault (`group_vars/all.yml`) nennt noch den alten Hostnamen. Gruppenvariablen einer Kindgruppe schlagen die von `all`, so braucht es keine Vault-Änderung |
+| Semaphore-Projekt für ControlPlane-1 | heißt vorerst weiter `worker-0` (Template `Deploy worker-0`) | `nightly_worker_wake` sucht Projekt und Template nach dem Namen des Workers. Die Umbenennung folgt, wenn ControlPlane-1 aus dem nächtlichen Zyklus genommen wird |
+| DNS | dnsmasq löst `controlplane-0`, `controlplane-1` auf; `homeserver` und `worker-0` bleiben als Übergangs-Alias | Das Alias `homeserver` deckt auch alle Subdomains `*.homeserver` ab und bleibt dauerhaft. Der Alias `worker-0` kann entfallen, wenn nichts mehr den alten Namen nutzt |
+
+Nicht umbenannt werden die DNS-Zonen und Tiers `*.homeserver`, die Root-CA `homeserver-root-ca`, die Cloudflare-Tunnelnamen, die CRD-Gruppe `capulus.homeserver`, das Metrik-Label `clusterLabel: homeserver` sowie Repo- und App-Namen.
 
 ## ENTW-Cluster (`entw-vm`)
 
@@ -175,7 +190,7 @@ einmal auslesen) — zu unzuverlässig für VM-Storage.
 - Sudo-Passwörter: `ansible-vault encrypt_string 'DEIN_SUDO_PW' --name 'vault_worker-0_become_password'` (worker-1:
   `vault_worker_1_become_password`, Ablage in `host_vars/worker-1/vault.yml`, Vorlage ist `host_vars/worker-0/vault.yml`).
 
-### Reihenfolge in `worker-0.yml` / `worker-1.yml`
+### Reihenfolge in `controlplane-1.yml` / `worker-1.yml`
 
 Seit der NAS-gestützten `nas`-StorageClass sind beide Worker reine k3s-Compute-Nodes. Die frühere HDD-Rolle (`sda`) und die
 Docker-Compose-Dienste (Paperless-ngx, TinyTeller) sind entfallen, beide laufen als ArgoCD-App. Die Reihenfolge ist zwingend:

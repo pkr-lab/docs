@@ -4,7 +4,7 @@ Bootstrap-Secret für den Semaphore-Pod.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `semaphore`, `semaphore-secrets` |
 | Quellcode | [roles/semaphore_secrets](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/semaphore_secrets) |
 

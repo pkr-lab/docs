@@ -4,7 +4,7 @@ WireGuard-Mesh-VPN, Auth-Key aus Ansible Vault; nur der homeserver ist Subnet-Ro
 
 | | |
 |---|---|
-| Läuft gegen | homeserver, worker-0/-1, xibosignage-Displays, Banana Pi, alert-caller-VM |
+| Läuft gegen | controlplane-0, controlplane-1, worker-1, xibosignage-Displays, Banana Pi, alert-caller-VM |
 | Tags | `tailscale`, `vpn` |
 | Quellcode | [roles/tailscale](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/tailscale) |
 
