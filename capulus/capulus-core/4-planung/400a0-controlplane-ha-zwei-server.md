@@ -225,7 +225,8 @@ Begründungen der Regeln: [60060](../6-hintergruende/60060-monitoring-und-alerti
 | Änderung | Begründung |
 |---|---|
 | `vmrule-worker-0` → `vmrule-controlplane-1` (`ControlPlane1Down`) ohne Cordon-Ausnahme | Der Node läuft dauerhaft, jede Abwesenheit ist ein Befund. `absent(…== 1)` fängt auch einen entfernten Node |
-| `vmrule-etcd` (kein Leader, Mitglieder fehlen, Peer verloren, Leaderwechsel, WAL-fsync, Datenbankgröße, Snapshot-Kopie) | Mit zwei Mitgliedern ist die API bei jedem Ausfall weg, die Snapshots sind der einzige Weg zurück |
+| `vmrule-etcd` (kein Leader, Mitglieder fehlen, Peer verloren, Leaderwechsel, WAL-fsync, Datenbankgröße) | Mit zwei Mitgliedern ist die API bei jedem Ausfall weg, die Snapshots sind der einzige Weg zurück |
+| Snapshot-Kopie meldet Fehler selbst per ntfy, keine Regel auf `node_systemd_*` | Das node-exporter-DaemonSet hat den systemd-Collector nicht, eine solche Regel würde nie feuern. Ausbleibende Läufe fallen so nicht auf; wer das braucht, aktiviert den Collector im DaemonSet |
 | `vmstaticscrape-etcd` auf `:2381` beider Server | Die Metriken kommen aus `etcd-expose-metrics`. Sollwert `etcd.expectedMembers` steigt mit ControlPlane-2 auf 3 |
 | controlplane-1 im `NodeDownPaging` | Sein Ausfall nimmt die Kubernetes-API, Telefon-Alarm nach 5 Minuten (zusätzlich zu `KubeApiDownPaging`) |
 | `ControlPlane1MemoryRequestsHigh` | Der weiche Taint hält ungepinnte Pods nicht sicher fern |

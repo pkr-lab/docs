@@ -41,6 +41,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `k3s_snapshot_mount_point` | `/mnt/k3s-etcd-snapshots` | Mount-Punkt der Freigabe |
 | `k3s_snapshot_copy_calendar` | `*-*-* 00,06,12,18:20:00` | Zeitpunkt der Kopie (20 Minuten nach dem Snapshot) |
 | `k3s_snapshot_copy_keep_days` | `14` | Aufbewahrung auf der NAS |
+| `k3s_ntfy_host`, `k3s_ntfy_ip`, `k3s_ntfy_topic` | `ntfy.tech.homeserver`, `{{ network_static_ip }}`, `Home-Lab-System` | Ziel der Fehlermeldung des Kopier-Skripts (nutzt Zugangsdaten und CA der Rolle `ntfy_publisher`) |
 | `k3s_ufw_enable` | `true` | legt die Server-Regeln an (Modi `init` und `join`) |
 | `k3s_ufw_api_sources` | LAN und `100.64.0.0/10` | Quellen für Port 6443 |
 | `k3s_ufw_etcd_extra_peers` | `[]` | zusätzliche etcd-Peers (Port 2379–2380), später ControlPlane-2 |
