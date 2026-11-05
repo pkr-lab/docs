@@ -2,7 +2,7 @@
 
 Plan für die Umstellung des TECH-Clusters von einem k3s-Server mit SQLite auf **zwei dauerhaft laufende Control-Planes** mit embedded etcd. ControlPlane-0 ist der bisherige Homeserver, ControlPlane-1 die Hardware des bisherigen `worker-0`. Eine dritte Control-Plane (ControlPlane-2) an einem anderen Standort wird nur vorbereitet. `worker-1` bleibt ein per Wake-on-LAN gesteuerter Agent.
 
-> **Stand (2026-11-05): in Umsetzung.** AP1 (Namensschema und Inventar) ist als Code vorbereitet, noch nicht ausgerollt. AP2 bis AP7 sind offen. Dieses Doc beschreibt den Plan und wird mit jedem Arbeitspaket ergänzt. Nach der Umsetzung wandert der Ist-Zustand in `b0000-k3s.md` und die Rollen-Docs.
+> **Stand (2026-11-05): in Umsetzung.** AP1 bis AP3 sind ausgerollt: controlplane-0 und controlplane-1 bilden einen etcd-Cluster mit zwei Mitgliedern. AP4 ist vorbereitet, AP5 bis AP7 sind offen. Dieses Doc beschreibt den Plan und wird mit jedem Arbeitspaket ergänzt. Nach der Umsetzung wandert der Ist-Zustand in `b0000-k3s.md` und die Rollen-Docs.
 
 Bezug: [b0000](../b-kubernetes-gitops/b0000-k3s.md) (k3s-Referenz), [20020](../../capulus-ansible/2-betrieb-hardware/20020-cluster-power-manager.md) (Power-Manager), [20030](../../capulus-ansible/2-betrieb-hardware/20030-nightly-worker-update.md) (nächtliches Update), [40090](40090-standby-cluster-ha-paar.md) (Standby-Cluster, siehe [Abgrenzung](#abgrenzung-zum-standby-cluster-40090)).
 
@@ -65,10 +65,10 @@ Die Reihenfolge ist zwingend, weil die Umstellung SQLite → etcd eine Einbahnst
 
 | AP | Inhalt | Stand |
 |---|---|---|
-| 1 | Namensschema und Inventar (nur Code, keine Node-Änderung) | Code vorbereitet |
+| 1 | Namensschema und Inventar (nur Code, keine Node-Änderung) | ausgerollt |
 | 2 | Entkopplung vom Power-Management, Watchdog-Umstellung | ausgerollt (2026-11-05) |
-| 3 | etcd und Server-Join, Runbook | Code vorbereitet, Wartungsfenster offen |
-| 4 | Monitoring und Alarme | offen |
+| 3 | etcd und Server-Join, Runbook | durchgeführt (2026-11-05) |
+| 4 | Monitoring und Alarme | Code vorbereitet |
 | 5 | Verlagerung einzelner Apps nach ControlPlane-1 | offen, nach Messwerten |
 | 6 | Umbenennung `homeserver` → `controlplane-0` | offen, Entscheidung des Nutzers nötig |
 | 7 | Vorbereitung ControlPlane-2 | offen |
@@ -163,7 +163,7 @@ Die Rolle `k3s` bekommt die Modi `init` und `join` ([k3s](../../capulus-ansible/
    sudo k3s etcd-snapshot save --name vor-join
    sudo k3s etcd-snapshot ls
    ```
-   Erwartet: Verzeichnis `etcd/` neben `state.db`, der Node hat die Rollen `control-plane,etcd,master`, `etcd_server_has_leader 1`, ein Snapshot `vor-join` wird gelistet. Erst weitermachen, wenn das stimmt.
+   Erwartet: Verzeichnis `etcd/` neben `state.db`, der Node hat die Rollen `control-plane,etcd` (ein Label `master` setzt diese k3s-Version nicht mehr), `etcd_server_has_leader 1`, ein Snapshot `vor-join` wird gelistet. Erst weitermachen, wenn das stimmt.
 5. **worker-0 aus dem Cluster nehmen.** Auf controlplane-0:
    ```bash
    kubectl drain worker-0 --ignore-daemonsets --delete-emptydir-data --timeout=180s
@@ -191,9 +191,9 @@ Die Rolle `k3s` bekommt die Modi `init` und `join` ([k3s](../../capulus-ansible/
    curl -s http://127.0.0.1:2381/metrics | grep -E "^etcd_server_(has_leader|is_leader)"
    sudo k3s etcd-snapshot ls
    ```
-   Erwartet: zwei Nodes (`homeserver` und `controlplane-1`) mit `control-plane,etcd,master`, beide `Ready`, Taint `capulus.homeserver/protected=true:PreferNoSchedule` auf controlplane-1. Der k3s-Nodename von controlplane-0 bleibt `homeserver` (Entscheidung in AP6).
+   Erwartet: zwei Nodes (`homeserver` und `controlplane-1`) mit `control-plane,etcd` (ein Label `master` setzt diese k3s-Version nicht mehr), beide `Ready`, Taint `capulus.homeserver/protected=true:PreferNoSchedule` auf controlplane-1. Der k3s-Nodename von controlplane-0 bleibt `homeserver` (Entscheidung in AP6).
 8. **Neustarttest.** `ssh ubuntu@controlplane-1 sudo reboot`. Während des Neustarts ist die API weg (zwei Mitglieder, ein Quorum von zwei), Pods laufen weiter. Prüfen über einen Dienst (zum Beispiel die Vaultwarden- oder ArgoCD-Oberfläche) und danach `kubectl get nodes`.
-9. **Zertifikat von controlplane-0 rotieren**, damit die neuen Namen und die IP von controlplane-1 im Serving-Zertifikat stehen. Nicht blockierend für den Beitritt. Das Verfahren stammt aus Community-Quellen, nicht aus der offiziellen Doku:
+9. **Zertifikat von controlplane-0 rotieren**, damit die neuen Namen und die IP von controlplane-1 im Serving-Zertifikat stehen. Nicht blockierend für den Beitritt. Das Verfahren stammt aus Community-Quellen, nicht aus der offiziellen Doku. Bei der Umstellung am 2026-11-05 hat es auf k3s v1.36.5 funktioniert: Das neue Zertifikat enthielt danach `controlplane-0`, `controlplane-1`, `homeserver` und beide IPs:
    ```bash
    sudo cp -a /var/lib/rancher/k3s/server/tls /root/k3s-tls-backup-$(date +%Y%m%d)
    kubectl -n kube-system delete secret k3s-serving
@@ -201,7 +201,7 @@ Die Rolle `k3s` bekommt die Modi `init` und `join` ([k3s](../../capulus-ansible/
    sudo systemctl restart k3s
    echo | openssl s_client -connect 192.168.178.94:6443 2>/dev/null | openssl x509 -noout -ext subjectAltName
    ```
-   Erwartet: `192.168.178.95`, `controlplane-0`, `controlplane-1` stehen in der Liste. Erscheint nichts Neues, ist das Zertifikat nicht neu erzeugt worden: das TLS-Backup zurückspielen und den Fund melden, nicht wiederholen.
+   Erwartet: `192.168.178.95`, `controlplane-0`, `controlplane-1` stehen in der Liste. (Ablauf bei der Umstellung: Secret löschen, `dynamic-cert.json` wegschieben, Neustart, ein bis zwei Minuten ohne API.) Erscheint nichts Neues, ist das Zertifikat nicht neu erzeugt worden: das TLS-Backup zurückspielen und den Fund melden, nicht wiederholen.
 10. **Aufräumen.** Alertmanager-Silence entfernen, ntfy-Nachricht „Wartung beendet“, PR für `ops/token-register.yaml` mergen.
 
 #### Rollback
@@ -218,7 +218,21 @@ Die Rolle `k3s` bekommt die Modi `init` und `join` ([k3s](../../capulus-ansible/
 - `make k3s-servers-update-check` und `make k3s-servers-update` aktualisieren die Server nacheinander (apt, Neustart nur nach etcd-Prüfung). Nur von der Workstation, nicht in Semaphore.
 - `make k3s-upgrade-check` und `make k3s-upgrade` heben k3s auf `k3s_version`: erst controlplane-0, dann controlplane-1, dann die Agents. Die Version vorher in beiden `group_vars`-Dateien ändern.
 
-### AP4 bis AP7
+### AP4: Monitoring und Alarme
+
+Begründungen der Regeln: [60060](../6-hintergruende/60060-monitoring-und-alerting.md#regeln-vmrule).
+
+| Änderung | Begründung |
+|---|---|
+| `vmrule-worker-0` → `vmrule-controlplane-1` (`ControlPlane1Down`) ohne Cordon-Ausnahme | Der Node läuft dauerhaft, jede Abwesenheit ist ein Befund. `absent(…== 1)` fängt auch einen entfernten Node |
+| `vmrule-etcd` (kein Leader, Mitglieder fehlen, Peer verloren, Leaderwechsel, WAL-fsync, Datenbankgröße, Snapshot-Kopie) | Mit zwei Mitgliedern ist die API bei jedem Ausfall weg, die Snapshots sind der einzige Weg zurück |
+| `vmstaticscrape-etcd` auf `:2381` beider Server | Die Metriken kommen aus `etcd-expose-metrics`. Sollwert `etcd.expectedMembers` steigt mit ControlPlane-2 auf 3 |
+| controlplane-1 im `NodeDownPaging` | Sein Ausfall nimmt die Kubernetes-API, Telefon-Alarm nach 5 Minuten (zusätzlich zu `KubeApiDownPaging`) |
+| `ControlPlane1MemoryRequestsHigh` | Der weiche Taint hält ungepinnte Pods nicht sicher fern |
+| smartctl-Scrape für controlplane-1 | Der Node läuft jetzt dauerhaft |
+| Sprachnamen im alert-caller: „Control Plane null/eins“ | Der Telefon-Alarm nannte `192.168.178.95` „Worker null“. Die Quelle `caller.py` gilt auch für die Alert-Caller-VM: Die Rolle `alert_caller` pinnt Tag und SHA-256 in `alert_caller_core_ref`, nach dem Release ist dort ein Bump nötig |
+
+### AP5 bis AP7
 
 Die Inhalte stehen im jeweiligen Abschnitt, sobald das Paket umgesetzt ist. Vorab die Randbedingungen, die schon feststehen:
 
