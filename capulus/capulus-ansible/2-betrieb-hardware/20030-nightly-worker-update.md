@@ -38,7 +38,7 @@ siehe [Cluster Power Manager](20020-cluster-power-manager.md). Nur der
 │  ├─ 2. wakeonlan an worker-0 + worker-1, auf kubectl-Ready warten, uncordon          │
 │  ├─ 3. Login bei Semaphore (Admin-Passwort aus /etc/semaphore-secrets)              │
 │  ├─ 4. Template "Deploy worker-0" / "Deploy worker-1" per REST-API triggern         │
-│  │     → führt worker-0.yml/worker-1.yml aus, inkl. worker_apt_update (cordon+     │
+│  │     → führt controlplane-1.yml/worker-1.yml aus, inkl. worker_apt_update (cordon+     │
 │  │       drain + Reboot bei reboot-required, siehe unten)                           │
 │  ├─ 5. Task-Status pollen, bis fertig ODER max. 25 Minuten seit dem ersten Wake      │
 │  │     (danach: Task-Stop-Request + kurze Gnadenfrist)                              │
@@ -97,7 +97,7 @@ Abbruch unerwartet war.
 **Warum über Semaphore statt eines eigenen Update-SSH-Keys?** Semaphore
 hat über [`semaphore_targets`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/semaphore_targets) bereits
 vollen, Vault-fähigen SSH-Zugriff auf beide Worker und führt bereits
-`worker-0.yml`/`worker-1.yml` aus (siehe [../b-kubernetes-gitops/b0030-semaphore.md](../b-kubernetes-gitops/b0030-semaphore.md)).
+`controlplane-1.yml`/`worker-1.yml` aus (siehe [../b-kubernetes-gitops/b0030-semaphore.md](../b-kubernetes-gitops/b0030-semaphore.md)).
 `nightly_worker_wake` triggert nur ein bestehendes Template zur richtigen
 Zeit, statt einen zweiten, separat gepflegten Zugangsweg mit eigenem
 Schlüsselmaterial aufzubauen. Für den Shutdown-Pfad gilt weiterhin das
@@ -125,7 +125,7 @@ und rebootet bei Bedarf selbstständig — **ohne** manuelles Eingreifen:
    (Boot-ID-Vergleich, nicht nur "SSH antwortet wieder"), bis der Node
    tatsächlich neu gebootet und erreichbar ist.
 3. Uncordon danach übernimmt die ohnehin schon bestehende "Uncordon nach
-   Provisioning"-Play am Ende von `worker-0.yml`/`worker-1.yml` — kein
+   Provisioning"-Play am Ende von `controlplane-1.yml`/`worker-1.yml` — kein
    separater Schritt nötig.
 
 Läuft komplett innerhalb desselben Semaphore-Tasks, den
@@ -143,9 +143,9 @@ rebooteten Worker mit `"rebooted": true`.
 | [`tailscale`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/tailscale) | worker-0, worker-1 | Seit 2026-09-15 Ansible-verwaltet statt manuell installiert, siehe [Fehlerbehebung](#fehlerbehebung) unten. Reiner Tailnet-Client (`tailscale_advertise_routes: ""`), kein Subnet-Router |
 | [`nightly_worker_wake`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/nightly_worker_wake) | homeserver | Skript + SSH-Forced-Command-Key für den n8n-Trigger: wecken, Semaphore-Template triggern, Zeitbudget überwachen, herunterfahren, Bericht an n8n |
 
-`worker_apt_update` ist der erste Schritt in `worker-0.yml`/`worker-1.yml`
+`worker_apt_update` ist der erste Schritt in `controlplane-1.yml`/`worker-1.yml`
 und läuft damit bei **jedem** Lauf dieser Playbooks — auch bei einem
-manuellen `make worker-0`/`make worker-1` oder `make worker-apt-update`.
+manuellen `make controlplane-1`/`make worker-1` oder `make worker-apt-update`.
 
 Dazu kommen zwei n8n-Workflows (kein Ansible, müssen einmalig manuell in
 n8n importiert werden):
@@ -290,7 +290,7 @@ werden trotzdem korrekt heruntergefahren. Die ntfy-Push-Meldungen
 
 ```bash
 make install              # site.yml: cluster_power_manager + nightly_worker_wake
-make worker-0 worker-1    # worker-0.yml/worker-1.yml: jetzt inkl. worker_apt_update
+make controlplane-1 worker-1    # controlplane-1.yml/worker-1.yml: jetzt inkl. worker_apt_update
 ```
 
 Nur die Rolle auf dem Homeserver neu ausrollen (z.B. nach Änderung des
@@ -419,7 +419,7 @@ ohne automatisches Re-Auth, da außerhalb von Ansible. Seit 2026-09-15 ist
 das behoben: statische Fallback-Nameserver machen `apt` unabhängig von
 Tailscale (`worker_apt_update_dns_fallback_enabled`, siehe oben), UND
 Tailscale selbst läuft jetzt über die Ansible-`tailscale`-Rolle
-(`worker-0.yml`) mit eigenem, vault-verschlüsseltem Auth-Key statt einer
+(`controlplane-1.yml`) mit eigenem, vault-verschlüsseltem Auth-Key statt einer
 manuellen, unbeaufsichtigten Installation. Prüfen (falls das Problem
 erneut auftritt):
 
@@ -436,7 +436,7 @@ gesetzt) lässt `worker_apt_update` vor dem `apt update` einen
 Netplan-Drop-in (`/etc/netplan/90-dns-fallback.yaml`, statische
 Nameserver `1.1.1.1`/`8.8.8.8`) deployen — siehe
 [`capulus-ansible/roles/worker_apt_update/defaults/main.yml`](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/worker_apt_update/defaults/main.yml).
-Das läuft bei jedem `worker-0.yml`/`worker-1.yml`-Durchlauf idempotent
+Das läuft bei jedem `controlplane-1.yml`/`worker-1.yml`-Durchlauf idempotent
 mit, macht DNS also unabhängig vom Tailscale-Login. Bei worker-1 ist das
 nur zusätzliche Absicherung — es bekommt per DHCPv6 vom Router ohnehin
 zuverlässig DNS; nötig ist der Fallback nur auf worker-0 (Fritz-WLAN-

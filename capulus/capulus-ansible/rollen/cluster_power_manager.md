@@ -4,7 +4,7 @@ weckt Worker per WoL, fährt sie per SSH wieder herunter.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `cluster-power-manager`, `power-management` |
 | Quellcode | [roles/cluster_power_manager](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/cluster_power_manager) |
 

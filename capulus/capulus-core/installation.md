@@ -42,7 +42,7 @@ ArgoCD liest danach `argocd/bootstrap/` und alle Apps unter `argocd/apps/tech/` 
 Alle Befehle laufen im Verzeichnis von capulus-ansible, nach `make install` für TECH:
 
 ```bash
-make worker-0 worker-1        # Worker in den TECH-Cluster aufnehmen
+make controlplane-1 worker-1        # Worker in den TECH-Cluster aufnehmen
 make libvirt-host             # KVM + Bridge auf dem Homeserver, legt prod-vm an
 make prod                     # k3s in der prod-vm; danach im Hub registrieren
 make worker-1-libvirt-host    # KVM + Bridge auf worker-1, legt entw-vm an

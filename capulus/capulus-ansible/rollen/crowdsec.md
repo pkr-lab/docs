@@ -4,7 +4,7 @@ Brute-Force-Schutz für SSH und Traefik-Logs.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `crowdsec`, `security` |
 | Quellcode | [roles/crowdsec](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/crowdsec) |
 

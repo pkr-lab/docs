@@ -4,9 +4,13 @@ Projekte, Inventories, Templates und Zeitpläne in Semaphore per REST-API.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | – |
 | Quellcode | [roles/semaphore_bootstrap](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/semaphore_bootstrap) |
+
+## Hinweis zur Quelle der Projekte
+
+`semaphore_projects` wird aus `defaults/main.yml` gelesen, kann aber in `group_vars/all.yml` überschrieben werden. Nach dem Umbenennen der Gruppen (`k3s_servers`, `k3s_primary`, `k3s_agents` statt `homeservers`) muss eine solche Überschreibung dieselben Inventar-Inhalte nutzen, sonst findet das Playbook in Semaphore keine Hosts. Nach jedem Merge, der Hostnamen oder Gruppen ändert, läuft `make semaphore-bootstrap`.
 
 ## Variablen
 

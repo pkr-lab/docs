@@ -4,7 +4,7 @@ HTTP-API für Helligkeit, Wake und Shutdown aus der iOS-App.
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `power-agent`, `power-management` |
 | Quellcode | [roles/power_agent](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/power_agent) |
 

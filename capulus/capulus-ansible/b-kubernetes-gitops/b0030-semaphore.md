@@ -160,8 +160,8 @@ nichts mehr klicken außer ▶ **Run**.
 
 | Project              | Repository                                                | Inventory   | Template                  | Playbook                  | Schedule       |
 |----------------------|-----------------------------------------------------------|-------------|---------------------------|---------------------------|----------------|
-| `home-server`        | dieses Repo (`argocd_repo_url` aus `group_vars/all.yml`)  | `homeservers` (192.168.178.94) | `Deploy Home Server`      | `capulus-ansible/site.yml`        | täglich 06:00  |
-| `worker-0`           | dieses Repo (`argocd_repo_url` aus `group_vars/all.yml`)  | `worker_0_only` (192.168.178.95) | `Deploy worker-0`         | `capulus-ansible/worker-0.yml`    | —              |
+| `home-server`        | dieses Repo (`argocd_repo_url` aus `group_vars/all.yml`)  | `homeservers` (Gruppen `k3s_servers`, `k3s_primary`, `k3s_agents`) | `Deploy Home Server`      | `capulus-ansible/site.yml`        | täglich 06:00  |
+| `worker-0`           | dieses Repo (`argocd_repo_url` aus `group_vars/all.yml`)  | `worker_0_only` (Gruppe `k3s_servers` mit `controlplane-1`, 192.168.178.95) | `Deploy worker-0`         | `capulus-ansible/controlplane-1.yml`    | —              |
 
 ### Workflow
 

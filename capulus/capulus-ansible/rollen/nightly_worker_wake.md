@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| Läuft gegen | homeserver |
+| Läuft gegen | controlplane-0 |
 | Tags | `nightly-worker-wake`, `power-management` |
 | Quellcode | [roles/nightly_worker_wake](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/nightly_worker_wake) |
 

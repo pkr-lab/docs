@@ -144,7 +144,7 @@ Die Rolle `capulus-ansible/roles/alamos_kiosk` installiert Chromium im Kiosk-Mod
 einen `alamos-heartbeat.timer` (Default alle 60s, siehe
 `alamos_kiosk_heartbeat_interval`). Zusätzlich laufen `thermal_watchdog` und
 `resource_watchdog` mit (gleiches Bundling wie bei `worker-0`, siehe
-`capulus-ansible/worker-0.yml`) — unbeaufsichtigte Geräte sollen sich bei
+`capulus-ansible/controlplane-1.yml`) — unbeaufsichtigte Geräte sollen sich bei
 Überhitzung/Überlast selbst schützen.
 
 3. **Einmaliger manueller Login am Pi (nach dem ersten Deploy):** AMweb
