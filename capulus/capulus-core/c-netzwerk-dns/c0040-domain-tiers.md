@@ -8,7 +8,7 @@ extern](#warum-punkt-intern-bindestrich-extern) unten:
 ```
 vorher:   grafana.homeserver          zammad.homeserver
 nachher:  grafana.tech.homeserver     zammad.tech.homeserver     (intern)
-          grafana-tech.pke-lab.de     support-tech.pke-lab.de    (extern)
+          grafana-tech.pkr-lab.de     support-tech.pkr-lab.de    (extern)
 ```
 
 Vorher lief alles flach unter `<app>.homeserver` bzw. `<app>.pke-lab.de` —
@@ -84,15 +84,15 @@ LAN/Tailnet:  Client → Traefik (Host-Header "app.tech.homeserver"
                                  bzw. "app.prod.homeserver")
                      → passender Service
 
-Internet:     Client → app-tech.pke-lab.de / app-prod.pke-lab.de
+Internet:     Client → app-tech.pkr-lab.de / app-prod.pkr-lab.de
                      → Cloudflare Edge → cloudflared
-                     → Traefik (EINE Wildcard-Regel *.pke-lab.de für die
+                     → Traefik (EINE Wildcard-Regel *.pkr-lab.de für die
                                  ganze Zone, s. u.)
-                     → Host-Header "app-tech.pke-lab.de" → passender Service
+                     → Host-Header "app-tech.pkr-lab.de" → passender Service
 ```
 
 Beide Pfade tragen dasselbe Tier-Label — z. B. ist Grafana intern
-`grafana.tech.homeserver` und extern `grafana-tech.pke-lab.de`, dieselbe
+`grafana.tech.homeserver` und extern `grafana-tech.pkr-lab.de`, dieselbe
 App, derselbe Tier, nur andere Domain (und anderes Trennzeichen vor dem
 Tier, s. u.). Betroffene Stellen pro App:
 
@@ -116,70 +116,70 @@ Ausnahmen aus dem [Abschnitt darüber](#dns-tier-und-cluster-sind-zwei-verschied
 ## Externe Erreichbarkeit: Wildcard-Routing über Traefik
 
 `cloudflared` enthält **nicht** eine Ingress-Regel pro extern freigegebener App, sondern nur
-**eine einzige** Wildcard-Regel für die ganze Zone (`*.pke-lab.de`). Sie zeigt auf den Traefik des
-jeweiligen Clusters (`https://traefik.kube-system.svc.cluster.local:443`, Zertifikatsprüfung
+**eine einzige** Wildcard-Regel für die ganze Zone (`*.pkr-lab.de`). Sie zeigt auf den Traefik des
+TECH-Clusters (`https://traefik.kube-system.svc.cluster.local:443`, Zertifikatsprüfung
 mit der privaten Homeserver-CA über `caPool` und `originServerName`), genau wie der interne LAN-Pfad das für
-`*.homeserver` tut.
+`*.homeserver` tut. Für Apps im PROD-Cluster kommt je Host eine eigene Regel davor (siehe unten).
 
-**Zwei Tunnel, ein Wildcard:** TECH und PROD haben je ein eigenes `cloudflared` mit eigenem Tunnel
-(`argocd/apps/tech/cloudflared/`, `argocd/apps/prod/cloudflared/`, Tunnel `homeserver` bzw.
-`homeserver-prod`). Beide Tunnel tragen dieselbe Wildcard-Regel; **welcher Tunnel einen Host
-bekommt, entscheidet allein der DNS-Eintrag bei Cloudflare.** Der Wildcard `*.pke-lab.de` zeigt auf
-den TECH-Tunnel, Hosts von Apps im PROD-Cluster werden einzeln mit
-`cloudflared tunnel route dns homeserver-prod <host>` auf den PROD-Tunnel gelegt. Wer eine App von
-TECH nach PROD umzieht, muss also auch den DNS-Eintrag ihres externen Hosts umlegen (siehe
-[e0010](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md)).
+**Ein Tunnel für alles:** Seit dem Wechsel auf `pkr-lab.de` (2026-11-12) zeigt bei Cloudflare nur noch ein
+Wildcard-CNAME `*` auf den TECH-Tunnel `homeserver` (`argocd/apps/tech/cloudflared/`). **Welcher Cluster einen
+Host bedient, entscheidet die cloudflared-Konfiguration im Git:** Die Hosts von Apps im PROD-Cluster haben
+je eine explizite Regel vor dem Wildcard, die an den Traefik des PROD-Clusters (`https://192.168.178.99:443`)
+weiterreicht. Alles andere geht über den Wildcard an den Traefik des TECH-Clusters. Der PROD-Tunnel
+`homeserver-prod` (`argocd/apps/prod/cloudflared/`) läuft noch, bekommt aber keinen Verkehr mehr. Wer eine App von
+TECH nach PROD umzieht, ergänzt die Hostregel in `argocd/apps/tech/cloudflared/values.yaml` (siehe
+[e0010](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md)), im DNS ändert sich nichts.
 
-**Nicht** eine Regel pro Tier (`*-tech.pke-lab.de`, `*-prod.pke-lab.de`, ...): laut
+**Nicht** eine Regel pro Tier (`*-tech.pkr-lab.de`, `*-prod.pkr-lab.de`, ...): laut
 `cloudflared tunnel ingress rule --help` erkennt cloudflared `*` ausschließlich als **komplettes**
 DNS-Label (`*.example.com`), kein Muster mit Stern + Literal *innerhalb* eines Labels
 (`*-tech.example.com`); das fiel im Test auf `defaultService`/404 zurück. Da `grafana-tech` selbst
-schon ein einziges vollständiges Label ist, deckt ein simples `*.pke-lab.de` alle Tiers gleichzeitig
+schon ein einziges vollständiges Label ist, deckt ein simples `*.pkr-lab.de` alle Tiers gleichzeitig
 ab, die Tier-Trennung ist auf cloudflared-Ebene nicht nötig und reine Namenskonvention für Menschen.
 
 **Eine Wildcard-Regel macht keine App automatisch extern erreichbar.** Traefik matcht
 Ingress-Ressourcen weiterhin exakt nach Host-Header: eine App wird nur erreichbar, wenn sie
-zusätzlich zu ihrem `*.homeserver`-Host auch einen `*-pke-lab.de`-Host in ihrer eigenen
+zusätzlich zu ihrem `*.homeserver`-Host auch einen `*-pkr-lab.de`-Host in ihrer eigenen
 `ingress.hosts`-Liste trägt. Fehlt der, matcht Traefik keinen Router und liefert 404, dieselbe
 „nur was explizit eingetragen ist"-Garantie wie über cloudflareds `defaultService`, nur eine Ebene
 tiefer.
 
-Aktuell tragen diese Apps zusätzlich einen `*-pke-lab.de`-Host:
+Aktuell tragen diese Apps zusätzlich einen `*-pkr-lab.de`-Host:
 
 | App | Extern | Tier | Cluster |
 |---|---|---|---|
-| Grafana | `grafana-tech.pke-lab.de` | tech | TECH |
-| ntfy | `ntfy-tech.pke-lab.de` | tech | TECH |
-| Zammad | `support-tech.pke-lab.de` (abweichendes Label!) | tech | TECH |
-| ticket-gate | `ticket-gate-tech.pke-lab.de` (nur die API des Kontaktformulars, [300r0](../3-apps-workloads/300r0-ticket-gate.md)) | tech | TECH |
-| Vaultwarden | `vault-tech.pke-lab.de` | tech | TECH |
-| MediaMTX | `stream-prod.pke-lab.de` | prod | TECH |
-| Uptime Kuma (Status-Seite) | `status-prod.pke-lab.de` | prod | TECH |
-| pacman | `pacman-prod.pke-lab.de` (öffentlich, ohne Auth, Schulungsobjekt) | prod | TECH |
-| alamos-relay | `alamos-relay-prod.pke-lab.de` (einziger Zweck ist die externe Erreichbarkeit, siehe [capulus-core/3-apps-workloads/300i0-alamos-relay.md](../3-apps-workloads/300i0-alamos-relay.md)) | prod | TECH |
-| Wiki.js | `wiki-prod.pke-lab.de` | prod | PROD |
-| Nextcloud | `nextcloud-prod.pke-lab.de` | prod | PROD |
-| Immich | `immich-prod.pke-lab.de` | prod | PROD |
-| Xibo CMS | `xibo-prod.pke-lab.de` | prod | PROD |
+| Grafana | `grafana-tech.pkr-lab.de` | tech | TECH |
+| ntfy | `ntfy-tech.pkr-lab.de` | tech | TECH |
+| Zammad | `support-tech.pkr-lab.de` (abweichendes Label!) | tech | TECH |
+| ticket-gate | `ticket-gate-tech.pkr-lab.de` (nur die API des Kontaktformulars, [300r0](../3-apps-workloads/300r0-ticket-gate.md)) | tech | TECH |
+| Vaultwarden | `vault-tech.pkr-lab.de` | tech | TECH |
+| MediaMTX | `stream-prod.pkr-lab.de` | prod | TECH |
+| Uptime Kuma (Status-Seite) | `status-prod.pkr-lab.de` | prod | TECH |
+| pacman | `pacman-prod.pkr-lab.de` (öffentlich, ohne Auth, Schulungsobjekt) | prod | TECH |
+| alamos-relay | `alamos-relay-prod.pkr-lab.de` (einziger Zweck ist die externe Erreichbarkeit, siehe [capulus-core/3-apps-workloads/300i0-alamos-relay.md](../3-apps-workloads/300i0-alamos-relay.md)) | prod | TECH |
+| Wiki.js | `wiki-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
+| Nextcloud | `nextcloud-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
+| Immich | `immich-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
+| Xibo CMS | `xibo-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
 
 Alle anderen Apps (Semaphore, Pi-hole, MinIO, Headlamp, Paperless-ngx, n8n, ...) bleiben
 ausschließlich LAN/Tailscale-erreichbar, auch wenn ihr Hostname theoretisch unter die Wildcard-Regel
 fiele, weil ihnen schlicht der zweite Ingress-Host fehlt.
 
-Eine App extern freigeben oder entfernen heißt: den `*-pke-lab.de`-Host in der `ingress.hosts`-Liste
+Eine App extern freigeben oder entfernen heißt: den `*-pkr-lab.de`-Host in der `ingress.hosts`-Liste
 der **App selbst** ergänzen bzw. löschen, nicht in `cloudflared/values.yaml`. Details/Ablauf:
 [capulus-core/e-externe-erreichbarkeit/e0010-cloudflare-deploy.md → Neuen Dienst freigeben](../e-externe-erreichbarkeit/e0010-cloudflare-deploy.md#neuen-dienst-freigeben).
 
 > **Zu prüfen nach einem Rollout:** Traefiks Host-Header-Routing setzt voraus, dass `cloudflared`
-> den ORIGINAL angefragten Hostnamen (z. B. `grafana-tech.pke-lab.de`) unverändert als HTTP-Host-Header
+> den ORIGINAL angefragten Hostnamen (z. B. `grafana-tech.pkr-lab.de`) unverändert als HTTP-Host-Header
 > weiterreicht. Das ist Cloudflares Default für `originRequest.httpHostHeader`, lässt sich aber per
-> `curl -I https://<app>-<tier>.pke-lab.de` bestätigen; falls nicht, `httpHostHeader` pro Regel in
+> `curl -I https://<app>-<tier>.pkr-lab.de` bestätigen; falls nicht, `httpHostHeader` pro Regel in
 > `cloudflared/values.yaml` explizit setzen.
 
 ### Warum Punkt intern, Bindestrich extern
 
 Ursprünglich war extern genau wie intern ein Punkt geplant
-(`grafana.tech.pke-lab.de`) — das scheiterte live an Cloudflares
+(`grafana.tech.pke-lab.de`, damals noch unter der alten Domain, für `pkr-lab.de` gilt dasselbe) — das scheiterte live an Cloudflares
 kostenlosem "Universal SSL"-Zertifikat: das deckt für eine Zone nur
 `pke-lab.de` + `*.pke-lab.de` ab, also genau **eine** Label-Ebene. Ein
 zweites Label vor der Domain fällt aus diesem Wildcard-Zertifikat raus —
@@ -289,10 +289,11 @@ mehr.
    Zertifikat ([d0040](../d-sicherheit/d0040-internal-tls.md)).
 4. Soll die App zusätzlich extern erreichbar sein: **in der `values.yaml` der App selbst** einen
    zweiten `ingress.hosts`-Eintrag mit demselben Tier ergänzen, **mit Bindestrich, nicht Punkt**:
-   `<app>-tech.pke-lab.de` / `<app>-prod.pke-lab.de` (siehe
+   `<app>-tech.pkr-lab.de` / `<app>-prod.pkr-lab.de` (siehe
    [Warum Punkt intern, Bindestrich extern](#warum-punkt-intern-bindestrich-extern)).
-   `cloudflared/values.yaml` bleibt dabei unangetastet, dafür muss der DNS-Eintrag beim richtigen
-   Tunnel liegen, siehe [Externe Erreichbarkeit](#externe-erreichbarkeit-wildcard-routing-über-traefik).
+   `cloudflared/values.yaml` bleibt bei Apps im TECH-Cluster unangetastet. Läuft die App im PROD-Cluster,
+   braucht der TECH-Tunnel dafür eine eigene Hostregel, siehe
+   [Externe Erreichbarkeit](#externe-erreichbarkeit-wildcard-routing-über-traefik).
 5. Referenziert eine andere, bereits bestehende App diesen neuen Host (oder umgekehrt), z. B. ein
    Webhook-Ziel oder ein Ansible-Default, auf den korrekten Tier des jeweiligen **Ziels** achten
    (siehe [Cross-App-Referenzen](#cross-app-referenzen)).
