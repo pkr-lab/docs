@@ -88,3 +88,12 @@ Die Vorbereitung ergab keine Änderung am System. Der Betreiber hat entschieden,
 | Cloudflare Access für Admin-nahe Hosts (Empfehlung: grafana-tech; support-tech und xibo-prod nur mit passender Policy beziehungsweise Bypass für `/xmds.php*`; status-prod nur `/dashboard*`; nicht für ntfy, vault, nextcloud, immich, wiki, alamos-relay, stream, pacman, instagram-bilder) | Betreiber, Cloudflare | offen |
 | HSTS und „Add security headers“ am Cloudflare-Rand | Betreiber, Cloudflare | offen |
 | WAF-Rate-Limit für `/login`, `/api/auth`, `/identity` (Free-Plan: eine Regel) | Betreiber, Cloudflare | offen |
+
+## Stand der Bearbeitung (2026-11-12)
+
+Mit dem Wechsel der Domain auf `pkr-lab.de` hat sich das Routing geändert. Die Hostnamen, Befunde und Statuscodes in diesem Incident beziehen sich auf den Stand vom 2026-10-17 unter `pke-lab.de` und sind unverändert zitiert.
+
+- **Ein Tunnel, ein DNS-Eintrag.** Bei Cloudflare zeigt nur noch der Wildcard-CNAME `*` auf den TECH-Tunnel. Der PROD-Tunnel `homeserver-prod` läuft weiter, bekommt aber keinen Verkehr mehr.
+- **Teilumsetzung der expliziten Hostregeln.** Die vier PROD-Hosts (`nextcloud-prod`, `immich-prod`, `wiki-prod`, `xibo-prod`) haben je eine eigene Regel in `argocd/apps/tech/cloudflared/values.yaml`, die an den Traefik des PROD-Clusters geht. Ein neuer Ingress im PROD-Cluster wird dadurch **nicht** mehr automatisch öffentlich, dafür braucht es eine neue Hostregel.
+- **Unverändert.** Die TECH-Hosts hängen weiter am Wildcard `*.pkr-lab.de`. Ein neuer TECH-Ingress mit `pkr-lab.de`-Host ist also weiterhin automatisch öffentlich, die Entscheidung vom 2026-10-17 gilt. Cloudflare Access, Security-Header und Rate-Limit sind weiterhin offen.
+- **Neues Risiko.** Der TECH-Tunnel ist jetzt der einzige Weg von außen. Fällt er aus, sind auch die PROD-Hosts extern nicht erreichbar, siehe [e0000](../e-externe-erreichbarkeit/e0000-cloudflare-tunnel.md#zwei-tunnel-tech-und-prod).

@@ -112,10 +112,10 @@ falls Option B aus capulus-core/e-externe-erreichbarkeit/e0000-cloudflare-tunnel
 
 ## Neuen Dienst freigeben
 
-`cloudflared/values.yaml` selbst (`argocd/apps/tech/cloudflared/` bzw. `argocd/apps/prod/cloudflared/`)
-bleibt dabei **unangetastet** — sie enthält nur noch **eine einzige** Wildcard-Regel
-(`*.deine-domain.de`), die pauschal an Traefik weiterreicht, unabhängig
-vom Tier (siehe [capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md), warum eine
+`argocd/apps/tech/cloudflared/values.yaml` bleibt für Apps im TECH-Cluster **unangetastet** — sie enthält
+dafür **eine einzige** Wildcard-Regel (`*.deine-domain.de`), die pauschal an Traefik des TECH-Clusters
+weiterreicht. Nur Apps im PROD-Cluster brauchen eine eigene Regel, siehe den Hinweis weiter unten. Die Wildcard-Regel
+gilt unabhängig vom Tier (siehe [capulus-core/c-netzwerk-dns/c0040-domain-tiers.md](../c-netzwerk-dns/c0040-domain-tiers.md), warum eine
 Regel pro Tier bei cloudflared technisch nicht funktioniert). Freigeben
 passiert stattdessen direkt in der `values.yaml` des jeweiligen Dienstes,
 analog zum internen `*.homeserver`-Host — **mit Bindestrich statt Punkt**
@@ -142,10 +142,21 @@ grafana:
 
 > **Läuft die App im PROD-Cluster** (z. B. Nextcloud, Immich, Wiki.js, Xibo), reicht der
 > Wildcard-Record **nicht**: er zeigt auf den TECH-Tunnel, dessen Traefik die PROD-App nicht kennt
-> (404). Den Host stattdessen einzeln auf den PROD-Tunnel legen:
-> `cloudflared tunnel route dns homeserver-prod nextcloud-prod.deine-domain.de`
-> (überschreibt für diesen Host den Wildcard). Umgekehrt gilt das beim Umzug einer App von TECH nach
-> PROD genauso, siehe [c0040](../c-netzwerk-dns/c0040-domain-tiers.md#externe-erreichbarkeit-wildcard-routing-über-traefik).
+> (404). Der DNS-Eintrag bleibt trotzdem derselbe, die Weiterleitung steht in
+> `argocd/apps/tech/cloudflared/values.yaml`: eine eigene Regel je Host, **vor** dem Wildcard, die an den
+> Traefik des PROD-Clusters weiterreicht:
+>
+> ```yaml
+> - hostname: "nextcloud-prod.deine-domain.de"
+>   service: https://192.168.178.99:443
+>   originRequest:
+>     caPool: /etc/cloudflared/origin-ca.pem
+>     originServerName: nextcloud.prod.homeserver
+> ```
+>
+> Ein `cloudflared tunnel route dns`-Aufruf und ein Eintrag im PROD-Tunnel sind dafür nicht nötig. Zieht eine App von
+> TECH nach PROD um, kommt die Regel dazu, zieht sie zurück, entfällt sie, siehe
+> [c0040](../c-netzwerk-dns/c0040-domain-tiers.md#externe-erreichbarkeit-wildcard-routing-über-traefik).
 
 ```bash
 git add argocd/apps/tech/monitoring/values.yaml
