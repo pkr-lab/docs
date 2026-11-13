@@ -82,26 +82,7 @@ und loggt dann nur die rohe IP ohne Standort (siehe `openGeoIP()` in
 
 ## Grafana-Dashboard
 
-`templates/dashboard-pacman-visitors.yaml` (nur gerendert, wenn
-`geoip.enabled: true`) liefert vier Panels gegen die vorhandene
-`VictoriaLogs`-Datasource (`argocd/apps/tech/logging/`):
-
-- **Requests** / **Eindeutige Besucher-IPs** im gewählten Zeitraum (Stat-Panels).
-- **Besucher-Standorte** — Geomap-Panel, Marker aus `geo_lat`/`geo_lon`.
-- **Letzte Zugriffe** — Tabelle mit Zeit, IP, Land/Stadt, Pfad, Status, User-Agent.
-
-Alle Panels filtern auf `{kubernetes.pod_namespace="pacman"} _msg:"http_access"`
-und entpacken die JSON-Logzeile per LogsQL `| unpack_json`/Feld-Zugriff.
-
-> **Verifiziert gegen die echte VictoriaLogs-Instanz** (17.08.2026, per
-> `kubectl port-forward svc/logging-victoria-logs-single-server 9428:9428`
-> + direkte `/select/logsql/query`-Aufrufe). Die ursprüngliche Annahme
-> (`namespace="pacman"`, `msg:"http_access"`) war falsch — das
-> `victoria-logs-collector`-Setup labelt den Namespace tatsächlich als
-> `kubernetes.pod_namespace`, das Nachrichtenfeld heißt `_msg`
-> (VictoriaLogs-Standardfeld), nicht `msg`. Beide waren dadurch bis zum Fix
-> stille No-Ops — kein Query-Fehler, aber auch keine Treffer, das
-> Dashboard blieb leer.
+Das frühere Besucher-Dashboard (`dashboard-pacman-visitors.yaml`) wurde entfernt. Die Zugriffslogs (`http_access`) stehen weiter in VictoriaLogs (Datasource `VictoriaLogs`, Stream-Label `kubernetes.pod_namespace="pacman"`, Nachrichtenfeld `_msg`) und lassen sich in Grafana Explore abfragen.
 
 ---
 

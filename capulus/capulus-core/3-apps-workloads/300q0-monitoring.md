@@ -33,9 +33,9 @@ flowchart LR
 |---|---|
 | Chart | Wrapper um `victoria-metrics-k8s-stack` (Version `*`, nicht fest gepinnt) von `victoriametrics.github.io/helm-charts` |
 | VMSingle | Aufbewahrung `15d`, ein Replika, PVC 10 GiB `local-path`, auf dem Node `homeserver` |
-| Grafana | PVC 2 GiB `local-path`, Plugins `victoriametrics-metrics-datasource`, `yesoreyeram-infinity-datasource`, `victoriametrics-logs-datasource`, `grafana-polystat-panel`, Admin aus dem Secret `grafana-admin`, Sidecar liest Dashboards und Datenquellen aus ConfigMaps (Namespaces `monitoring` und `pacman`) |
+| Grafana | PVC 2 GiB `local-path`, Plugins `victoriametrics-metrics-datasource`, `yesoreyeram-infinity-datasource`, `victoriametrics-logs-datasource`, `grafana-polystat-panel`, Admin aus dem Secret `grafana-admin`, Sidecar liest Dashboards und Datenquellen aus ConfigMaps (Namespace `monitoring`) |
 | Alertmanager | ein Replika, Routen siehe [60060](../6-hintergruende/60060-monitoring-und-alerting.md#alertmanager-routing) |
-| Dashboards | Ordner Hardware, Plattform (TECH), Anwendungen (TECH), je App aus der Liste `dashboardApps`, Rhein-Pegel, Zammad, Pis |
+| Dashboards | Ordner Hardware (Mainboard, Übersicht, Server-Detail, Speicher & Laufwerke), Anwendungen (TECH) mit Rhein-Pegel |
 | Schreibzugang | Ingress `vm-write` mit Basic-Auth `vm-writer` (`writeAuth.enabled`, derzeit `false`), für `vmagent` der Pis, siehe [vmagent](../../capulus-ansible/rollen/vmagent.md) |
 | Secrets | `grafana-admin`, `alert-caller-token`, `n8n-webhook-token`, `vm-write-auth` (SealedSecrets) |
 
@@ -67,8 +67,7 @@ kubectl -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-passwor
 ```
 
 - **Grafana-Zugang:** Benutzer `admin`, Passwort aus dem Secret `grafana-admin`. Neu erzeugen: `scripts/regenerate-grafana-admin.sh` ([Skripte-Referenz](../f-cicd-automatisierung/f00c0-skripte-und-workflows-referenz.md#skripte-zum-versiegeln-und-für-tokens)).
-- **Neues Dashboard:** ConfigMap mit Label `grafana_dashboard: "1"` und Annotation `grafana_folder` im Namespace `monitoring` (oder `pacman`).
-- **Neue App im Dashboard-Ordner:** Eintrag in `dashboardApps` der `values.yaml`.
+- **Neues Dashboard:** ConfigMap mit Label `grafana_dashboard: "1"` und Annotation `grafana_folder` im Namespace `monitoring`.
 - **Neuer Host:** `VMStaticScrape` (Label `host` setzen, alle Regeln nutzen `host`), siehe `templates/vmstaticscrape-vms.yaml`.
 
 ---
