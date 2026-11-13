@@ -53,6 +53,7 @@ sudo journalctl -u ssh -n 50 --no-pager
 | Symptom | Ursache | Lösung |
 |---|---|---|
 | `Das Drop-in … wird von einer früher geladenen Datei übersteuert.` | Ein früheres Drop-in (zum Beispiel `50-cloud-init.conf`) setzt dieselben Werte | Der Dateiname der Härtung muss alphabetisch vor `50-cloud-init.conf` liegen (Standard `00-hardening.conf`) |
+| `--check` bricht mit „Das Drop-in … wird von einer früher geladenen Datei übersteuert“ ab | alter Stand der Rolle: `sshd -T` wurde im Dry-Run übersprungen | Rolle aktualisieren. Seit dem Fix laufen `sshd -t` und `sshd -T` auch im Dry-Run, die Prüfung der Werte nur im echten Lauf |
 | `sshd-Härtung abgebrochen, das Drop-in … wurde entfernt. sshd wurde nicht neu geladen.` | `sshd -t` meldete einen Fehler in der Konfiguration | Fehler aus `sshd -t` lesen, Variablen der Rolle prüfen. Die Rolle entfernt das fehlerhafte Drop-in selbst |
 | Anmeldung per Passwort nicht mehr möglich | Härtung aktiv (gewollt), Schlüssel fehlt | öffentlichen Schlüssel auf dem Host hinterlegen (Konsole am Gerät) |
 | Aussperrung | Schlüssel nicht autorisiert, bevor die Härtung lief | Konsole am Gerät, `sudo rm /etc/ssh/sshd_config.d/00-hardening.conf && sudo systemctl reload ssh` |
