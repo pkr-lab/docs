@@ -73,7 +73,7 @@ Ein schlanker VictoriaMetrics-+-Grafana-Stack lebt unter `argocd/apps/tech/monit
 | **Host-Metriken** | `prometheus-node-exporter` als DaemonSet auf den TECH-Knoten, `node_exporter` auf `prod-vm`/`entw-vm`, smartctl-Exporter für die Platten |
 | **Cluster-Metriken** | kubelet/cAdvisor, kube-apiserver, kube-state-metrics, CoreDNS |
 | **Alerts** | Default-kube-prometheus-Rules; ntfy-Alertmanager-Bridge |
-| **Dashboards** | Ordner *Hardware* (Übersicht mit Waben, Server-Detail, Speicher & S.M.A.R.T.), *Plattform (TECH)* und *Anwendungen (TECH)*, Node Exporter Full, VictoriaMetrics + Kubernetes Views, siehe [Hardware-Monitoring](../capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md) |
+| **Dashboards** | Ordner *Hardware* (Mainboard, Übersicht mit Waben, Server-Detail, Speicher & Lebensdauer), *Anwendungen (TECH)* (nur Rhein-Pegel), Node Exporter Full, VictoriaMetrics + Kubernetes Views, siehe [Hardware-Monitoring](../capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md) |
 
 </details>
 

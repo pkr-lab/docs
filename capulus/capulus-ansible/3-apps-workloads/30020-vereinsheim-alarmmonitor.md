@@ -20,14 +20,11 @@ die es bei den Raspberry Pis bewusst nicht gibt:
 3. **Grafana-Monitoring + Zammad-Ticket bei Ausfall** — taucht im
    Dashboards im Ordner "Hardware" auf (per **Push**, nicht Pull — siehe
    unten) und erzeugt (nur für dieses Gerät) ein Zammad-Ticket, wenn es
-   länger als 10 Minuten nicht erreichbar ist. Ein eigenes Standort-Dashboard
-   **"1002011-pis"** (`dashboard-1002011-pis.yaml`, benannt nach dem
-   ALAMOS-Standortcode des Vereinsheims, siehe `banana_pi_kiosk_station` in
-   `capulus-ansible/inventory/hosts.yml`) zeigt zusätzlich zum Rhein-Pegel und den
-   ALAMOS-Statuswerten auch CPU/RAM/Temperatur/Disk dieses Pi im Detail —
-   und, da am selben Standort, dieselben Metriken für die xibosignage-
-   Infotafel `infotafel` (siehe
-   [capulus-core/3-apps-workloads/300e0-xibosignage.md, "Monitoring (Grafana)"](../../capulus-core/3-apps-workloads/300e0-xibosignage.md#monitoring-grafana)).
+   länger als 10 Minuten nicht erreichbar ist. Online/Offline, CPU, RAM, Temperatur,
+   Festplatte und Uptime stehen im Dashboard "Mainboard" (Ordner "Hardware"), die
+   Lebensdauer der SD-Karte unter "Speicher & Laufwerke". Das frühere Standort-Dashboard
+   "1002011-pis" ist entfallen (ALAMOS-Statuswerte dort inklusive); der
+   Rhein-Pegel bleibt im Dashboard "Rhein-Pegel Andernach".
 
 ## Inhaltsverzeichnis
 
@@ -305,12 +302,7 @@ seine Metriken mit `host`/`kind` ankommen. Die Labels ergänzt VictoriaMetrics
 beim Empfang (`argocd/apps/tech/monitoring/templates/configmap-vmsingle-relabel.yaml`),
 die `vmagent`-Rolle (`capulus-ansible/roles/vmagent/templates/vmagent-scrape.yml.j2`)
 setzt sie ab dem nächsten `make banana-pi-kiosks` zusätzlich selbst — ein
-Ansible-Lauf gegen den Pi ist dafür nicht nötig. Zusätzlich hat der Pi (fest verdrahtet, nicht über `host`) eigene
-Detail-Panels im Standort-Dashboard **"1002011-pis"**
-(`argocd/apps/tech/monitoring/templates/dashboard-1002011-pis.yaml`,
-ehemals "Vereinsheim-Alarmmonitor" — umbenannt, als die xibosignage-
-Infotafel `infotafel` als zweites Gerät am selben Standort dazukam, siehe
-[capulus-core/3-apps-workloads/300e0-xibosignage.md, "Monitoring (Grafana)"](../../capulus-core/3-apps-workloads/300e0-xibosignage.md#monitoring-grafana)).
+Ansible-Lauf gegen den Pi ist dafür nicht nötig. Das frühere Standort-Dashboard "1002011-pis" mit eigenen Detail-Panels ist entfallen.
 
 ## Zammad-Ticket via n8n
 
@@ -361,7 +353,7 @@ ist ein *Browser-Start*-Marker, kein Lebenszeichen. `/start` wird nur
 aufgerufen, wenn Chromium (neu) startet (Reboot, Absturz, Fallback-Wechsel);
 danach hält der Browser die AMweb-Seite dauerhaft offen. Ein Wert von
 10 h oder mehr ist daher normal und wächst bis zum nächsten Neustart. Im
-Dashboard "1002011-pis" heißt das Panel deshalb "Letzter Browser-Start"
+früheren Dashboard "1002011-pis" hieß das Panel deshalb "Letzter Browser-Start"
 (neutral blau, ohne Alarmfarbe); massgeblich für "lebt der Monitor" ist das
 Panel "Letztes Lebenszeichen (Heartbeat)" (grün < 2 min, gelb ab 2 min, rot
 ab 5 min). Im Zammad-Ticket-Workflow unten steht dieser Wert ebenfalls unter
