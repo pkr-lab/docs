@@ -41,7 +41,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `k3s_etcd_min_members` | `2` bei `join`, sonst `1` | Mindestzahl etcd-Mitglieder, auf die die Rolle nach dem Start wartet |
 | `k3s_snapshot_copy_enabled` | `false` (auf den k3s-Servern `true`) | richtet Mount und Timer ein, der Snapshots auf die NAS kopiert. Erst aktivieren, wenn das Verzeichnis auf der NAS existiert |
 | `k3s_snapshot_nfs_server`, `k3s_snapshot_nfs_export` | leer (auf den k3s-Servern `192.168.178.97`, `/volume1/k8s-storage/k3s-etcd-snapshots`) | NAS und Verzeichnis für die Kopie |
-| `k3s_snapshot_mount_point` | `/mnt/k3s-etcd-snapshots` | Mount-Punkt der Freigabe |
+| `k3s_snapshot_mount_point` | `/mnt/k3s-etcd-snapshots` | Mount-Punkt der Freigabe. Das Kopierskript versucht den Mount einmal (`mount <Mount-Punkt>`, 45 s), bevor es „nicht eingebunden“ meldet |
 | `k3s_snapshot_copy_calendar` | `*-*-* 00,06,12,18:20:00` | Zeitpunkt der Kopie (20 Minuten nach dem Snapshot) |
 | `k3s_snapshot_copy_keep_days` | `14` | Aufbewahrung auf der NAS |
 | `k3s_ntfy_host`, `k3s_ntfy_ip`, `k3s_ntfy_topic` | `ntfy.tech.homeserver`, `{{ network_static_ip }}`, `Home-Lab-System` | Ziel der Fehlermeldung des Kopier-Skripts (nutzt Zugangsdaten und CA der Rolle `ntfy_publisher`) |

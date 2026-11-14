@@ -27,6 +27,7 @@
 | [`infotafel_poweroff`](infotafel_poweroff.md) | Infotafel (`xibo_displays`) | Erlaubt n8n, den Pi per SSH (forced command) herunterzufahren |
 | [`power_agent`](power_agent.md) | controlplane-0 | HTTP-API für Helligkeit, Wake und Shutdown aus der iOS-App |
 | [`resource_watchdog`](resource_watchdog.md) | alle Knoten und Kiosks | Selbst-Abschaltung bei Dauerlast |
+| [`restic_backup`](restic_backup.md) | ollama-pc | Tägliches Restic-Backup des Home-Verzeichnisses mit Aufbewahrung und Integritätsprüfung (aus, bis aktiviert) |
 | [`semaphore_bootstrap`](semaphore_bootstrap.md) | controlplane-0 | Projekte, Inventories, Templates und Zeitpläne in Semaphore per REST-API |
 | [`semaphore_secrets`](semaphore_secrets.md) | controlplane-0 | Bootstrap-Secret für den Semaphore-Pod |
 | [`semaphore_targets`](semaphore_targets.md) | alle verwalteten Hosts | SSH-Pubkey von Semaphore in `authorized_keys` |
