@@ -69,21 +69,42 @@ Zugriff braucht.
 ### Zwei Tunnel: TECH und PROD
 
 Seit der Multi-Cluster-Umstellung ([40080](../4-planung/40080-multi-cluster-entw-prod-tech.md)) läuft in
-**TECH und PROD je ein eigenes `cloudflared`** mit **eigenem Tunnel**:
+**TECH und PROD je ein eigenes `cloudflared`** mit **eigenem Tunnel**. Seit dem Wechsel auf `pkr-lab.de`
+(2026-11-12) kommt der **gesamte externe Verkehr beim TECH-Tunnel an**, der PROD-Tunnel bekommt keinen Verkehr mehr:
 
-| Cluster | ArgoCD-App | Tunnel | Was dort ankommt |
+| Cluster | ArgoCD-App | Tunnel | Stand |
 |---|---|---|---|
-| TECH | `argocd/apps/tech/cloudflared/` | `homeserver` | der Wildcard `*.pke-lab.de` und alle Hosts der Apps im TECH-Cluster |
-| PROD | `argocd/apps/prod/cloudflared/` | `homeserver-prod` | nur die Hosts, die einzeln auf diesen Tunnel geroutet sind (Apps im PROD-Cluster) |
+| TECH | `argocd/apps/tech/cloudflared/` | `homeserver` | nimmt alle externen Hosts an: der Wildcard `*.pkr-lab.de` → Traefik des TECH-Clusters, davor je eine explizite Regel pro PROD-Host → Traefik des PROD-Clusters (`https://192.168.178.99:443`) |
+| PROD | `argocd/apps/prod/cloudflared/` | `homeserver-prod` | läuft weiter, aber kein DNS-Eintrag zeigt mehr auf ihn; der Abbau ist vorgesehen |
 
-Beide Tunnel tragen dieselbe Wildcard-Regel `*.pke-lab.de` → Traefik des eigenen Clusters. Welcher
-Host bei welchem Tunnel landet, entscheidet **allein der DNS-Eintrag bei Cloudflare**: der Wildcard
-zeigt auf den TECH-Tunnel, ein PROD-Host bekommt einen eigenen, spezifischeren Eintrag per
-`cloudflared tunnel route dns homeserver-prod <host>`. ENTW hat keinen Tunnel (kein `cloudflared` unter `argocd/apps/entw/`); die
-Trainingsumgebung ist nicht aus dem Internet erreichbar.
+Bei Cloudflare gibt es **einen einzigen** DNS-Eintrag: `*` als proxied CNAME auf `<TUNNEL-ID>.cfargotunnel.com`
+des TECH-Tunnels (die ID steht in `argocd/apps/tech/cloudflared/values.yaml`). **Welcher Cluster einen Host
+bedient, steht in der cloudflared-Konfiguration im Git und nicht mehr im DNS.** cloudflared prüft die Regeln von
+oben nach unten, deshalb stehen die expliziten PROD-Hostregeln vor dem Wildcard:
 
-Die Schritte 2–5 unten beschreiben den Aufbau für den TECH-Tunnel; für den PROD-Tunnel sind sie mit
-Tunnel-Name `homeserver-prod` und den Dateien unter `argocd/apps/prod/cloudflared/` identisch.
+| Host | Regel in `argocd/apps/tech/cloudflared/values.yaml` | Ziel |
+|---|---|---|
+| `nextcloud-prod.pkr-lab.de`, `immich-prod.pkr-lab.de`, `wiki-prod.pkr-lab.de`, `xibo-prod.pkr-lab.de` | eigene Regel je Host | Traefik des PROD-Clusters, `originServerName: nextcloud.prod.homeserver` |
+| alle anderen `*.pkr-lab.de` | Wildcard | Traefik des TECH-Clusters, `originServerName: homeserver` |
+
+`originServerName` ist bei den PROD-Regeln ein Name aus der SAN-Liste des PROD-Zertifikats. Verschwindet
+`nextcloud.prod.homeserver` aus dieser Liste, scheitert die Prüfung und alle vier Hosts liefern 502, siehe
+[028](../7-security-incidents/028-cloudflared-zu-traefik-ohne-tls-pruefung.md).
+
+**Ausfall.** Fällt der TECH-Tunnel aus (beide Replicas oder die Verbindung zu Cloudflare), sind jetzt auch die
+PROD-Hosts extern nicht erreichbar. Der interne Zugriff über `*.homeserver` per LAN oder Tailscale bleibt davon
+unberührt. Vorher traf ein Tunnelausfall nur den jeweiligen Cluster. Der Tunnel läuft mit zwei Replicas, siehe
+[60040](../6-hintergruende/60040-helm-charts-tech.md).
+
+ENTW hat keinen Tunnel (kein `cloudflared` unter `argocd/apps/entw/`); die Trainingsumgebung ist nicht aus dem
+Internet erreichbar.
+
+Die Schritte 2–5 unten beschreiben den Aufbau für den TECH-Tunnel. Für den PROD-Tunnel sind sie mit Tunnel-Name
+`homeserver-prod` und den Dateien unter `argocd/apps/prod/cloudflared/` identisch, wären aber nur nötig, falls er
+wieder Verkehr bekommen soll.
+
+**Domain.** Die öffentliche Zone ist `pkr-lab.de` (Cloudflare, Plan Free). Die frühere Domain `pke-lab.de` ist
+abgelaufen (DENIC-Status am 2026-11-12: Redemption Period) und löst nicht mehr auf. Ältere Beschreibungen, Belege und Incident-Texte nennen sie noch.
 
 ---
 
@@ -354,14 +375,14 @@ Access-Policy auf deine eigene E-Mail-Adresse als zusätzliche Absicherung.
 
 ### Konkret: Access-Policy für Grafana anlegen
 
-Grafana (`grafana-tech.pke-lab.de`) hat nur den lokalen Grafana-Login und
+Grafana (`grafana-tech.pkr-lab.de`) hat nur den lokalen Grafana-Login und
 ist über den Tunnel öffentlich erreichbar — ohne Access-Policy schützt nur
 noch das lokale Grafana-Passwort die Cluster-/Infra-Metriken. Empfohlenes
 Setup:
 
 1. [Zero Trust Dashboard](https://one.dash.cloudflare.com) → **Access →
    Applications → Add an application → Self-hosted**.
-2. **Application domain:** `grafana-tech.pke-lab.de` (kompletter Hostname, kein
+2. **Application domain:** `grafana-tech.pkr-lab.de` (kompletter Hostname, kein
    Pfad-Suffix nötig — die Policy greift dann für die ganze App).
 3. **Session Duration:** z. B. `24h` — danach muss die Cloudflare-Login-Seite
    erneut durchlaufen werden, auch wenn die Grafana-Session selbst länger
@@ -382,8 +403,8 @@ Setup:
 ```bash
 # Ohne gültige Access-Session sollte Cloudflare die Login-Seite zeigen,
 # nicht direkt Grafana:
-curl -sI https://grafana-tech.pke-lab.de | head -1
-# Im Browser: Inkognito-Fenster öffnen → grafana-tech.pke-lab.de →
+curl -sI https://grafana-tech.pkr-lab.de | head -1
+# Im Browser: Inkognito-Fenster öffnen → grafana-tech.pkr-lab.de →
 # es muss zuerst die Cloudflare-Access-Seite kommen, nicht der
 # Grafana-Login.
 ```
