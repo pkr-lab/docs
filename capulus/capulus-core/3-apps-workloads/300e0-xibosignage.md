@@ -439,14 +439,10 @@ infotafel`, `kind: pi`), `infotafel` taucht dort automatisch mit auf, sobald
 die Metriken ankommen (identisches Prinzip wie bei den Banana-Pi-
 Alarmmonitoren).
 
-Da `infotafel` physisch am selben Standort (Vereinsheim, ALAMOS-Standortcode
-`1002011`) wie `vereinsheim-alarmmonitor` steht, hat es zusätzlich eigene
-Detail-Panels (Erreichbarkeit, Uptime, CPU, RAM, Temperatur, Disk) im
-gemeinsamen Standort-Dashboard **"1002011-pis"**
-(`argocd/apps/tech/monitoring/templates/dashboard-1002011-pis.yaml`,
-ehemals "Vereinsheim-Alarmmonitor" — umbenannt, als `infotafel` als zweites
-Geraet dazukam, siehe
-[capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)).
+`infotafel` erscheint im Grafana-Dashboard "Mainboard" (Online/Offline, CPU, RAM, Temperatur,
+Festplatte, Uptime) und unter "Speicher & Laufwerke" (SD-Karte, Lebensdauer-Prognose), siehe
+[capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md](../../capulus-ansible/2-betrieb-hardware/20060-hardware-monitoring.md).
+Das frühere gemeinsame Standort-Dashboard "1002011-pis" ist entfallen.
 
 ---
 
