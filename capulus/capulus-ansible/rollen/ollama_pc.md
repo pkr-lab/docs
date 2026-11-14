@@ -6,8 +6,10 @@ Ollama auf dem Desktop-PC: Installation, systemd-Override, Wake-on-LAN über Net
 |---|---|
 | Läuft gegen | ollama-pc (Gruppe `ollama_pcs`) |
 | Playbook | `ollama-pc.yml` (`make ollama-pc-local`, `make ollama-pc-local-check` ohne SSH, `make ollama-pc`, `make ollama-pc-check` per SSH) |
-| Tags | `ollama-pc`, `llm` |
+| Tags | `ollama-pc`, `llm`, `hardening` (nur die Härtungs-Tasks) |
 | Quellcode | [roles/ollama_pc](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/ollama_pc) |
+
+Das Playbook führt außerdem [`ssh_hardening`](ssh_hardening.md) und [`restic_backup`](restic_backup.md) aus.
 
 Bedienung, BIOS und Betrieb: [300g0](../../capulus-core/3-apps-workloads/300g0-ollama.md).
 
@@ -36,6 +38,16 @@ Defaults aus `defaults/main.yml`. Überschreiben in `host_vars/ollama-pc/vars.ym
 | `ollama_pc_ufw_enabled` | `true` | UFW einrichten und aktivieren |
 | `ollama_pc_ufw_allowed_sources` | `[<Homeserver-IP>]` | Quellen, die Port 11434 erreichen |
 | `ollama_pc_ufw_ssh_sources` | `[<local_subnet>]` | Quellen, die SSH erreichen (verhindert den Selbstausschluss) |
+| `ollama_pc_hardening_enabled` | `true` | Härtung des Arbeitsplatzes (`tasks/hardening.yml`, Tag `hardening`) |
+| `ollama_pc_ssh_dir` | `/home/<ansible_user>/.ssh` | Verzeichnis der SSH-Schlüssel (Modus `0700`) |
+| `ollama_pc_ssh_private_key_files` | `[id_ed25519, prod_vm_ed25519, netcup-deploy, client-private.key]` | Dateien, die (soweit vorhanden) auf `0600` gesetzt werden |
+| `ollama_pc_ssh_public_key_files` | `[client-public.key]` | Dateien, die (soweit vorhanden) auf `0644` gesetzt werden |
+| `ollama_pc_stale_sudoers_files` | `[010-pela-nopasswd]` | Dateien in `/etc/sudoers.d`, die entfernt werden, **wenn sie leer sind** |
+| `ollama_pc_rpcbind_disabled` | `true` | `rpcbind` stoppen und deaktivieren, solange kein NFS eingebunden ist |
+| `ollama_pc_disabled_services` | `[]` | weitere Dienste, die gestoppt und deaktiviert werden (z. B. `teamviewerd.service`) |
+| `ollama_pc_security_tools_enabled` | `true` | Prüfwerkzeuge installieren und `auditd` aktivieren |
+| `ollama_pc_security_packages` | `[smartmontools, lm-sensors, tpm2-tools, lynis, rkhunter, chkrootkit, clamav, auditd, debsums]` | Pakete (ohne empfohlene Zusatzpakete) |
+| `ollama_pc_blocked_modules` | `[dccp, sctp, rds, tipc]` | Kernelmodule, die per `install <modul> /bin/false` gesperrt werden |
 
 `host_vars/ollama-pc/vars.yml` setzt `ollama_pc_interface: enp7s0`, `ollama_pc_nm_connection: netplan-enp7s0` und `wake_on_lan_mac_address` (liest auch die Rolle `power_agent`).
 
@@ -43,15 +55,16 @@ Defaults aus `defaults/main.yml`. Überschreiben in `host_vars/ollama-pc/vars.ym
 
 1. nvidia-treiber prüfen (`nvidia-smi -L`)
 2. Paketlisten aktualisieren (ein Fehler bricht nicht ab, nur eine Warnung), benötigte pakete installieren
-3. prüfen, ob ollama installiert ist, sonst Skript laden und ausführen
-4. systemd-override mit den umgebungsvariablen deployen (Handler: `daemon-reload`, Neustart von `ollama.service`)
-5. nvidia-persistenced beim boot einhängen (Symlink in `multi-user.target.wants`) und starten
-6. `nvidia-power-limit.service` deployen, aktivieren, anwenden
-7. NetworkManager-Verbindung ermitteln, `802-3-ethernet.wake-on-lan magic` setzen, sofort mit `ethtool -s … wol g` aktivieren, `Wake-on: g` prüfen
-8. Resume-Hook `/usr/lib/systemd/system-sleep/ollama-resume` deployen
-9. Leerlauf-Skript und Timer `ollama-idle-suspend` deployen, aktivieren (oder deaktivieren)
-10. UFW-Regeln für SSH und die Ollama-API anlegen, UFW mit `deny incoming` aktivieren
-11. ollama.service aktivieren und starten, auf `/api/tags` warten, fehlende Modelle laden
+3. Härtung (Tag `hardening`): SSH-Verzeichnis und Schlüsseldateien absichern, leere sudoers-Datei entfernen, Prüfwerkzeuge installieren, `auditd` starten, Modul-Sperrliste ablegen, `rpcbind` ohne NFS abschalten, `ollama_pc_disabled_services` abschalten
+4. prüfen, ob ollama installiert ist, sonst Skript laden und ausführen
+5. systemd-override mit den umgebungsvariablen deployen (Handler: `daemon-reload`, Neustart von `ollama.service`)
+6. nvidia-persistenced beim boot einhängen (Symlink in `multi-user.target.wants`) und starten
+7. `nvidia-power-limit.service` deployen, aktivieren, anwenden
+8. NetworkManager-Verbindung ermitteln, `802-3-ethernet.wake-on-lan magic` setzen, sofort mit `ethtool -s … wol g` aktivieren, `Wake-on: g` prüfen
+9. Resume-Hook `/usr/lib/systemd/system-sleep/ollama-resume` deployen
+10. Leerlauf-Skript und Timer `ollama-idle-suspend` deployen, aktivieren (oder deaktivieren)
+11. UFW-Regeln für SSH und die Ollama-API anlegen, UFW mit `deny incoming` aktivieren
+12. ollama.service aktivieren und starten, auf `/api/tags` warten, fehlende Modelle laden
 
 ## Handler
 
@@ -62,6 +75,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `host_vars/ollama-pc/vars.ym
 
 - `ollama-override.conf.j2`
 - `nvidia-power-limit.service.j2`
+- `blocked-modules.conf.j2`
 - `ollama-idle-suspend.service.j2`, `ollama-idle-suspend.timer.j2`
 - `files/ollama-resume.sh`, `files/ollama-idle-suspend.sh`
 
