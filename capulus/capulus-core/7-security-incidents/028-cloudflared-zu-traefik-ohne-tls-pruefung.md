@@ -74,3 +74,20 @@ Niedrig.
 **Offen.**
 
 - Abhängigkeit: Der Name `nextcloud.prod.homeserver` muss in der PROD-SAN-Liste bleiben, siehe Hintergrunddoc.
+
+## Nachtrag (2026-11-12): TECH-Tunnel prüft auch die PROD-Hosts
+
+Seit dem Domainwechsel auf `pkr-lab.de` reicht der TECH-Tunnel die Hosts `nextcloud-prod`, `immich-prod`, `wiki-prod` und `xibo-prod` an den Traefik des PROD-Clusters (`https://192.168.178.99:443`) weiter. Die Regeln in `argocd/apps/tech/cloudflared/values.yaml` setzen dafür `caPool: /etc/cloudflared/origin-ca.pem` und `originServerName: nextcloud.prod.homeserver`, es gibt weiterhin kein `noTLSVerify`. Die Abhängigkeit von der SAN-Liste gilt damit für den **TECH-Tunnel** (vorher nur für den PROD-Tunnel).
+
+| Voraussetzung | Wo |
+|---|---|
+| `nextcloud.prod.homeserver` steht in `dnsNames` des PROD-Zertifikats | [`certificate-homeserver-wildcard.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/prod/cert-manager/templates/certificate-homeserver-wildcard.yaml) |
+| Die Root-CA in `tunnel.originCaPem` des TECH-Tunnels ist die aktuelle | `argocd/apps/tech/cloudflared/values.yaml`, identisch zu `pki/homeserver-root-ca.pem` |
+
+**Prüfung** (am 2026-11-12 mit der CA aus der gerenderten ConfigMap gegen den PROD-Traefik: `Verification: OK`):
+
+```
+openssl s_client -connect 192.168.178.99:443 -servername nextcloud.prod.homeserver -CAfile pki/homeserver-root-ca.pem -verify_hostname nextcloud.prod.homeserver
+```
+
+**Fehlerbild.** Fehlt der Name in der SAN-Liste, liefern die vier PROD-Hosts 502, während der TECH-Tunnel `Ready` bleibt. Dann in den vier Regeln `originServerName` auf einen Namen setzen, der in der Liste steht.
