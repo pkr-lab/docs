@@ -19,6 +19,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `common_ufw_k3s_api_sources` | `['{{ local_subnet }}']` | – |
 | `common_ufw_trusted_hosts` | `[]` | – |
 | `common_ufw_lan_services` | `[]` | – |
+| `common_disabled_services` | `[ModemManager.service]` | Dienste, die gestoppt und deaktiviert werden; nicht vorhandene Einheiten werden übersprungen |
 
 ## Ablauf
 
@@ -72,6 +73,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 48. Reboot the server because /var/run/reboot-required is set
 49. Reboot required but auto_reboot_if_required is false — warn the operator
 50. Reboot required but Semaphore is running this task — warn instead of self-killing
+51. nicht benötigte dienste stoppen und deaktivieren
 
 ## Handler
 
