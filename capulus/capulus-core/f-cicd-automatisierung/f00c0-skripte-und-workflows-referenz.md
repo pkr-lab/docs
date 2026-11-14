@@ -165,6 +165,39 @@ Der Ablauf (ENTW → `main` → PROD) und die Gates stehen in [f0080](f0080-entw
 
 ---
 
+## Aktion `mattermost-notify`
+
+Die zusammengesetzte Aktion `.github/actions/mattermost-notify` postet eine Karte (Message-Attachment) als Bot `n8n-bot` in einen Mattermost-Channel. Ohne `token` passiert nichts (Exit 0). Ein Fehler beim Senden ist nur eine Warnung (`::warning title=Mattermost`) und lässt den Lauf nicht rot werden.
+
+| Input | Pflicht | Bedeutung |
+|---|---|---|
+| `channel` | ja | URL-Name des Channels, der Bot muss Mitglied sein |
+| `message` | ja | Markdown-Text der Karte |
+| `title` | nein | Titel der Karte, verlinkt auf `link`. Ohne Titel zeigt die Karte nur Farbbalken, Text und Footer |
+| `status` | nein | `success` (grün), `failure` (rot), `warning` (orange), sonst `info` (blau) |
+| `link` | nein | Ziel des Titels, Standard ist der aktuelle Workflow-Lauf |
+| `fields` | nein | JSON-Array `[{"title":"Commit","value":"abc1234","short":true}]`. Ungültiges JSON wird ignoriert |
+| `token` | nein | Bot-Token, in den Workflows `secrets.MATTERMOST_BOT_TOKEN` |
+| `url` | nein | Basis-URL, Standard `https://matter-tech.pkr-lab.de` |
+
+Der Footer der Karte zeigt Repo und Workflow. Aufrufer:
+
+| Workflow | Channel | Karte |
+|---|---|---|
+| `promote-entw.yml` | `deployments` | rot „CI auf entw ist rot“, grün „ENTW → main“, je mit Commit |
+| `promote-chain.yml` | `deployments` | rot bei fehlgeschlagener Kette |
+| `release.yml` | `deployments` | grün mit Link auf das Release |
+| `security-issues.yml` | `sicherheit` | rot bei Fehler im Alert-Abgleich |
+| `token-watch.yml` | `sicherheit` | rot bei Token-Ablauf in 7 Tagen oder weniger |
+
+| Meldung | Ursache | Abhilfe |
+|---|---|---|
+| `Kein Bot-Token gesetzt, Mattermost-Benachrichtigung uebersprungen.` | Secret `MATTERMOST_BOT_TOKEN` fehlt | Secret anlegen ([Token-Register](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml)) |
+| `Channel … nicht gefunden oder Bot kein Mitglied` | Channel-Name falsch oder `n8n-bot` nicht im Channel | URL-Name prüfen, Bot hinzufügen |
+| Warnung `Benachrichtigung konnte nicht gesendet werden` | Mattermost nicht erreichbar oder Token abgelaufen | Erreichbarkeit von `matter-tech.pkr-lab.de` und Token prüfen |
+
+---
+
 ## Checkliste „Workflow oder Skript schlägt fehl“
 
 1. **Lauf öffnen:** GitHub → Actions → Workflow → fehlgeschlagener Schritt. Die Fehlerzeile steht meist am Ende des Schritts.
