@@ -2,6 +2,8 @@
 
 Stand: 2026-10-16. Dieses Verzeichnis enthält die Findings des Security-Audits der eigenen Infrastruktur. Jedes Finding liegt in einer eigenen Datei `NNN-slug.md`, diese Seite sortiert sie nach Severity.
 
+Das Folge-Audit vom 2026-11-14 (Arbeitsplatz und Server, Nummern `INC-xxx`) steht getrennt unter [audit-2026-11-14](audit-2026-11-14/README.md).
+
 ---
 
 ## Zusammenfassung
