@@ -1,8 +1,8 @@
 # Hardware-Monitoring (Grafana-Ordner "Hardware")
 
-Drei Grafana-Dashboards zeigen den Zustand der gesamten Hardware: CPU, RAM,
+Vier Grafana-Dashboards zeigen den Zustand der gesamten Hardware: CPU, RAM,
 Netzwerk, Datenträger (Füllstand, I/O, S.M.A.R.T.), Temperaturen und
-Stromversorgung — für **homeserver, controlplane-1, worker-1, das UGREEN NAS, die
+Stromversorgung — für **control-plane-0 (Hostname `homeserver`), controlplane-1, worker-1, das UGREEN NAS, die
 beiden KVM-VMs (prod-vm, entw-vm)** und die Raspberry Pis. Sie liegen im
 Grafana-Ordner **Hardware** (`https://grafana-tech.pke-lab.de`) und lösen das
 frühere Dashboard "Home Server Auslastung" ab.
@@ -16,17 +16,16 @@ Quellen im Repo: [argocd/apps/tech/monitoring/dashboards/hardware/](https://gith
 
 | Ordner | Inhalt | Wie einsortiert |
 |---|---|---|
-| **Hardware** | die drei Dashboards oben + die "Node Exporter …"-Standard-Dashboards | `dashboards-hardware.yaml`; Node-Exporter-Dashboards per Hook-Job |
+| **Hardware** | die vier Dashboards oben + die "Node Exporter …"-Standard-Dashboards | `dashboards-hardware.yaml`; Node-Exporter-Dashboards per Hook-Job |
 | **Kubernetes (TECH)** | "Kubernetes / …" (Compute Resources, Networking, Kubelet, …) — zeigen den TECH-Cluster | Hook-Job `monitoring-dashboard-folders` (nach Titel-Präfix) |
 | **Monitoring-Stack** | VictoriaMetrics, Prometheus, Alertmanager, Grafana Overview | dito |
-| **Plattform (TECH)** | Pro-App-Dashboards der Infrastruktur-Dienste (cert-manager, minio, semaphore, …) | `values.yaml` `dashboardApps` (`folder:`) |
-| **Anwendungen (TECH)** | Pro-App-Dashboards der TECH-Anwendungen (n8n, vaultwarden, uptime-kuma, …), Zammad, Pacman, Pegel-Dashboard, "1002011-pis" | `dashboardApps` bzw. `grafana_folder`-Annotation im jeweiligen Template |
+| **Anwendungen (TECH)** | nur noch das Pegel-Dashboard "Rhein-Pegel Andernach" | `dashboard-rhein-andernach.yaml` (`grafana_folder`-Annotation) |
 
-Apps, die nach PROD umgezogen sind (immich, nextcloud, paperless-ngx,
-wikijs, xibosignage, demo-app, example-whoami), haben **keine**
-Dashboards mehr: PROD/ENTW werden von diesem VictoriaMetrics nicht gescrapt,
-die Dashboards blieben leer. Wer PROD-Monitoring aufbaut, ergänzt die Einträge
-in `dashboardApps` wieder.
+Pro-App-Dashboards (frühere Ordner **Plattform (TECH)** und die App-Dashboards in
+**Anwendungen (TECH)**, Zammad, Pacman, "1002011-pis") gibt es nicht mehr: Das
+Mainboard und das Server-Detail decken die Maschinen ab, App-Zustand zeigen
+ArgoCD, Uptime Kuma und die Alerts. Der leere Ordner **Plattform (TECH)** muss
+einmalig von Hand gelöscht werden.
 
 Ein umbenannter Ordner ist für Grafana ein **neuer** Ordner — der alte bleibt
 leer stehen und muss von Hand gelöscht werden (Grafana → Dashboards → Ordner
@@ -38,12 +37,28 @@ leer stehen und muss von Hand gelöscht werden (Grafana → Dashboards → Ordne
 
 | Dashboard | uid | Wofür |
 |---|---|---|
-| **Hardware Übersicht** | `hardware-overview` | Einstieg: Waben (Server, Füllstand, Laufwerke), Tabelle aller Server, Verläufe |
-| **Server-Detail** | `hardware-host` | Alles zu **einem** Server (Variable `Server`): CPU, RAM, Netzwerk, Datenträger, Temperaturen, Akku/Netzteil, S.M.A.R.T. |
-| **Speicher & Laufwerke** | `hardware-storage` | Alle Dateisysteme inkl. NAS-Volumes, Prognose "Tage bis voll", RAID, S.M.A.R.T. aller Platten |
+| **Mainboard** | `hardware-mainboard` | Einstieg: oben Online/Offline aller Server, NAS, VMs und Pis, darunter je Maschine CPU, RAM, Festplatte, Netzwerk, Temperatur und Uptime |
+| **Hardware Übersicht** | `hardware-overview` | Waben (Server, Füllstand, Laufwerke), Tabelle aller Server, Verläufe |
+| **Server-Detail** | `hardware-host` | Alles zu **einer** Maschine, auch Pis (Variable `Maschine`): CPU, RAM, Netzwerk, Datenträger, Temperaturen, Akku/Netzteil, S.M.A.R.T. |
+| **Speicher & Laufwerke** | `hardware-storage` | Alle Dateisysteme inkl. NAS-Volumes und Pis, Prognose "Tage bis voll", Lebensdauer-Prognose aller Speichermedien, RAID, S.M.A.R.T. aller Platten |
 
 Die Dashboards verlinken sich gegenseitig (Kopfzeile). In den Tabellen führt
 ein Klick auf einen Servernamen direkt ins Server-Detail.
+
+### Mainboard
+
+Oberste Zeile: vier Kachelgruppen (Server, NAS, Virtuelle Maschinen, Raspberry Pis),
+je Maschine eine Kachel **Online** (grün), **Offline** (rot) oder **Schläft** (blau,
+gecordoneter Node, siehe unten). Ein Pi, der gar keine Metriken mehr liefert (z. B.
+`vereinsheim-alarmmonitor` per vmagent-Push), bleibt bis zu 7 Tage als **Offline**
+sichtbar (`last_over_time(up[7d])`). Die nicht mehr existierenden Namen `homeserver` (jetzt `control-plane-0`) und `worker-0` sind per Regex (`host!~"homeserver|worker-0"`) aus den Status-Kacheln und der Maschinen-Auswahl ausgeschlossen; weitere abgebaute Maschinen dort ergänzen.
+
+Darunter je Maschine eine Zeile mit CPU, RAM, Festplatte (vollste Partition),
+Netzwerk (↓/↑), Temperatur und Uptime. Die Zeilen entstehen per Wiederholung über die
+Variable `Maschinen` (Standard: alle). Keine Daten werden grau dargestellt (z. B.
+Temperatur einer VM). Ein Klick auf eine Kachel öffnet das Server-Detail der Maschine.
+Die Temperatur kommt aus `node_hwmon_temp_celsius`, ersatzweise aus
+`node_thermal_zone_temp` (Pis ohne hwmon-Sensor).
 
 ### Waben (Polystat)
 
@@ -64,6 +79,43 @@ Objekt, Farbe nach Schwellwert:
 > `/mnt/factory`) und `/var/log*`. Der Filter steht als `FS_BASE`-Ausdruck in
 > den Panel-Queries (Suche nach `mountpoint!~`).
 
+### Lebensdauer-Prognose (Speichermedien)
+
+In **Speicher & Laufwerke** (alle Maschinen) und im **Server-Detail** (eine Maschine)
+berechnet das Dashboard je physischem Datenträger (NVMe, SATA, SD-Karte, `kind != vm`)
+die verbleibende Schreib-Lebensdauer:
+
+```
+Ø Schreibrate   = bisher geschriebene Bytes ÷ Laufzeit
+Restlebensdauer = (erwartete Schreibmenge − bisher geschrieben) ÷ Ø Schreibrate
+```
+
+Die **bisher geschriebene Menge** kommt, wenn vorhanden, aus den S.M.A.R.T.-Zählern der
+Platte und umfasst damit die gesamte Lebenszeit, die Laufzeit ist dann die Betriebszeit
+der Platte (`smartctl_device_power_on_seconds`):
+
+| Medium | Geschriebene Menge (Lebenszeit) |
+|---|---|
+| NVMe | `smartctl_device_bytes_written` |
+| SATA | `Total_LBAs_Written` × 512 Byte, ersatzweise `Host_Writes_32MiB` × 32 MiB |
+| ohne S.M.A.R.T. (Pis, NAS aktuell) | `node_disk_written_bytes_total` seit dem letzten Boot, Laufzeit = Uptime |
+
+| Medium | Erkennung | Erwartete Schreibmenge | Variable |
+|---|---|---|---|
+| SSD / NVMe | Gerätename `nvme*`, `sd*` ohne Rotation | Größe × 600 Zyklen (≈ 300 TBW bei 500 GB) | `P/E-Zyklen SSD` |
+| SD-Karte | Gerätename `mmcblk*` | Größe × 300 Zyklen | `P/E-Zyklen SD-Karte` |
+| HDD | `Spin_Up_Time`-Attribut bzw. Drehzahl > 0 aus S.M.A.R.T.; alle `sd*` des NAS | pauschal 900 TB (180 TB/Jahr × 5 Jahre) | `TBW HDD (TB)` |
+
+Die Variablen stehen oben im Dashboard (Textfelder) und gelten nur für die aktuelle
+Ansicht; dauerhaft ändern: Standardwerte im JSON. Bei Pis (kein S.M.A.R.T.) zählt nur die
+Datenmenge seit dem letzten Boot, frühere Schreibmengen fehlen, die Schätzung ist dort
+optimistisch. Manche SATA-SSDs melden die Schreibmenge in anderen Einheiten oder gar nicht,
+dann greift ebenfalls der Boot-Zähler. Die Größe stammt aus `smartctl_device_capacity_bytes`,
+ersatzweise aus der Summe der eingehängten Partitionen (Pis). Das NAS liefert aktuell keine
+S.M.A.R.T.-Werte, deshalb steht dort nur die HDD-Pauschale ohne Größe. Die Anzeige ist bei
+100 Jahren begrenzt. Farben: rot < 1 Jahr, gelb < 3 Jahre, sonst grün. Der echte Verschleiß
+der SSDs steht weiterhin in der S.M.A.R.T.-Tabelle ("Verschleiß").
+
 ### Was das Server-Detail zusätzlich zeigt
 
 - **CPU nach Modus** (user/system/iowait/steal …), Load Average gegen Kerne,
@@ -81,7 +133,7 @@ Objekt, Farbe nach Schwellwert:
   Latenz und Auslastung je Platte.
 - **Temperaturen** je Chip (`coretemp`/`k10temp` = CPU, `nvme` = SSD,
   `acpitz` = Mainboard, sonst PCI-Geräte) und alle Sensoren im Verlauf;
-  **Akku/Netzteil** (nur homeserver — die Hardware ist ein Notebook und
+  **Akku/Netzteil** (nur control-plane-0 — die Hardware ist ein Notebook und
   dient als Mini-USV).
 - **S.M.A.R.T.-Tabelle**: Modell, Typ (NVMe = Protokoll; HDD = hat das
   Attribut `Spin_Up_Time`; sonst SATA-SSD), Größe, Health, Temperatur,
@@ -110,20 +162,26 @@ mitbekommt — nicht über `instance` (das ist bei den k3s-Nodes weiterhin
 
 | Label | Werte | Zweck |
 |---|---|---|
-| `host` | `homeserver`, `controlplane-1`, `worker-1`, `ugreen-nas`, `prod-vm`, `entw-vm`, `infotafel`, `vereinsheim-alarmmonitor` | Name des Servers in den Dashboards |
+| `host` | `control-plane-0`, `controlplane-1`, `worker-1`, `ugreen-nas`, `prod-vm`, `entw-vm`, `infotafel`, `vereinsheim-alarmmonitor` | Name des Servers in den Dashboards |
 | `kind` | `server`, `vm`, `nas`, `pi` | Typ-Spalte in der Übersicht |
+
+> **`control-plane-0` ist nur der Anzeigename.** Hostname und Kubernetes-Nodename des
+> Rechners bleiben `homeserver` (Node-Selector, `kubectl`, Ansible). Das Label `host`
+> wird im node-exporter-Scrape (`values.yaml`), im smartctl- und im etcd-Scrape auf
+> `control-plane-0` gesetzt. Metriken vor der Umbenennung tragen noch `host="homeserver"`
+> (Retention 15 Tage) und erscheinen bis dahin als eigene, "Offline" gemeldete Maschine.
 
 | Host | node_exporter | S.M.A.R.T. | Wo definiert |
 |---|---|---|---|
-| homeserver, controlplane-1, worker-1 | DaemonSet `prometheus-node-exporter` (Relabeling `host` = k8s-Nodename, `kind: server`) | Ansible-Rolle [`smartctl_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/smartctl_exporter) (Port 9633) → `vmstaticscrape-smartctl.yaml` | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/values.yaml) `prometheus-node-exporter.vmScrape` |
+| control-plane-0, controlplane-1, worker-1 | DaemonSet `prometheus-node-exporter` (Relabeling `host` = k8s-Nodename, nur der Node `homeserver` wird zu `control-plane-0`, `kind: server`) | Ansible-Rolle [`smartctl_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/smartctl_exporter) (Port 9633) → `vmstaticscrape-smartctl.yaml` | [values.yaml](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/values.yaml) `prometheus-node-exporter.vmScrape` |
 | ugreen-nas | Docker-Container auf dem NAS (Port 9100) | Docker-Container (Port 9633), siehe [NAS-Storage](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards) | `vmstaticscrape-ugreen-nas.yaml` |
 | **prod-vm** (192.168.178.99), **entw-vm** (192.168.178.100) | Ansible-Rolle [`node_exporter`](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/node_exporter) (Port 9100) in `prod.yml`/`entw.yml` | — (virtuelle Platten, kein SMART) | `vmstaticscrape-vms.yaml` |
 | infotafel (Pi) | `node_exporter` (Port 9100) | — | `vmstaticscrape-infotafel.yaml` |
 | vereinsheim-alarmmonitor (Pi, nur Tailscale) | lokaler `vmagent` pusht per remote_write | — | [vmagent-Rolle](https://github.com/pkr-lab/capulus-ansible/tree/main/roles/vmagent) (setzt `host`/`kind` ab dem nächsten Lauf) **und** VMSingle-Relabeling [`configmap-vmsingle-relabel.yaml`](https://github.com/pkr-lab/capulus-core/blob/main/argocd/apps/tech/monitoring/templates/configmap-vmsingle-relabel.yaml) (setzt sie beim Empfang, solange sie fehlen) |
 
 ```
-homeserver / worker-1 ──► node-exporter (DaemonSet, :9100) ─┐
-homeserver / worker-1 ──► smartctl_exporter (systemd, :9633)─┤
+control-plane-0 / worker-1 ──► node-exporter (DaemonSet, :9100) ─┐
+control-plane-0 / worker-1 ──► smartctl_exporter (systemd, :9633)─┤
 prod-vm / entw-vm ──────► node_exporter (systemd, :9100) ────┼──► vmagent ──► VictoriaMetrics ──► Grafana
 ugreen-nas ─────────────► node-exporter + smartctl (Docker) ─┤     (Label host/kind, siehe oben)
 infotafel ──────────────► node_exporter (:9100) ─────────────┘
@@ -220,7 +278,7 @@ Regex in der Query "Verschleiß" (`dashboards/hardware/*.json`) ergänzen.
 |---|---|
 | **NAS: Laufwerke-Panels leer**, `smartctl_devices` = 5, aber kein `smartctl_device_*` | Stand 2026-09-20 liefert der smartctl-Container auf dem NAS zwar die Geräteanzahl, aber keine Werte je Platte (auch die früheren Panels waren dadurch leer). Auf dem NAS `docker logs smartctl-exporter` prüfen und `docker exec smartctl-exporter smartctl --json -a /dev/sda`; häufige Ursache: fehlender Gerätezugriff (`--privileged`, `-v /dev:/dev:ro` siehe [NAS-Storage](../../capulus-core/2-betrieb-hardware/20000-nas-storage.md#monitoring-grafana-hardware-dashboards)) oder ein Gerätetyp, der `-d sat` braucht |
 | Server fehlt in den Dashboards | Label `host` fehlt: `up{host="…"}` in Grafana Explore abfragen; bei k3s-Nodes prüfen, ob `kubectl -n monitoring get vmservicescrape monitoring-victoria-metrics-k8s-stack-prometheus-node-exporter -o yaml` die `relabelConfigs` enthält |
-| `vereinsheim-alarmmonitor` fehlt in den Hardware-Dashboards | Der Pi pusht ohne `host`/`kind`; VictoriaMetrics ergänzt sie beim Empfang per `-relabelConfig` (ConfigMap `vmsingle-relabel`, Mount `/etc/vm/configs/vmsingle-relabel/`, nur für `instance="vereinsheim-alarmmonitor"`). Prüfen: `up{host="vereinsheim-alarmmonitor"}` in Grafana Explore; sonst ob das VMSingle-Pod mit dem Argument `-relabelConfig` läuft (`kubectl -n monitoring get pod -l app.kubernetes.io/name=vmsingle -o yaml`). Nur neue Datenpunkte bekommen das Label, ältere nicht. Sein eigenes Dashboard "1002011-pis" ist davon unabhängig |
+| `vereinsheim-alarmmonitor` fehlt in den Hardware-Dashboards | Der Pi pusht ohne `host`/`kind`; VictoriaMetrics ergänzt sie beim Empfang per `-relabelConfig` (ConfigMap `vmsingle-relabel`, Mount `/etc/vm/configs/vmsingle-relabel/`, nur für `instance="vereinsheim-alarmmonitor"`). Prüfen: `up{host="vereinsheim-alarmmonitor"}` in Grafana Explore; sonst ob das VMSingle-Pod mit dem Argument `-relabelConfig` läuft (`kubectl -n monitoring get pod -l app.kubernetes.io/name=vmsingle -o yaml`). Nur neue Datenpunkte bekommen das Label, ältere nicht. Das frühere Standort-Dashboard "1002011-pis" gibt es nicht mehr; der Pi erscheint im Mainboard |
 | Waben-Panel zeigt "Panel plugin not found" | Plugin `grafana-polystat-panel` noch nicht installiert: Grafana-Pod nach dem Sync neu starten (Plugins werden beim Start geladen) |
 | Dashboards neu / Ordner "Hardware" fehlt nach Sync | ArgoCD-Sync von `monitoring` hängt an einem Hook (`monitoring-dashboard-folders`): `kubectl -n argocd get app monitoring -o jsonpath='{.status.operationState.message}'`; ggf. mit `kubectl -n argocd patch application monitoring --type merge -p '{"status":{"operationState":{"phase":"Terminating"}}}'` beenden. Ursache am 2026-09-19/20: Image-Tag `alpine/k8s:1.30.1` existiert nicht → jetzt `1.30.14` |
 | VM zeigt "Offline" obwohl sie läuft | `curl 192.168.178.99:9100/metrics` (bzw. `.100`) vom homeserver: läuft `prometheus-node-exporter` in der VM, lässt die UFW der VM das LAN zu? |

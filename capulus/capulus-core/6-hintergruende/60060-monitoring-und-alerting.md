@@ -144,8 +144,8 @@ Hosts außerhalb des Clusters schicken Metriken (`vmagent` → `https://vm-write
 - **Speicher:** 512Mi waren zu knapp (OOMKilled am 2026-09-19, RSS 488 MB beim Kill). Grafana 12 baut Suchindizes (bleve) im Speicher auf und startet vier Plugin-Prozesse
   (`gpx_*`), die im selben cgroup zählen.
 - **Grafana-ServiceAccount liest nur ConfigMaps, in zwei Namespaces.** Das Grafana-Chart hängt an den ServiceAccount `monitoring-grafana` eine ClusterRole mit `get/list/watch` auf `configmaps` **und `secrets`** aller Namespaces, sobald ein Sidecar aktiv ist, und zwar unabhängig von `sidecar.*.resource`. Grafana ist über `grafana-tech.pke-lab.de` öffentlich, das Token liegt im Pod: Ein Fehler im Grafana-Prozess (Dateilesen, SSRF) hätte damit den Schlüssel von Sealed Secrets und alle Datenbankpasswörter des Clusters preisgegeben. Gegenmaßnahmen: `grafana.sidecar.dashboards/datasources.resource: configmap` (die Sidecars suchen keine Secrets mehr), `grafana.rbac.create: false` und eine eigene ClusterRole `monitoring-grafana-sidecar` mit nur `configmaps` samt eigenem Binding (`templates/rbac-grafana-sidecar.yaml`). Ein anderes Binding statt `rbac.useExistingClusterRole`, weil sich die `roleRef` eines bestehenden ClusterRoleBindings nicht ändern lässt. Die Dashboard-Suche ist von allen Namespaces auf `monitoring,pacman` begrenzt (dort liegen alle 72 ConfigMaps mit dem Label). Ein Dashboard in einem neuen Namespace braucht den Eintrag in `sidecar.dashboards.searchNamespace`. Das Token landet weiterhin auch im Grafana-Hauptcontainer, das Chart kann es nicht pro Container verteilen.
-- **Dashboard-Ordner:** Der Sidecar lädt jede ConfigMap mit dem Label `grafana_dashboard=1` (in `monitoring` und `pacman`). `folderAnnotation` plus
-  `provider.foldersFromFilesStructure` machen aus der Annotation `grafana_folder` einen echten Grafana-Ordner („Plattform (TECH)“, „Anwendungen (TECH)“, „Hardware“, „Kubernetes (TECH)“,
+- **Dashboard-Ordner:** Der Sidecar lädt jede ConfigMap mit dem Label `grafana_dashboard=1` (in `monitoring`). `folderAnnotation` plus
+  `provider.foldersFromFilesStructure` machen aus der Annotation `grafana_folder` einen echten Grafana-Ordner („Anwendungen (TECH)“, „Hardware“, „Kubernetes (TECH)“,
   „Monitoring-Stack“; live verifiziert 2026-09-20). Wird ein Ordner **umbenannt**, entsteht ein neuer Grafana-Ordner, der alte leere muss von Hand gelöscht werden.
 - **`job-dashboard-folders`** sortiert die vom Chart `victoria-metrics-k8s-stack` gezogenen Standard-Dashboards („Kubernetes / …“ → „Kubernetes (TECH)“, „Node Exporter …“ →
   „Hardware“, „VictoriaMetrics …“/„Prometheus …“/„Alertmanager …“/„Grafana …“ → „Monitoring-Stack“) in eigene Ordner. Warum ein eigener Job: Der eingebaute Sync-Job unterstützt **keine**
@@ -154,14 +154,7 @@ Hosts außerhalb des Clusters schicken Metriken (`vmagent` → `https://vm-write
   stellt sicher, dass er erst **nach** dem Sync-Job läuft, sonst würde jeder Sync-Job-Lauf (bei jedem Helm-Upgrade) die Annotationen wieder zurücksetzen. Das Job-Image bündelt `kubectl` und
   `jq` (exakte Version unkritisch, nur `get`/`patch` auf ConfigMaps). **Tag `1.30.1` existiert auf Docker Hub nicht** (`ImagePullBackOff`, der Hook blockierte den ArgoCD-Sync von
   `monitoring` seit 2026-09-19), daher `1.30.14`.
-- **`dashboardApps`** erzeugt je Eintrag ein Grafana-Dashboard (CPU/RAM/Pod-Restarts, bei `hasIngress` zusätzlich Request-Rate/Fehlerrate/Latenz):
-  - Namespace = Ordnername für jede `argocd/apps/tech/<name>`-App (siehe `destination.namespace` im ApplicationSet), Ausnahmen nur für die unten ausgeschlossenen Apps.
-  - **Nur Apps im TECH-Cluster**: PROD-/ENTW-Workloads werden von dieser VictoriaMetrics nicht gescrapt, ihre Dashboards blieben leer (am 2026-09-20 entfernt: demo-app, example-whoami,
-    immich, mealie, nextcloud, paperless-ngx, tinyteller, wikijs, xibosignage, da nach PROD umgezogen).
-  - `hasIngress: true` nur, wenn die App ein k8s-Ingress/IngressRoute definiert, es steuert das Panel „User Requests/s“ (`traefik_service_requests_total{service=~"^<namespace>-.*"}`). Nach
-    dem Deploy gegen den Live-Cluster prüfen (`curl :9100/metrics` am Traefik-Pod oder Abfrage in Grafana), denn der Regex folgt Traefiks Namenskonvention und ist nicht gegen dieses Cluster bestätigt.
-  - Bewusst ausgeschlossen: `github-release-watcher` und `wiki-docs-sync` (nur CronJobs, kein dauerhafter Pod), `zammad` (hat ein handgebautes Dashboard), `monitoring` (abgedeckt durch die
-    `defaultDashboards` des Charts), `coredns-custom` und `traefik-config` (reine Konfiguration in `kube-system`).
+- **Pro-App-Dashboards (`dashboardApps`) entfallen** (Stand 2026-11-12): Auf Wunsch entfernt, damit die Dashboards übersichtlich bleiben. Es bleiben das Hardware-Mainboard und die Detail-Dashboards im Ordner „Hardware“ sowie das Rhein-Pegel-Dashboard. Die früheren handgebauten Dashboards für Zammad, Pacman-Besucher und „1002011-pis“ wurden ebenfalls entfernt.
 
 ---
 
