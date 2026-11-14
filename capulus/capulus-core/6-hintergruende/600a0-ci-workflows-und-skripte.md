@@ -40,6 +40,16 @@ der Beitritt fehlt ([f00a0](../f-cicd-automatisierung/f00a0-tailscale-runner-poc
 
 ---
 
+## Aktion `mattermost-notify`
+
+- **Karte statt Klartext.** Die Aktion sendet ein Message-Attachment mit leerem `message`. Farbbalken je `status`, verlinkter Titel, Felder und Footer machen Erfolg und Fehler auf einen Blick unterscheidbar, die Farben entsprechen denen der Mails aus „Publish: Benachrichtigung“ ([30070](../3-apps-workloads/30070-n8n.md#publish-zentrale-meldung-und-morgenbericht)). Das `fallback`-Feld (Titel plus Text) liefert den lesbaren Text für Push-Benachrichtigungen und Vorschauen.
+- **Alte Aufrufe bleiben gültig.** `title`, `status`, `link` und `fields` sind optional, `message` bleibt Pflicht. Ohne Titel entsteht nur Farbbalken, Text und Footer.
+- **`fields` ist ein JSON-String.** Inputs zusammengesetzter Aktionen sind immer Strings, verschachtelte Werte gehen nur serialisiert. Die Aktion prüft das JSON mit `jq` und verwirft Ungültiges, damit ein Tippfehler im Aufrufer keine Meldung verhindert.
+- **Der „Lauf ansehen“-Link steckt im Titel.** Ohne `link` zeigt der Titel auf den aktuellen Lauf, die Aufrufer müssen keine eigene Link-Zeile mehr bauen. `release.yml` setzt `link` auf das Release.
+- **Nie rot wegen Mattermost.** Ein Sendefehler ist nur eine Warnung. Eine Benachrichtigung darf den Lauf nicht scheitern lassen, den sie melden soll.
+
+---
+
 ## Skripte
 
 ### `promote-entw.sh` und `sync-entw.sh`
