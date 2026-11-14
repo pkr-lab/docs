@@ -57,7 +57,7 @@ siehe [TEMPLATE](../TEMPLATE.md)).
 | `argocd/apps/tech/pacman` | [60090](60090-pacman-schulungsobjekt.md) |
 | `argocd/apps/tech/capulus-operator`, `capulus-operator` (Repo) | [600c0](600c0-capulus-operator.md) |
 | `argocd/apps/tech/mdm`, `argocd/apps/tech/n8n/workflows/mdm-*.json` | [600d0](600d0-mdm.md) |
-| `.github/workflows/`, `.github/dependabot.yml`, `renovate.json`, `scripts/`, `Makefile`, `.ansible-lint`, `.yamllint`, `ops/`, `CLAUDE.md`, `.gitignore` | [600a0](600a0-ci-workflows-und-skripte.md) |
+| `.github/workflows/`, `.github/actions/`, `.github/dependabot.yml`, `renovate.json`, `scripts/`, `Makefile`, `.ansible-lint`, `.yamllint`, `ops/`, `CLAUDE.md`, `.gitignore` | [600a0](600a0-ci-workflows-und-skripte.md) |
 
 ## Sync ins Wiki
 
