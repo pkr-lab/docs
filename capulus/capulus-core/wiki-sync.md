@@ -7,7 +7,7 @@ Der Wiki-Sync spiegelt dieses Docs-Repo (`pkr-lab-docs`) nach Wiki.js im PROD-Cl
 ```mermaid
 flowchart LR
   docs["pkr-lab-docs (GitHub)"] -->|"1 Aufruf: Tarball"| job["CronJob wiki-docs-sync<br/>Image ghcr.io/pkr-lab/capulus-wiki-sync"]
-  job -->|"GraphQL, interner Service"| wiki["Wiki.js (wikijs-Namespace)"]
+  job -->|"REST-API, interner Service"| wiki["Wiki.js 3 (wikijs-Namespace)"]
   sec1["SealedSecret github-api-token"] -.-> job
   sec2["SealedSecret wiki-docs-sync-wikijs-token"] -.-> job
   renovate["Renovate"] -->|"Image-Tag"| chart["Chart wiki-docs-sync (capulus-core)"]
@@ -17,7 +17,7 @@ flowchart LR
 | Frage | Antwort |
 |---|---|
 | Quelle | GitHub-Repo `pkr-lab/pkr-lab-docs`, Branch `main`, geladen als Tarball über die GitHub-API (ein API-Aufruf pro Lauf) |
-| Ziel | Wiki.js im Namespace `wikijs`, Locale `en`, Pfad-Präfix `docs` |
+| Ziel | Wiki.js 3 im Namespace `wikijs` (REST-API unter `/_api`), Locale `en`, Pfad-Präfix `docs` |
 | Auslöser | CronJob `*/15 * * * *` (Zeitzone Europe/Berlin), `concurrencyPolicy: Forbid` |
 | Authentifizierung | GitHub-Token aus dem SealedSecret `github-api-token` (optional, hebt das Rate-Limit), Wiki.js-API-Key aus `wiki-docs-sync-wikijs-token` |
 | Zustand | keiner im Cluster; GitHub ist bei jedem Lauf die einzige Quelle der Wahrheit |
@@ -39,6 +39,14 @@ flowchart LR
 - Schutz: Liefert die Quelle weniger als `MIN_PAGES` (20) Seiten oder schlägt das Laden fehl, bricht der Lauf ab und ändert nichts. Gleichnamige Zielpfade zweier Quelldateien führen ebenfalls zum Abbruch.
 - Schlägt eine Seite fehl, laufen die übrigen weiter; der Job endet dann mit Exit-Code 1 und erscheint als fehlgeschlagen.
 
+## Rendern und Wiederholungen
+
+- **Render-Budget:** Wiki.js 3 rendert Seiten in einer Warteschlange und begrenzt die Zahl der Aufträge. Ein Lauf reiht höchstens `RENDER_BATCH` (8) Render-Aufträge ein. Geänderte Seiten über dem Budget werden zurückgestellt (`zurückgestellt=N` im Log) und im nächsten Lauf geschrieben, neue Seiten werden immer angelegt.
+- **Nachrendern:** Seiten ohne gerenderten Inhalt werden erneut eingereiht, solange Budget frei ist.
+- **HTTP 429:** gilt als Render-Limit, nicht als Fehler. Der Lauf reiht nichts mehr ein und meldet `[WARN] Render-Limit erreicht`; die Seite folgt im nächsten Lauf.
+- **Wiederholungen:** Bei HTTP 5xx, Timeouts und Verbindungsfehlern wiederholt der Client jede Anfrage bis zu zweimal, mit 2 s und 4 s Pause. Nach dem letzten Versuch wartet er nicht mehr. HTTP 4xx (außer 429) wird nicht wiederholt.
+- **Site-ID:** Ohne `WIKIJS_SITE_ID` ermittelt der Sync die Site über `/_api/bootstrap`.
+
 ## Konfiguration
 
 Alle Werte stehen in `argocd/apps/prod/wiki-docs-sync/values.yaml` und kommen als Umgebungsvariablen im Container an.
@@ -56,12 +64,30 @@ Alle Werte stehen in `argocd/apps/prod/wiki-docs-sync/values.yaml` und kommen al
 | `wikijs.dryRun` | `DRY_RUN` | `false` | `true` = nur protokollieren, nichts ändern; vor größeren Änderungen an Quelle oder Präfix einschalten |
 | `wikijs.minPages` | `MIN_PAGES` | `20` | Mindestzahl an Seiten, sonst Abbruch |
 | `wikijs.tokenSecretName`, `tokenSecretKey` | `WIKIJS_API_TOKEN` | `wiki-docs-sync-wikijs-token`, `token` | Wiki.js-API-Key |
+| – | `WIKIJS_SITE_ID` | leer | Site-ID in Wiki.js 3; leer = über `/_api/bootstrap` ermitteln |
+| – | `RENDER_BATCH` | `8` | Render-Aufträge pro Lauf, mindestens 1 |
+
+Ungültige Zahlen in `MIN_PAGES` oder `RENDER_BATCH` und fehlende Pflichtvariablen (`WIKIJS_API_URL`, `WIKIJS_API_TOKEN`) beenden den Container mit Exit-Code 2.
 
 Der GitHub-Token braucht für das öffentliche Docs-Repo nur Lesezugriff auf öffentliche Repos. Wird das Docs-Repo privat, braucht er Leserecht auf `pkr-lab-docs`.
 
 ## Releases und Image
 
-`capulus-wiki-sync` wird mit semantic-release versioniert. Jedes Release baut das Image `ghcr.io/pkr-lab/capulus-wiki-sync:vX.Y.Z`. Renovate öffnet in capulus-core einen PR, der `image.tag` anhebt (Regel in `renovate.json`). Das Image enthält keine Zugangsdaten und kann öffentlich sein, dann braucht der Namespace kein Pull-Secret (`imagePullSecrets` in den Values).
+`capulus-wiki-sync` wird mit semantic-release versioniert (zentraler Workflow, [github-workflows](../../github-workflows/index.md)). Jedes Release baut das Image `ghcr.io/pkr-lab/capulus-wiki-sync:vX.Y.Z` auf `python:3.15-slim`; es enthält nur das Paket `wikisync/` und nutzt nur die Standardbibliothek. Renovate öffnet in capulus-core einen PR, der `image.tag` anhebt (Regel in `renovate.json`). Das Image enthält keine Zugangsdaten und kann öffentlich sein, dann braucht der Namespace kein Pull-Secret (`imagePullSecrets` in den Values).
+
+## Entwicklung und CI
+
+| Prüfung | Befehl | Inhalt |
+|---|---|---|
+| `unittest` | `python3 -m unittest discover -s . -t .` | Tests für Konfiguration, Quelle, Rendern, Abgleich und den REST-Client (`tests/test_wikijs.py`, mit gemocktem `urlopen`, ohne Netz) |
+| `ruff und mypy` | `python3 -m pip install -r requirements-dev.txt && ruff check . && mypy` | Regeln in `pyproject.toml` (ruff `E`, `F`, `I`, `UP`, `B`; `mypy --strict` für `wikisync/`) |
+| `docker build` | `docker build -t capulus-wiki-sync:ci . && docker run --rm capulus-wiki-sync:ci` | Aufruf ohne Konfiguration muss mit Exit-Code 2 enden |
+| gitleaks | – | Secret-Scan der Historie |
+
+- Die CI testet mit derselben Python-Version wie das Image (3.15). Bei einem Versionswechsel `python-version` in `ci.yml` und das Basis-Image im `Dockerfile` gemeinsam anheben.
+- `requirements-dev.txt` pinnt ruff und mypy. Renovate reicht deren Updates als `ci(deps):` ein, damit sie kein Release des Images auslösen.
+- Der Abgleich spricht den Client über das Protocol `WikiApi` an. `tests/helpers.py` enthält mit `FakeClient` eine Wiki.js-Attrappe im Speicher, mit der die Tests den ganzen Lauf prüfen.
+- Lokaler Hook: `git config core.hooksPath .githooks` (Kopie des zentralen `commit-msg`-Hooks).
 
 ## Umstellung vom alten Sync (durchgeführt am 2026-10-18)
 
@@ -83,6 +109,8 @@ Die URLs der Seiten haben sich geändert. Verweise auf alte Wiki-Seiten müssen 
 |---|---|
 | Job endet mit `Quelle nicht verwendbar` | GitHub nicht erreichbar oder Rate-Limit; Token im Secret `github-api-token` prüfen |
 | `Nur N Seiten, mindestens 20 erwartet` | Quelle leer oder Branch falsch; nichts wurde geändert |
+| `zurückgestellt=N` bleibt über mehrere Läufe hoch | Mehr Änderungen als `RENDER_BATCH` pro Lauf; abwarten oder `RENDER_BATCH` erhöhen |
+| `Site-ID nicht ermittelbar, WIKIJS_SITE_ID setzen` | `/_api/bootstrap` liefert keine Site; die ID in Wiki.js nachsehen und als `WIKIJS_SITE_ID` setzen |
 | `HTTP 403 … error code 1010` | `wikijs.url` zeigt auf die öffentliche Cloudflare-URL; den internen Service verwenden |
 | `API Key invalid` oder `API disabled` im Wechsel | Wiki.js läuft mit mehr als einem Pod; `maxReplicas` bleibt 1 (siehe [60050](6-hintergruende/60050-helm-charts-prod.md#wikijs-und-wiki-docs-sync)) |
 | Verweise auf Überschriften im Wiki führen ins Leere | Wiki.js bildet Anker anders als GitHub (z. B. bei Umlauten); der Sync lässt Anker unverändert |

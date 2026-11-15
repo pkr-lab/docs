@@ -11,7 +11,8 @@ Repository: [pkr-lab/.github](https://github.com/pkr-lab/.github)
 | `.github/workflows/release.yml` | wiederverwendbar: semantic-release mit CHANGELOG, Tag, GitHub-Release, optionalem Artefakt-Skript und Container-Image |
 | `.github/workflows/commitlint.yml` | wiederverwendbar: prüft alle Commits eines Pull Requests |
 | `hooks/commit-msg` | lokaler Hook mit denselben Regeln, ohne Abhängigkeiten |
-| `.github/workflows/self-release.yml`, `self-commitlint.yml`, `ci.yml` | das Repo nutzt seine Workflows selbst und prüft sie mit actionlint |
+| `.github/workflows/self-release.yml`, `self-commitlint.yml`, `ci.yml` | das Repo nutzt seine Workflows selbst; `ci.yml` prüft sie mit actionlint, testet den Hook und vergleicht Hook und commitlint an denselben Nachrichten |
+| `renovate.json` | hält Actions (per SHA) und die per `npx -p <paket>@<version>` geladenen npm-Pakete aktuell |
 
 ## Architektur
 
@@ -32,7 +33,7 @@ flowchart LR
   rel --> out["Tag, CHANGELOG.md,<br/>GitHub-Release, Artefakte, Image"]
 ```
 
-Die Aufrufer in den Repos binden die Workflows mit dem Commit-SHA ein (`uses: pkr-lab/.github/.github/workflows/release.yml@<sha> # v1.0.1`). Renovate hebt die Version an. Die Konfiguration von semantic-release liegt nur zentral; Repos haben keine eigene `.releaserc.json`.
+Die Aufrufer in den Repos binden die Workflows mit dem Commit-SHA ein (`uses: pkr-lab/.github/.github/workflows/release.yml@<sha> # vX.Y.Z`). Renovate hebt die Version an. Die Konfiguration von semantic-release liegt nur zentral; Repos haben keine eigene `.releaserc.json`. Findet der Workflow trotzdem eine eigene Release-Konfiguration, meldet er eine Warnung und ersetzt sie für den Lauf.
 
 ## Wer nutzt sie
 
@@ -48,4 +49,4 @@ capulus-core, capulus-ansible, capulus-ios, capulus-wiki-sync, cubi, ui-terminal
 
 ## Fehlersuche
 
-Fehlerbilder der Release- und Commitlint-Workflows: [Nutzung: Fehlersuche](nutzung.md#fehlersuche). Je Repo, das die Workflows nutzt, gibt es zusätzlich die Fehlerbilder der Aufrufer (zum Beispiel [capulus-core: Skripte und Workflows](../capulus/capulus-core/f-cicd-automatisierung/f00c0-skripte-und-workflows-referenz.md#workflows)). Stand der Prüfung (2026-10-21): Das Repo `pkr-lab/.github` liegt nicht unter `~/gitlab`, die Angaben stützen sich auf die vorhandene Doku und die Aufrufer-Workflows der anderen Repos (TODO: prüfen gegen das Repo selbst).
+Fehlerbilder der Release- und Commitlint-Workflows: [Nutzung: Fehlersuche](nutzung.md#fehlersuche). Je Repo, das die Workflows nutzt, gibt es zusätzlich die Fehlerbilder der Aufrufer (zum Beispiel [capulus-core: Skripte und Workflows](../capulus/capulus-core/f-cicd-automatisierung/f00c0-skripte-und-workflows-referenz.md#workflows)). Stand der Prüfung (2026-11-15): Die Angaben sind gegen das Repo `pkr-lab/.github` selbst geprüft.
