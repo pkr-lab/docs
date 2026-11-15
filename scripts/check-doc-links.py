@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+from collections.abc import Iterator
 from urllib.parse import unquote
 
 FENCE = re.compile(r"^\s*(```|~~~)")
@@ -32,7 +33,7 @@ def slug(heading: str) -> str:
     return h.replace(" ", "-")
 
 
-def iter_unfenced_lines(path: str):
+def iter_unfenced_lines(path: str) -> Iterator[tuple[int, str]]:
     in_fence = False
     with open(path, encoding="utf-8") as fh:
         for lineno, line in enumerate(fh, 1):
@@ -44,22 +45,22 @@ def iter_unfenced_lines(path: str):
 
 
 @functools.cache
-def lowercase_anchors(path: str) -> frozenset:
-    seen: dict = {}
-    result = set()
+def lowercase_anchors(path: str) -> frozenset[str]:
+    seen: dict[str, int] = {}
+    result: set[str] = set()
     for _, line in iter_unfenced_lines(path):
         for m in HTML_ID.finditer(line):
             result.add(m.group(1))
-        m = HEADING.match(line)
-        if m:
-            base = slug(m.group(1))
+        heading = HEADING.match(line)
+        if heading:
+            base = slug(heading.group(1))
             n = seen.get(base, 0)
             seen[base] = n + 1
             result.add(base if n == 0 else f"{base}-{n}")
     return frozenset(a.lower() for a in result)
 
 
-def iter_links(path: str):
+def iter_links(path: str) -> Iterator[tuple[int, str]]:
     for lineno, line in iter_unfenced_lines(path):
         stripped = re.sub(r"``.+?``|`[^`]*`", lambda m: " " * len(m.group(0)), line)
         for rx in (LINK, IMAGE):
@@ -67,8 +68,8 @@ def iter_links(path: str):
                 yield lineno, m.group(1)
 
 
-def check(path: str) -> list:
-    problems = []
+def check(path: str) -> list[str]:
+    problems: list[str] = []
     for lineno, target in iter_links(path):
         if re.match(r"^[a-zA-Z][a-zA-Z0-9+.\-]*:", target):
             continue
@@ -90,7 +91,7 @@ def check(path: str) -> list:
 
 def main() -> int:
     files = sys.argv[1:] or subprocess.check_output(["git", "ls-files", "--cached", "--others", "--exclude-standard", "*.md"], text=True).split()
-    problems = []
+    problems: list[str] = []
     for f in files:
         problems += check(f)
     for p in problems:
