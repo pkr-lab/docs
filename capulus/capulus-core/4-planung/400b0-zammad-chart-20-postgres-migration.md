@@ -306,6 +306,7 @@ Den Dump aus Schritt 4 in eine leere Datenbank der laufenden Chart-Version einsp
 
 | Fallstrick | Hinweis |
 |---|---|
+| Selektiver Sync meldet `Error`, Application `Unknown`/`ComparisonError` mit `zammadConfig.minio/minio were replaced by zammadConfig.rustfs/rustfs` | zwei Chart-Archive in `argocd/apps/tech/zammad/charts/` (am 2026-11-15 nach einem Merge von `main` in den Branch: 16.4.10 und 20.0.2). Vor dem Merge prüfen, dass dort nur `zammad-20.0.2.tgz` liegt, und `helm template` auf dem Merge-Stand laufen lassen. Ein direkt nach dem Patch gelesenes `Succeeded` kann noch von der vorherigen Operation stammen, deshalb `startedAt` mitlesen |
 | Auto-Sync zu früh an | Init-Job initialisiert die leere neue Datenbank als frische Installation. Siehe Rollback A |
 | `kubectl patch` an der Application allein | wird vom ApplicationSet-Controller zurückgesetzt, erst `ignoreApplicationDifferences` setzen |
 | nginx/railsserver bleiben nach Schritt 7 auf 0 | HPA skaliert nicht von 0, `/spec/replicas` ist im ApplicationSet ignoriert, von Hand auf 1 |
