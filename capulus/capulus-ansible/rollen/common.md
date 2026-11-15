@@ -33,47 +33,41 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 8. Ensure unattended-upgrades service is enabled
 9. Set system timezone
 10. Ensure chrony is enabled and running
-11. Check for active swap devices
-12. Disable swap immediately
-13. Remove swap entries from /etc/fstab
-14. Ensure swap is not re-enabled by systemd
-15. Create modules-load.d config for k3s/Kubernetes
-16. Load required kernel modules for k3s/Kubernetes
-17. Configure sysctl parameters for Kubernetes
-18. Allow SSH (port 22) before any other firewall changes
-19. Set UFW default incoming policy to deny
-20. Set UFW default outgoing policy to allow
-21. Allow HTTP (port 80) for Traefik ingress
-22. Allow HTTPS (port 443)
-23. k3s-api (6443) nur von den freigegebenen quellen erlauben
-24. Remove ArgoCD NodePort 30080 rules (NodePort entfällt, ArgoCD läuft über den Ingress)
-25. Remove unrestricted ArgoCD NodePort 30080 rule (manuell gesetzt, jetzt auf LAN/Tailnet begrenzt)
-26. Remove useless ArgoCD NodePort 30443 rule (Server spricht dort Klartext, kein TLS)
-27. Allow Tailscale WireGuard (UDP 41641)
-28. flannel-vxlan (udp 8472) und kubelet (10250) nur aus dem lan erlauben
-29. offene k3s-regeln für alle quellen entfernen (6443, 10250, 8472)
-30. Allow all traffic from k3s pod CIDR
-31. Allow all traffic from k3s service CIDR
-32. Allow all traffic from local LAN subnet
-33. Allow all traffic from Tailscale network
-34. infrastruktur-hosts mit vollzugriff erlauben
-35. dienste für das lan freigeben
-36. pauschale lan-regel entfernen
-37. pauschale tailnet-regel entfernen
-38. Enable UFW
-39. Verify UFW is active
-40. Display UFW status
-41. Configure static IP via Netplan
-42. Find existing Netplan configs
-43. Remove existing Netplan DHCP configs
-44. Deploy static Netplan configuration
-45. Apply Netplan configuration (connection will briefly drop)
-46. Wait for server to be reachable at the new static IP
-47. Check whether a reboot is required (kernel/libc updates)
-48. Reboot the server because /var/run/reboot-required is set
-49. Reboot required but auto_reboot_if_required is false — warn the operator
-50. Reboot required but Semaphore is running this task — warn instead of self-killing
-51. nicht benötigte dienste stoppen und deaktivieren
+11. kubernetes-voraussetzungen herstellen (`tasks/k8s_prerequisites.yml`: Swap aus und maskiert, Kernel-Module `br_netfilter`/`overlay`, sysctl in `/etc/sysctl.d/99-k3s.conf`; auch von `k3s_agent` genutzt)
+12. Allow SSH (port 22) before any other firewall changes
+13. Set UFW default incoming policy to deny
+14. Set UFW default outgoing policy to allow
+15. Allow HTTP (port 80) for Traefik ingress
+16. Allow HTTPS (port 443)
+17. k3s-api (6443) nur von den freigegebenen quellen erlauben
+18. Remove ArgoCD NodePort 30080 rules (NodePort entfällt, ArgoCD läuft über den Ingress)
+19. Remove unrestricted ArgoCD NodePort 30080 rule (manuell gesetzt, jetzt auf LAN/Tailnet begrenzt)
+20. Remove useless ArgoCD NodePort 30443 rule (Server spricht dort Klartext, kein TLS)
+21. Allow Tailscale WireGuard (UDP 41641)
+22. flannel-vxlan (udp 8472) und kubelet (10250) nur aus dem lan erlauben
+23. offene k3s-regeln für alle quellen entfernen (6443, 10250, 8472)
+24. Allow all traffic from k3s pod CIDR
+25. Allow all traffic from k3s service CIDR
+26. Allow all traffic from local LAN subnet
+27. Allow all traffic from Tailscale network
+28. infrastruktur-hosts mit vollzugriff erlauben
+29. dienste für das lan freigeben
+30. pauschale lan-regel entfernen
+31. pauschale tailnet-regel entfernen
+32. Enable UFW
+33. Verify UFW is active
+34. Display UFW status
+35. Configure static IP via Netplan
+36. Find existing Netplan configs
+37. Remove existing Netplan DHCP configs
+38. Deploy static Netplan configuration
+39. Apply Netplan configuration (connection will briefly drop)
+40. Wait for server to be reachable at the new static IP
+41. Check whether a reboot is required (kernel/libc updates)
+42. Reboot the server because /var/run/reboot-required is set
+43. Reboot required but auto_reboot_if_required is false — warn the operator
+44. Reboot required but Semaphore is running this task — warn instead of self-killing
+45. nicht benötigte dienste stoppen und deaktivieren
 
 ## Handler
 

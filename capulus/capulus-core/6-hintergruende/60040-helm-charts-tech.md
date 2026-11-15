@@ -179,7 +179,7 @@ leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
   `GET /heartbeat?station=<name>` → Lebenszeichen des Pi, `GET /metrics` → Prometheus-Metriken. Ein Hintergrund-Thread prüft
   periodisch, ob ein Standort länger als `HEARTBEAT_TIMEOUT_SECONDS` keinen Heartbeat gesendet hat, und meldet das per ntfy (kein
   Zammad-Ticket, [30010](../3-apps-workloads/30010-alamos-apager.md)). Der Timeout soll **deutlich über dem Heartbeat-Intervall** des
-  Pi-Timers liegen (`alamos_kiosk_heartbeat_interval`), damit ein einzelner verpasster Ping keinen Fehlalarm auslöst.
+  Pi-Timers liegen (Timer der Rolle `banana_pi_kiosk`), damit ein einzelner verpasster Ping keinen Fehlalarm auslöst.
 - **`/metrics`** exportiert je Standort den Zeitstempel der letzten erfolgreichen `/start`-Anfrage (= der Kiosk-Browser hat die echte
   AMweb-URL tatsächlich angefragt) und des letzten Heartbeats. Genutzt vom n8n-Workflow „Banana-Pi-Down → Zammad-Ticket“, um im Ticket zu
   zeigen, wann der Standort zuletzt erfolgreich war ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). Es wird
