@@ -18,12 +18,10 @@ Im Modus `init` und `join` ist `k3s_version` Pflicht (alle Server brauchen diese
 
 ## Variablen
 
-Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`.
+Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`. `k3s_installer_url` und `k3s_installer_sha256` stehen gemeinsam für `k3s` und `k3s_agent` in `group_vars/all.yml`, `k3s_version` und `k3s_server_host` des TECH-Clusters kommen aus `k3s_cluster_version` und `k3s_cluster_server_host` (ebenfalls `group_vars/all.yml`).
 
 | Variable | Default | Bedeutung |
 |---|---|---|
-| `k3s_installer_url` | `https://raw.githubusercontent.com/k3s-io/k3s/2977c525a2e7a487886107ce4df43630ae9b03b2/i…` | – |
-| `k3s_installer_sha256` | `e5cc3b3d9dfc1662c2d9be6da5abc9a4cd317d6abc3a5ffc02e3dd3248207fee` | – |
 | `k3s_node_name` | `{{ inventory_hostname }}` | Nodename in k3s (`node-name`). `controlplane-0` setzt `homeserver` in den `host_vars`, weil ein Nodename nicht änderbar ist |
 | `k3s_mode` | `single` | `single`, `init` oder `join`, siehe oben |
 | `k3s_primary_host` | erster Host der Gruppe `k3s_primary` | Quelle von Join-Token und `server:`-URL |
@@ -44,7 +42,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `k3s_snapshot_mount_point` | `/mnt/k3s-etcd-snapshots` | Mount-Punkt der Freigabe. Das Kopierskript versucht den Mount einmal (`mount <Mount-Punkt>`, 45 s), bevor es „nicht eingebunden“ meldet |
 | `k3s_snapshot_copy_calendar` | `*-*-* 00,06,12,18:20:00` | Zeitpunkt der Kopie (20 Minuten nach dem Snapshot) |
 | `k3s_snapshot_copy_keep_days` | `14` | Aufbewahrung auf der NAS |
-| `k3s_ntfy_host`, `k3s_ntfy_ip`, `k3s_ntfy_topic` | `ntfy.tech.homeserver`, `{{ network_static_ip }}`, `Home-Lab-System` | Ziel der Fehlermeldung des Kopier-Skripts (nutzt Zugangsdaten und CA der Rolle `ntfy_publisher`) |
+| `k3s_ntfy_host`, `k3s_ntfy_ip`, `k3s_ntfy_topic` | `{{ homelab_ntfy_host }}`, `{{ homelab_ntfy_ip }}`, `{{ homelab_ntfy_topic }}` (Werte in `group_vars/all.yml`) | Ziel der Fehlermeldung des Kopier-Skripts (nutzt Zugangsdaten und CA der Rolle `ntfy_publisher`) |
 | `k3s_ufw_enable` | `true` | legt die Server-Regeln an (Modi `init` und `join`) |
 | `k3s_ufw_api_sources` | LAN und `100.64.0.0/10` | Quellen für Port 6443 |
 | `k3s_ufw_etcd_extra_peers` | `[]` | zusätzliche etcd-Peers (Port 2379–2380), später ControlPlane-2 |

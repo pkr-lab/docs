@@ -35,6 +35,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `semaphore_default_keys` | `[{login: '{{ semaphore_ssh_login }}', name: semaphore-ssh-key, type: ssh}, {name: git-n…` | – |
 | `semaphore_default_environment` | `{env: {ANSIBLE_VAULT_PASSWORD_FILE: /var/run/semaphore-secrets/ansible_vault_password},…` | – |
 | `semaphore_projects` | `[{description: Deploy / re-provision the home-server itself., environments: ['{{ semaph…` | – |
+| `semaphore_bootstrap_delete_orphan_projects` | `true` | löscht Semaphore-Projekte, die nicht in `semaphore_projects` stehen; `false` lässt von Hand angelegte Projekte stehen |
 
 ## Ablauf
 
@@ -74,7 +75,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 34. Authenticate against Semaphore
 35. Provision each Semaphore project
 36. List all projects for orphan cleanup
-37. Delete orphan projects not in semaphore_projects
+37. Delete orphan projects not in semaphore_projects (nur mit `semaphore_bootstrap_delete_orphan_projects: true`)
 38. Display Semaphore bootstrap summary
 39. List existing projects for {{ project_spec.name }}
 40. Find project id for {{ project_spec.name }}

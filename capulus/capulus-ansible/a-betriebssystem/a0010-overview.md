@@ -419,7 +419,7 @@ flowchart TB
 | `journal_upload` | alle Ansible-Hosts | journald → VictoriaLogs ([300j0](../../capulus-core/3-apps-workloads/300j0-logging.md)) |
 | `vmagent` | Tailscale-only-Hosts (Banana Pi) | Metriken-Push per remote-write |
 | `cups_print_server` | homeserver | Druckserver, QPDL-Treiber-Build, zweite Warteschlange |
-| `alamos_kiosk` / `banana_pi_kiosk` | Raspberry Pis / Banana Pi | Chromium-Kiosk + Heartbeat-Timer |
+| `banana_pi_kiosk` | Banana Pi | Chromium-Kiosk + Heartbeat-Timer |
 | `xibo_kiosk` | xibosignage-Displays | NFS-Mount, Manifest-Timer, Chromium-Slideshow-Kiosk |
 | `alert_caller` | externe VM `alert-caller-vm` (noch nicht ausgerollt, heute läuft der Caller als Pod) | Telefon-Alarm: Webhook-Server, Piper-Ansage, baresip-Anruf ([10020](../../capulus-core/1-benachrichtigungen/10020-telefon-alarm.md)) |
 | `vaultwarden_restore` | homeserver | Wiederherstellung der Vaultwarden-Daten aus dem NAS-Backup |
@@ -434,7 +434,6 @@ make libvirt-host   # auf dem homeserver: Bridge + prod-vm (braucht libvirt_host
 make worker-1-libvirt-host   # auf worker-1: Bridge + entw-vm
 make prod           # k3s in der prod-vm; danach Cluster im Hub registrieren (capulus-core/komponenten/bootstrap-prod.md)
 make entw           # k3s + ArgoCD in der entw-vm
-make alarm-kiosks   # optional, nur manuell
 make xibo-kiosks    # optional, nur manuell
 ```
 
@@ -564,7 +563,7 @@ SCHICHT 1  Ubuntu 26.04 LTS (3 Hosts + 2 VMs)   KVM/libvirt (homeserver, worker-
            UGOS (NAS, manuell)   Raspberry Pi OS / Armbian (Kiosks)
            Ansible: common crowdsec dnsmasq tailscale k3s k3s_agent libvirt_host argocd semaphore_*
                     thermal/resource_watchdog cluster_power_manager wake_on_lan
-                    cups_print_server alamos_kiosk xibo_kiosk
+                    cups_print_server banana_pi_kiosk xibo_kiosk
                                    |  läuft auf
                                    v
 SCHICHT 0  HP ProBook 450 G9 (.94, 24/7)   Lenovo M90q (.95, WoL)   MSI Tower (.96, WoL)

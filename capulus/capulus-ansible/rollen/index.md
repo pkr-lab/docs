@@ -4,7 +4,6 @@
 
 | Rolle | Läuft gegen | Zweck |
 |---|---|---|
-| [`alamos_kiosk`](alamos_kiosk.md) | Raspberry Pis | Chromium-Kiosk und Heartbeat-Timer für den Alarmmonitor |
 | [`alert_caller`](alert_caller.md) | externe VM `alert-caller-vm`, Vereinsheim-Pi | Telefon-Alarm: Webhook-Server, Piper-Ansage, baresip-Anruf |
 | [`argocd`](argocd.md) | controlplane-0 (Hub), entw-vm | ArgoCD per Helm, Bootstrap-ApplicationSet und -Projects, Namespace-Labels, NetworkPolicies |
 | [`banana_pi_kiosk`](banana_pi_kiosk.md) | Banana Pi | Chromium-Kiosk, Heartbeat-Timer und WoL-Agent |
@@ -14,6 +13,7 @@
 | [`crowdsec`](crowdsec.md) | controlplane-0 | Brute-Force-Schutz für SSH und Traefik-Logs |
 | [`cups_print_server`](cups_print_server.md) | controlplane-0 | Druckserver, QPDL-Treiber-Build, zweite Warteschlange |
 | [`disable_eee`](disable_eee.md) | controlplane-0, controlplane-1, worker-1 | Energy Efficient Ethernet dauerhaft deaktivieren (Realtek-NIC-Link-Drops) |
+| [`homeserver_ca`](homeserver_ca.md) | Banana Pi, alle Hosts mit `journal_upload` über HTTPS | legt die Homeserver-Root-CA in den System-Vertrauensspeicher |
 | [`dnsmasq`](dnsmasq.md) | controlplane-0 | Split-DNS `*.homeserver` (inkl. `*.dev.homeserver` → ENTW und PROD-Einzelhosts), Weiterleitung an Pi-hole |
 | [`journal_upload`](journal_upload.md) | alle Ansible-Hosts | journald → VictoriaLogs |
 | [`k3s`](k3s.md) | controlplane-0, prod-vm, entw-vm | Kubernetes-Server und Helm, je Cluster eigene CIDRs |
@@ -91,7 +91,7 @@ make lint                                   # yamllint und ansible-lint
 | [`thermal_watchdog`](thermal_watchdog.md), [`resource_watchdog`](resource_watchdog.md), [`ntfy_publisher`](ntfy_publisher.md) | in den Host-Playbooks | `thermal-watchdog`, `resource-watchdog@*`, `/etc/ntfy-publisher/` |
 | [`node_exporter`](node_exporter.md), [`smartctl_exporter`](smartctl_exporter.md), [`vmagent`](vmagent.md), [`journal_upload`](journal_upload.md) | in den Host-Playbooks | `prometheus-node-exporter`, `prometheus-smartctl-exporter`, `vmagent`, `systemd-journal-upload` |
 | [`cups_print_server`](cups_print_server.md) | `make cups-print-server` | `cups`, `avahi-daemon` |
-| [`alamos_kiosk`](alamos_kiosk.md), [`banana_pi_kiosk`](banana_pi_kiosk.md), [`xibo_kiosk`](xibo_kiosk.md) | `make alarm-kiosks`, `make banana-pi-kiosks`, `make xibo-kiosks` | `alamos-kiosk`, `banana-pi-wol-agent`, `xibosignage-kiosk` |
+| [`banana_pi_kiosk`](banana_pi_kiosk.md), [`xibo_kiosk`](xibo_kiosk.md) | `make banana-pi-kiosks`, `make xibo-kiosks` | `banana-pi-wol-agent`, `xibosignage-kiosk` |
 | [`alert_caller`](alert_caller.md) | `make alert-caller`, `make alert-caller-pi` | `alert-caller` |
 | [`wireguard_backup`](wireguard_backup.md) | in `site.yml` | `wg-quick@wg-backup` |
 | [`vaultwarden_restore`](vaultwarden_restore.md) | `make vaultwarden-restore FORCE_RESTORE=true` (überschreibt Live-Daten) | Namespace `vaultwarden` |

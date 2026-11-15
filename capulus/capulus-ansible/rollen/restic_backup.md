@@ -31,7 +31,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `host_vars/ollama-pc/vars.ym
 2. restic installieren
 3. Konfigurationsverzeichnis, Passwortdatei, `env` und Ausschlussliste ablegen
 4. systemd-Units und Timer deployen
-5. Repository prüfen (`restic cat config`), bei Bedarf `restic init`
+5. Repository prüfen (`restic cat config`), `restic init` nur bei fehlendem Repository (Exit-Code 10 oder „does not exist“); andere Fehler wie falsches Passwort oder Netzwerk brechen ab
 6. Timer `restic-backup.timer` und `restic-prune.timer` aktivieren
 
 ## Templates

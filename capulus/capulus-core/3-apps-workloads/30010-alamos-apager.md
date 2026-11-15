@@ -108,62 +108,21 @@ bleibt zusätzlich als SealedSecret verschlüsselt.
    Chart-Root — ArgoCD/Helm wenden nur Dateien unter `templates/` an, alles
    andere im Chart-Verzeichnis wird stillschweigend ignoriert.
 3. ArgoCD synct das Secret innerhalb von ~3 Minuten.
-4. Pi gemäß [Pi-Provisionierung](#pi-provisionierung-ansible) mit
-   `alamos_kiosk_station: <name>` (identischer Name wie der Secret-Key)
+4. Gerät gemäß [Pi-Provisionierung](#pi-provisionierung-ansible) mit
+   `banana_pi_kiosk_station: <name>` (identischer Name wie der Secret-Key)
    einrichten.
 
 ## Pi-Provisionierung (Ansible)
 
-**Voraussetzung:** Raspberry Pi OS (Desktop) bereits geflasht, Autologin für
-den Kiosk-User im Raspberry Pi Imager aktiviert ("Enable autologin"). Das
-richtet diese Rolle nicht zusätzlich ein — reines Imaging, kein
-Konfigurationsmanagement-Thema.
+Alarmmonitore laufen als Banana Pi mit der Rolle `banana_pi_kiosk` (Playbook `banana-pi-kiosks.yml`, `make banana-pi-kiosks`).
+Einrichtung, Stationsname (`banana_pi_kiosk_station`, identisch mit dem Secret-Key) und Fallback-URL stehen in
+[30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md). Die frühere Raspberry-Pi-Rolle `alamos_kiosk`
+mit `alarm-kiosks.yml` und dem Semaphore-Projekt „alarm-kiosks“ ist entfernt.
 
-1. Host in `capulus-ansible/inventory/hosts.yml` unter `raspberry_pis` eintragen:
-
-   ```yaml
-   raspberry_pis:
-     hosts:
-       geraetehaus:
-         ansible_host: 192.168.178.110
-         ansible_user: pi
-         alamos_kiosk_station: geraetehaus
-   ```
-
-2. Denselben Host auch unter `semaphore_targets` eintragen, dann:
-
-   ```bash
-   make semaphore-targets   # pusht den Semaphore-SSH-Key auf den Pi
-   make alarm-kiosks        # oder: Semaphore-UI → "Deploy Alarmmonitor Kiosks" → Run
-   ```
-
-   Dry-Run vorher: `make alarm-kiosks-check`.
-
-Die Rolle `capulus-ansible/roles/alamos_kiosk` installiert Chromium im Kiosk-Modus
-(`alamos-kiosk.service`, läuft in der grafischen Session des Pi-Users) sowie
-einen `alamos-heartbeat.timer` (Default alle 60s, siehe
-`alamos_kiosk_heartbeat_interval`). Zusätzlich laufen `thermal_watchdog` und
-`resource_watchdog` mit (gleiches Bundling wie bei `worker-0`, siehe
-`capulus-ansible/controlplane-1.yml`) — unbeaufsichtigte Geräte sollen sich bei
-Überhitzung/Überlast selbst schützen.
-
-3. **Einmaliger manueller Login am Pi (nach dem ersten Deploy):** AMweb
-   verlangt beim Laden **Passwort** + **Verschlüsselungspasswort** über ein
-   Formular auf der Seite selbst — das lässt sich nicht automatisiert
-   ausfüllen. Chromium läuft deshalb bewusst **ohne** `--incognito`, damit
-   die Session (Cookies/LocalStorage) über Neustarts hinweg erhalten
-   bleibt. Direkt am Pi (Tastatur/Maus anschließen, oder per VNC/Remote):
-   Kiosk-Fenster öffnen, beide Passwörter einmalig eintragen. Danach läuft
-   der Pi unbeaufsichtigt weiter, bis die Chromium-Profildaten gelöscht
-   werden (z. B. bei SD-Karten-Neuflash) oder AMweb die Session invalidiert.
-   Beide Passwörter landen nie im Cluster/Git — reiner Browser-lokaler
-   Zustand auf dem jeweiligen Pi.
-
-Das Semaphore-Projekt **"alarm-kiosks"** ist nach `make semaphore-bootstrap`
-automatisch in der UI verfügbar (siehe
-[capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)) — **bewusst ohne** automatischen
-Schedule, anders als `home-server`/`worker-0`: ein Re-Run soll hier nur per
-Knopfdruck laufen.
+**Einmaliger manueller Login am Gerät (nach dem ersten Deploy):** AMweb verlangt beim Laden **Passwort** und
+**Verschlüsselungspasswort** über ein Formular auf der Seite selbst, das lässt sich nicht automatisiert ausfüllen. Chromium läuft
+deshalb bewusst **ohne** `--incognito`, damit die Session (Cookies/LocalStorage) über Neustarts erhalten bleibt. Beide Passwörter
+landen nie im Cluster oder in Git, sie sind reiner Browser-Zustand auf dem jeweiligen Gerät.
 
 ## Monitoring & Alerting
 
@@ -189,6 +148,6 @@ Knopfdruck laufen.
 | Pi zeigt AMweb-Login-Formular statt Alarmmonitor | Chromium-Session abgelaufen/gelöscht — einmaligen manuellen Login (Passwort + Verschlüsselungspasswort, siehe [Pi-Provisionierung](#pi-provisionierung-ansible)) am Pi wiederholen |
 | `alamos-apager.prod.homeserver` löst nicht auf | Wildcard-DNS prüfen: `nslookup alamos-apager.prod.homeserver` (siehe [capulus-core/c-netzwerk-dns/c0000-dns-architecture.md](../c-netzwerk-dns/c0000-dns-architecture.md)) |
 | Kein ntfy-Alarm bei Ausfall | `kubectl -n alamos-apager logs deploy/alamos-apager` — `NTFY_URL`/`NTFY_TOPIC` korrekt? ntfy-Topic im Client abonniert? |
-| Chromium startet nicht / schwarzer Bildschirm | Autologin auf dem Pi aktiv? `systemctl status alamos-kiosk` auf dem Pi |
-| `Permission denied (publickey)` bei `make alarm-kiosks` | `make semaphore-targets` lief nicht für den neuen Pi (siehe [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)) |
-| Ansible-Fehler "alamos_kiosk_station ist nicht gesetzt" | Host-Var in `capulus-ansible/inventory/hosts.yml` fehlt — siehe [Pi-Provisionierung](#pi-provisionierung-ansible) |
+| Chromium startet nicht / schwarzer Bildschirm | Autologin aktiv? `journalctl -t banana-pi-kiosk` auf dem Gerät ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)) |
+| `Permission denied (publickey)` bei `make banana-pi-kiosks` | `make semaphore-targets` lief nicht für das neue Gerät (siehe [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md)) |
+| Ansible-Fehler "banana_pi_kiosk_station ist nicht gesetzt" | Host-Var in `capulus-ansible/inventory/hosts.yml` fehlt, siehe [Pi-Provisionierung](#pi-provisionierung-ansible) |
