@@ -21,6 +21,8 @@ HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(.*?)\s*#*\s*$")
 LINK = re.compile(r"(?<!\!)\[(?:[^\]\[]|\[[^\]]*\])*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
 IMAGE = re.compile(r"\!\[(?:[^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
 HTML_ID = re.compile(r"""<a\s+[^>]*(?:id|name)=["']([^"']+)["']""", re.I)
+INLINE_CODE = re.compile(r"``.+?``|`[^`]*`")
+URL_SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.\-]*:")
 
 
 def slug(heading: str) -> str:
@@ -62,7 +64,7 @@ def lowercase_anchors(path: str) -> frozenset[str]:
 
 def iter_links(path: str) -> Iterator[tuple[int, str]]:
     for lineno, line in iter_unfenced_lines(path):
-        stripped = re.sub(r"``.+?``|`[^`]*`", lambda m: " " * len(m.group(0)), line)
+        stripped = INLINE_CODE.sub(lambda m: " " * len(m.group(0)), line)
         for rx in (LINK, IMAGE):
             for m in rx.finditer(stripped):
                 yield lineno, m.group(1)
@@ -71,7 +73,7 @@ def iter_links(path: str) -> Iterator[tuple[int, str]]:
 def check(path: str) -> list[str]:
     problems: list[str] = []
     for lineno, target in iter_links(path):
-        if re.match(r"^[a-zA-Z][a-zA-Z0-9+.\-]*:", target):
+        if URL_SCHEME.match(target):
             continue
         file_part, _, anchor = target.partition("#")
         file_part = unquote(file_part)
