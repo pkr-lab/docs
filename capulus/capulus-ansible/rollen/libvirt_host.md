@@ -75,8 +75,8 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- System-dnsmasq nach Snippet-Entschaerfung neu starten
-- systemd nach libvirt-guests-Drop-in neu laden
+- system-dnsmasq nach snippet-entschärfung neu starten
+- systemd nach libvirt-guests-drop-in neu laden
 
 ## Templates
 

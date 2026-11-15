@@ -29,7 +29,7 @@ Banana Pi hat sie ersetzt).
 | Heartbeat-Skript: Fehlschlag ohne Folgen | Schlägt der Request fehl (Cluster/DNS kurz weg), passiert nichts weiter: Der lokale Supervisor kümmert sich unabhängig um die Browser-Umschaltung, der Timer steuert **nur** den zentralen ntfy-Ausfall-Alarm. |
 | Täglicher Neustart startet nur die **tty1-Session** (getty → startx → X/openbox/Chromium), **kein** `reboot` | Auf dem Banana Pi M2 Ultra (Armbian „Community Supported“) ist der Warm-Reset-Pfad unzuverlässig: Der Pi blieb nach einem echten Reboot einmal komplett aus und war nur per physischem Stromzyklus wieder erreichbar. Das Vereinsheim hängt nur per Tailscale dran, ohne LAN-Fallback. Der Session-Neustart räumt Chromium-Zustand und Speicher genauso auf, ohne das Kernel-/Firmware-Risiko. |
 | Timer **ohne** `Persistent=true` | Er soll nur zur geplanten Uhrzeit auslösen und nicht nachholen, falls der Pi da gerade aus war (sonst würde er direkt beim nächsten Hochfahren erneut neu starten). |
-| `make banana-pi-kiosks-restart-session` | Der Handler „Reload getty@tty1“ läuft nur bei Ansible-`changed`. Liegt das Skript schon korrekt auf der Platte (z. B. weil ein früherer Lauf es geschrieben hat, bevor der `notify` existierte), meldet der Task `ok`, und der längst laufende Prozess bleibt mit veralteten Werten (z. B. `BASE_URL`) im Speicher, weil er sich nicht selbst neu einliest. Das Target erzwingt den Neustart unabhängig von einem Playbook-Diff und braucht kein Vault-Passwort, da der Ad-hoc-Befehl keine verschlüsselten Variablen referenziert. |
+| `make banana-pi-kiosks-restart-session` | Der Handler „getty@tty1 neu laden“ läuft nur bei Ansible-`changed`. Liegt das Skript schon korrekt auf der Platte (z. B. weil ein früherer Lauf es geschrieben hat, bevor der `notify` existierte), meldet der Task `ok`, und der längst laufende Prozess bleibt mit veralteten Werten (z. B. `BASE_URL`) im Speicher, weil er sich nicht selbst neu einliest. Das Target erzwingt den Neustart unabhängig von einem Playbook-Diff und braucht kein Vault-Passwort, da der Ad-hoc-Befehl keine verschlüsselten Variablen referenziert. |
 | Screenshot-Skript nur manuell per SSH, kein Timer/Dienst (kein x11vnc, kein Cron) | Nur für die Sichtprüfung ([30020](../3-apps-workloads/30020-vereinsheim-alarmmonitor.md), „Sichtprüfung ohne physischen Zugriff“). Läuft als Kiosk-User (gleicher User wie die X-Session auf `:0`), daher kein `XAUTHORITY`-Handling. |
 | Wake-on-LAN-Skript nur manuell per SSH | Der Pi ist per Tailscale erreichbar (Semaphore und n8n haben **keinen** Pfad zu Tailscale-Peers), broadcastet das Magic Packet aber lokal. Das funktioniert nur, wenn Zielgerät und Pi im selben L2-Segment hängen (keine Client-/AP-Isolation im Router oder Repeater). |
 | WoL-HTTP-Agent (`banana-pi-wol-agent.py`) direkt am Pi | Dünner HTTP-Wrapper um `banana-pi-wol.sh`, damit die iOS-App ein Magic Packet ins Standort-LAN auslösen kann. Er spiegelt strukturell `power-agent.py`, ist aber sonst unabhängig: Der power-agent läuft im LAN des Homeservers und wird vom carplay-api-Pod gerufen, dieser hier läuft im reinen Tailscale-Netz des Pi und wird **direkt** von der App gerufen, weil der carplay-api-Pod keine Route zu Tailscale-Peers hat ([40020](../../capulus-core/4-planung/40020-vereinsheim-wol-router-vpn.md)). Er kennt keine MACs, Gültigkeit des Ziels und MAC-Lookup bleiben in `banana-pi-wol.sh` / `banana_pi_kiosk_wol_devices`, er reicht nur den Alias weiter. Er lauscht auf `banana_pi_kiosk_wol_agent_bind_address`: Im Standard `0.0.0.0`, für den Alarmmonitor per `host_vars` auf seine Tailscale-Adresse (`ansible_host`), damit das Vereinsheim-LAN den Port nicht erreicht. Steht `ansible_host` auf einer LAN-Adresse (Ersteinrichtung), lauscht der Agent dort statt am Tailnet. Timeouts, Body-Grenze und systemd-Härtung wie beim [power_agent](#power_agent). **TLS** schaltet `banana_pi_kiosk_wol_agent_tls_enabled` ein (Zertifikat und Schlüssel als Vault-Variablen, die Rolle legt sie mit `0600` ab, der Schlüssel mit `no_log`; fehlt eines, bricht ein `assert` ab). Der Agent aktiviert TLS nur, wenn `TLS_CERT` und `TLS_KEY` gesetzt sind, ohne diese Werte läuft er wie vorher mit HTTP, das ist der Rollback-Schalter. Mindestens TLS 1.2. Der Handshake läuft im Handler-Thread mit dem 10-Sekunden-Timeout und nicht im Accept-Loop, sonst könnte ein Client, der nur verbindet und nichts sendet, den ganzen Agent blockieren. Fehlgeschlagene Handshakes (Klartext-Client, Scanner) landen als eine Logzeile im Journal statt als Traceback. Das Zertifikat ist von Hand ausgestellt (365 Tage, Ablauf im Token-Register), weil cert-manager es nicht auf den Pi verteilen kann: [d0040](../../capulus-core/d-sicherheit/d0040-internal-tls.md#zertifikat-für-den-wol-agent-auf-dem-vereinsheim-pi). |
@@ -148,6 +148,7 @@ Kiosk-Modus per `file://`. Ablauf und Betrieb: [300e8](../3-apps-workloads/300e8
   Play „Uncordon nach Provisioning“ am Ende von `controlplane-1.yml`/`worker-1.yml`, die immer läuft.
   `worker_apt_update_reboot_timeout_seconds` (300) gilt für den Neustart samt erneuter Erreichbarkeit und für die Wartezeit danach, bis
   sich k3s-Agent und Netzwerk gesetzt haben.
+- `dns-fallback.yaml.j2` ergänzt nur `nameservers` für `worker_apt_update_dns_fallback_interface`. Netplan führt das mit der bestehenden Subiquity-Konfiguration zusammen, Adresse und Route bleiben dort unverändert ([20030](../2-betrieb-hardware/20030-nightly-worker-update.md)).
 
 ### power_agent
 
@@ -157,7 +158,7 @@ Bildschirmhelligkeit (sysfs), manuelles Wake-on-LAN und Poweroff für worker-0/w
 - Er steht im Playbook **nach** `cluster_power_manager` und nutzt dessen SSH-Key, kubeconfig, State-Verzeichnis und Worker-Liste. So
   teilen manuelle Aktionen aus der App und der automatische Last-Watchdog dieselbe Buchführung (`woke_at`-Dateien), statt sich zu
   widersprechen.
-- UFW braucht **keine** neue Regel: „Allow all traffic from k3s pod CIDR“ (Rolle `common`) deckt Pod → Host ab, unabhängig davon, auf
+- UFW braucht **keine** neue Regel: „gesamten verkehr aus dem pod-cidr von k3s erlauben“ (Rolle `common`) deckt Pod → Host ab, unabhängig davon, auf
   welchem Node der carplay-api-Pod läuft (Flannel-Overlay).
 - **Der Agent lauscht nur auf der Adresse der Pod-Bridge `cni0` des homeservers** (`power_agent_bind_address: "10.42.2.1"` in `host_vars/homeserver`, das Pod-Netz `10.42.2.0/24` ist dem Node fest zugewiesen), `carplay-api` ruft
   `http://10.42.2.1:9101` auf. Er ist damit weder aus dem LAN noch aus dem Tailnet noch von den Workern oder über `127.0.0.1` erreichbar, und der Token läuft nur über die Bridge des eigenen Nodes, nicht über das LAN. Das ersetzt HTTPS und
@@ -251,6 +252,7 @@ Desktop-PC mit Ollama ([300g0](../../capulus-core/3-apps-workloads/300g0-ollama.
   virtio-Platten ohne SMART, das NAS hat seinen eigenen Docker-Exporter. Der Exporter läuft als root (Zugriff auf `/dev/sd*`,
   `/dev/nvme*`) und scannt alle Platten selbst (`smartctl --scan`). Er lauscht auf dem Default-Port `9633` des Ubuntu-Pakets
   `prometheus-smartctl-exporter`, der Cluster scrapt ihn per `VMStaticScrape`.
+- Die Labels `host` und `kind` in `vmagent-scrape.yml.j2` sind die einheitlichen Filter-Labels der Hardware-Dashboards ([20060](../2-betrieb-hardware/20060-hardware-monitoring.md)).
 
 ### Namensschema und Variablenvorrang
 
@@ -296,7 +298,7 @@ Der Inventar-Host und der k3s-Nodename sind getrennt: `k3s_node_name` (Standard 
   („Failed to read state file: Permission denied“). Der Kopfzeilen-Text der Datei (`# This is private data. Do not parse.`) ist
   Dateiinhalt und gehört dazu.
 - Reihenfolge: Das Zurücksetzen des Start-Limits (`systemctl reset-failed`) und der Restart laufen per `flush_handlers` **vor**
-  „aktivieren und starten“, und der Handler zum Zurücksetzen steht in `handlers/main.yml` **vor** „Restart systemd-journal-upload“
+  „aktivieren und starten“, und der Handler zum Zurücksetzen steht in `handlers/main.yml` **vor** „systemd-journal-upload neu starten“
   (Handler laufen in Definitionsreihenfolge, nicht in Notify-Reihenfolge). Ein im Start-Limit hängender Dienst lässt sich sonst nicht
   neu starten.
 
@@ -412,6 +414,19 @@ Planung und Runbook: [400a0](../../capulus-core/4-planung/400a0-controlplane-ha-
   das `chmod 0600` einmal von Hand setzen (und die Zeile in `config.yaml` angleichen, damit ein späterer Start nicht wieder `0644` schreibt), statt k3s dafür neu zu starten.
 - **Wer sonst die Datei lesen muss,** braucht `sudo` oder eine eigene Kopie (`sudo install -m 0600 -o <user> /etc/rancher/k3s/k3s.yaml ~/.kube/config`). Eine Sicherungskopie der Datei darf nie weiter geöffnet sein als das Original.
 
+### k3s: Templates `k3s-config.yaml.j2` und `audit-policy.yaml.j2`
+
+- **`resolv-conf`.** Ubuntu stellt `/etc/resolv.conf` per `systemd-resolved` auf den Stub `127.0.0.53`, der aus dem Pod-Netz nicht erreichbar ist. CoreDNS bekäme damit keine Upstream-Server und könnte externe Namen (`github.com` usw.) nicht auflösen. Welche Datei stattdessen gilt, steht oben unter „Eigene `resolv.conf` für kubelet und CoreDNS“.
+- **`secrets-encryption: true`** (Härtung Phase 4, [d0010](../../capulus-core/d-sicherheit/d0010-security-hardening-roadmap.md), [d0050](../d-sicherheit/d0050-secrets-encryption-audit-log.md)) verschlüsselt Secrets im k3s-Datastore selbst. Sealed Secrets schützt nur den Git-Zustand, ohne das Flag liegen entschlüsselte Secrets im Klartext auf der Platte. Die Zeile allein aktiviert nichts, weil k3s `config.yaml` nur beim Start liest. Erst ein bewusster `sudo systemctl restart k3s` mit vorherigem Backup und anschließendem `rotate-keys` (Ablauf in [d0050](../d-sicherheit/d0050-secrets-encryption-audit-log.md)) setzt sie um.
+- **Audit-Log des kube-apiservers** (Härtung Phase 4). Die Policy legt der Task „audit-policy für kube-apiserver templaten“ in `roles/k3s/tasks/main.yml` unter `/etc/rancher/k3s/audit-policy.yaml` ab. Die Aufbewahrung ist bewusst begrenzt (14 Tage, 5 Sicherungen, 100 MB je Datei): genug, um einen Vorfall nachzuvollziehen, ohne die lokale SSD unbegrenzt wachsen zu lassen.
+- **Audit-Policy schlank statt „RequestResponse für alles“.** Ziel ist nachzuvollziehen, wer was wann geändert hat. Dafür reicht `Metadata` (Zeitstempel, Benutzer, Verb, Objekt, ohne Body), ein vollständiger Mitschnitt jedes `GET`/`LIST`/`WATCH` würde die SSD füllen. Die Regeln im Einzelnen:
+  - Lesender Verkehr (`get`, `list`, `watch`) ist komplett ausgeschlossen: größter Log-Anteil, praktisch nie sicherheitsrelevant (Grafana, vmagent und ArgoCD fragen ständig ab).
+  - Verkehr des Systems (`system:nodes`, ServiceAccounts in `kube-system`, Health-/Readiness-Checks, Discovery) ist Rauschen ohne Sicherheitswert.
+  - Secrets und ConfigMaps nur auf `Metadata`, nicht `RequestResponse`: Sonst landeten die Secret-Inhalte im Audit-Log und hebelten die Verschlüsselung im Datastore aus.
+  - RBAC-Änderungen (wer bekommt oder verliert Rechte) und `pods/exec`, `pods/attach`, `pods/portforward` (interaktiver Zugriff in Container) werden protokolliert.
+  - Alles andere läuft als Auffangregel auf `Metadata`, das deckt auch künftige Änderungen an NetworkPolicies ([d0030](../../capulus-core/d-sicherheit/d0030-network-policies.md)) ab, ohne je Ressourcentyp eine Regel zu brauchen.
+- **Kubelet-Reserven** (`k3s_kubelet_memory_protection_enabled`). `system-reserved` und `kube-reserved` halten RAM für Betriebssystem, kubelet und containerd frei, damit Speicherdruck der Pods nicht `sshd` oder `tailscaled` trifft. Die `eviction-hard`-Schwelle liegt bewusst unter den 90 % des `resource_watchdog`: Der Kubelet räumt oder OOM-killt betroffene Pods, **bevor** der Watchdog reagiert, Kubernetes bekommt so zuerst die Chance zu einer geordneten Reaktion ([20020, Mehrschichtiger RAM-Schutz](../2-betrieb-hardware/20020-cluster-power-manager.md#mehrschichtiger-ram-schutz)).
+
 ### cups_print_server
 
 Macht einen USB-Drucker am Homeserver per CUPS im Heimnetz und Tailnet verfügbar (IPP/AirPrint für Handys und Tablets, IPP für Windows/Linux, Anleitung in
@@ -424,6 +439,15 @@ bekannt sind, dafür gibt es Debug-Tasks, die beides ermitteln.
 Die Reihenfolge ist zwingend ([d0020](../d-sicherheit/d0020-crowdsec.md)): Zuerst wird CrowdSec (LAPI und Agent) installiert, den **Firewall-Bouncer** installiert die Rolle **erst danach**, wenn
 CrowdSec läuft. LAN und Tailscale stehen auf der Whitelist, damit sich niemand selbst aussperrt.
 
+- **Whitelist:** CrowdSec bringt eine Whitelist für die RFC1918-Bereiche mit, der CGNAT-Bereich von Tailscale (`100.64.0.0/10`) gehört nicht dazu und braucht einen eigenen Eintrag. Das LAN steht trotzdem ausdrücklich in `whitelist.yaml.j2`, statt sich auf den genauen Inhalt der mitgelieferten Datei zu verlassen.
+- **Quellen:** SSH-Brute-Force erkennt CrowdSec aus dem systemd-Journal (`acquis-ssh.yaml.j2`, Unit `ssh.service`). Der Pfad des Traefik-Access-Logs (`crowdsec_traefik_log_glob`) hängt vom Log-Layout von k3s/containerd ab; nach dem Rollout prüfen, dass er wirklich auf eine Datei zeigt ([d0020, Traefik-Log verifizieren](../d-sicherheit/d0020-crowdsec.md#traefik-log-verifizieren)).
+
+### libvirt_host: Bridge-Netplan
+
+Die übrigen Hintergründe zur Rolle stehen in [60010](../../capulus-core/6-hintergruende/60010-ansible-hosts-und-playbooks.md#rolle-libvirt_host).
+
+- `bridge-netplan.yaml.j2` ersetzt die direkte IP-Konfiguration auf `libvirt_host_bridge_interface` durch die Linux-Bridge `libvirt_host_bridge_name`, an die libvirt-VMs mit eigener, im LAN direkt erreichbarer IP angeschlossen werden ([40080](../../capulus-core/4-planung/40080-multi-cluster-entw-prod-tech.md), Baustein 5). Die Host-IP wandert von der physischen NIC auf die Bridge, der Host bleibt unter derselben IP erreichbar, nur über ein anderes Interface.
+- **`ra-overrides: use-dns: false`.** Der Router kündigt per Router Advertisement zwei zusätzliche IPv6-DNS-Server an. Zusammen mit den festen Servern wären das vier, das kubelet erlaubt drei und meldete jede Minute „Nameserver limits were exceeded“. Auf den Hosts steht dasselbe zusätzlich als systemd-Drop-in `/etc/systemd/network/10-netplan-br0.network.d/no-ra-dns.conf`.
 
 ### Installer und Prüfsummen (Incident 017)
 
@@ -514,6 +538,7 @@ der NAS gefüllt) auf die `vaultwarden-data`-PVC zurück ([300a0](../../capulus-
 - **`semaphore_secrets` läuft nur noch als Abhängigkeit von `semaphore_bootstrap`** (Tag `semaphore-secrets`, `make semaphore` unverändert). Das Secret entsteht damit im dritten Play von `site.yml` statt direkt nach `argocd`; der Semaphore-Pod wartet so lange auf das Secret.
 - **Verwaiste Semaphore-Projekte** löscht `semaphore_bootstrap` weiterhin, aber nur solange `semaphore_bootstrap_delete_orphan_projects` `true` ist. Mit `false` bleiben von Hand angelegte Projekte stehen.
 - **`xibo_kiosk`: Display-Skript ohne Endlosschleife.** `xibosignage-display-mode.sh` kennt nur noch `once` und `par`; der Poll-Zweig und `xibo_kiosk_display_poll_seconds` wurden nie benutzt.
+- **Stil (Punkt 25).** Task- und Handlernamen sind deutsch und kleingeschrieben, Begründungen aus den Templates stehen jetzt hier (k3s, crowdsec, vmagent, `worker_apt_update`, `libvirt_host`). Die gerenderten Dateien auf den Hosts ändern sich dadurch einmalig: Neustart von CrowdSec und vmagent, `netplan apply` auf worker-1 (`dns-fallback`) und auf Hosts mit `libvirt_host_configure_bridge: true` (`bridge-netplan`, Verbindung kann kurz abreißen), `config.yaml` und `audit-policy.yaml` von k3s ohne Neustart.
 - **Offen:** Die Migrations-Tasks in `common`, `k3s_agent/ufw.yml`, `argocd`, `nightly_worker_wake` und `xibo_kiosk` bleiben, bis bestätigt ist, dass alle Hosts migriert sind.
 
 ### tailscale: Wiederholungen beim Paket-Server

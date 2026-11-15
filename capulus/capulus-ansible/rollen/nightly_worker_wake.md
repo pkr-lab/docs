@@ -52,7 +52,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Reload systemd for nightly worker wake
+- systemd für nightly-worker-wake neu laden
 
 ## Templates
 

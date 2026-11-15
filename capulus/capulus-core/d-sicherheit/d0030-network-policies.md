@@ -92,7 +92,7 @@ den kompletten Apply fehlschlagen, obwohl alle anderen 35 Policies
 problemlos durchgingen (`kubectl apply` verarbeitet trotzdem jedes
 Dokument, meldet aber am Ende den Gesamtfehler).
 
-**Fix:** Neuer Task „Get existing namespaces" vor dem Templating holt die
+**Fix:** Neuer Task „vorhandene namespaces lesen“ vor dem Templating holt die
 aktuell existierenden Namespaces per `kubectl get namespaces`; das Template
 ([bootstrap-networkpolicies.yaml.j2](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/argocd/templates/bootstrap-networkpolicies.yaml.j2))
 überspringt Apps, deren Namespace noch nicht existiert. Ein fehlender

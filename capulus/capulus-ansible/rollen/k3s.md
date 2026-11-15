@@ -55,37 +55,37 @@ Vor den bekannten Schritten: Version prüfen, abbrechen wenn noch `k3s-agent.ser
 
 ## Ablauf
 
-1. Create /etc/rancher/k3s directory
-2. Template kube-apiserver audit policy
-3. Create /var/log/k3s directory for audit log output
-4. Template k3s server configuration
-5. Check if k3s is already installed
-6. Get current k3s version (if installed)
-7. Decide whether to (re)run the k3s installer
-8. Download k3s install script
-9. Install or upgrade k3s (pinned version or latest in channel)
-10. Remove k3s install script
-11. Enable and start k3s service
-12. Wait for k3s API server to be reachable (port 6443)
-13. Wait for k3s node to be in Ready state
-14. Display node status
-15. Create .kube directory for ubuntu user
-16. Copy k3s kubeconfig to ubuntu user
-17. Set KUBECONFIG in /etc/environment (system-wide)
-18. Set KUBECONFIG in ubuntu user's .bashrc
-19. Add kubectl completion and `k` alias to ubuntu user's .bashrc
-20. Check if Helm is already installed
-21. Get installed Helm version
-22. Decide whether to (re)install Helm
-23. Download Helm release
-24. Install Helm binary
-25. Set Helm binary permissions
-26. Remove Helm archive
-27. Verify Helm installation
-28. Display Helm version
-29. Wait for core system pods to be ready
-30. Get system pod status
-31. Show system pod status
+1. verzeichnis /etc/rancher/k3s anlegen
+2. audit-policy für kube-apiserver templaten
+3. verzeichnis /var/log/k3s für das audit-log anlegen
+4. k3s-server-konfiguration templaten
+5. prüfen ob k3s bereits installiert ist
+6. aktuelle k3s-version lesen (falls installiert)
+7. entscheiden ob der k3s-installer (erneut) laufen muss
+8. k3s-installationsskript herunterladen
+9. k3s installieren oder aktualisieren (gepinnte version oder neueste im kanal)
+10. k3s-installationsskript entfernen
+11. dienst k3s aktivieren und starten
+12. warten bis der k3s-api-server erreichbar ist (port 6443)
+13. warten bis der k3s-node ready ist
+14. node-status anzeigen
+15. verzeichnis .kube für den benutzer ubuntu anlegen
+16. k3s-kubeconfig für den benutzer ubuntu kopieren
+17. KUBECONFIG in /etc/environment setzen (systemweit)
+18. KUBECONFIG in der .bashrc des benutzers ubuntu setzen
+19. kubectl-vervollständigung und alias `k` in der .bashrc des benutzers ubuntu eintragen
+20. prüfen ob helm bereits installiert ist
+21. installierte helm-version lesen
+22. entscheiden ob helm (erneut) installiert werden muss
+23. helm-release herunterladen
+24. helm-binary installieren
+25. rechte des helm-binarys setzen
+26. helm-archiv entfernen
+27. helm-installation prüfen
+28. helm-version anzeigen
+29. warten bis die system-pods bereit sind
+30. status der system-pods lesen
+31. status der system-pods anzeigen
 
 ## Templates
 
