@@ -88,35 +88,53 @@ Liste von Objekten, nicht nur `owner/repo`-Strings — pro Repo lässt sich
 
 ```yaml
 github:
+  sourceRepo: "pkr-lab/capulus-core"
+  sourceRef: "main"
   repos:
     - id: docflowengine
       name: "DocFlowEngine"
       repo: "pkr-lab/DocFlowEngine"
-      currentVersion: ""       # "" = unbekannt, App zeigt keinen Update-Status
-      notifyZammad: true       # erzeugt bei neuem Release ein Zammad-Ticket
-    - id: mein-neuer-dienst
-      name: "Mein Dienst"
-      repo: "owner/repo"
-      # currentVersion MUSS zum tag_name-Stil des jeweiligen Repos passen
-      # (z.B. "v1.2.3" vs. "1.2.3" vs. "app@1.2.3") — vor dem Eintragen
-      # gegenprüfen: curl https://api.github.com/repos/<owner>/<repo>/releases/latest
-      currentVersion: "v1.2.3"
-      notifyZammad: false      # nur in der App-Update-Liste sichtbar, kein Ticket
+      currentVersion: ""
+      notifyZammad: true
+    - id: nextcloud
+      name: "Nextcloud"
+      repo: "nextcloud/server"
+      currentFrom:
+        file: "argocd/apps/prod/nextcloud/values.yaml"
+        image: "nextcloud"
+      notifyZammad: false
+    - id: victoria-logs
+      name: "VictoriaLogs"
+      repo: "VictoriaMetrics/helm-charts"
+      tagPrefix: "victoria-logs-single-"
+      currentFrom:
+        file: "argocd/apps/tech/logging/Chart.lock"
+        chart: "victoria-logs-single"
+      notifyZammad: false
 
 zammad:
   url: "https://zammad.tech.homeserver"
-  group: "Users"                       # Zammad-Gruppe für das Ticket
-  requesterEmail: "<empfaenger>@example.com"  # Ticket-Anfrager (customer)
+  group: "Users"
+  requesterEmail: "<empfaenger>@example.com"
 
 secrets:
   encryptedToken: "<Ausgabe aus Schritt 2>"
 ```
 
-`currentVersion` ist **rein manuell gepflegt** (Git als Source of Truth) und
-muss nach jedem Upgrade des jeweiligen Diensts hier nachgezogen werden —
-sonst zeigt die App-Update-Liste einen falschen/veralteten Stand. Siehe auch
-die Kommentare direkt in `values.yaml`, die das für jeden aktuell
-eingetragenen Repo-Eintrag dokumentieren.
+| Feld | Bedeutung |
+|---|---|
+| `repo` | GitHub-Repo, dessen Releases geprüft werden |
+| `tagPrefix` | Nur Releases mit diesem Tag-Präfix zählen, das Präfix wird vor dem Vergleich entfernt. Für Repos mit mehreren Produkten (`VictoriaMetrics/helm-charts`, `zammad/zammad-helm` mit `zammad-`, sealed-secrets mit `helm-v`, Headlamp mit `headlamp-helm-`, n8n mit `n8n@`) |
+| `currentFrom.file` | Datei in `sourceRepo@sourceRef`, aus der die installierte Version gelesen wird |
+| `currentFrom.image` | Wert der `repository:`-Zeile, die Version ist das folgende `tag:` (ohne Digest) |
+| `currentFrom.chart` | Name des Dependency-Eintrags (`- name:`) in `Chart.yaml`/`Chart.lock`, die Version ist das folgende `version:` |
+| `currentFrom.pattern` | Regulärer Ausdruck, die erste Gruppe ist die Version (n8n: `FROM n8nio/n8n:…` im Dockerfile) |
+| `currentVersion` | Feste Version, nur ohne `currentFrom`. Leer heißt „unbekannt“ |
+| `notifyZammad` | `true` erzeugt bei einem neuen Release ein Zammad-Ticket (nur DocFlowEngine) |
+
+Die installierte Version liest der Watcher bei jedem Lauf aus dem Repo, nach einem Upgrade muss nichts nachgezogen werden.
+Neue App: Eintrag mit `currentFrom` anlegen, dann den Watcher einmal von Hand starten (Schritt 6) und im Log die Zeile
+`[OK] <repo>: …, installiert <version>` prüfen. `installierte Version nicht lesbar` heißt: `image`/`chart` passt nicht zur Datei.
 
 > **`requesterEmail`:** Muss ein **bereits existierender** Zammad-User
 > (Login oder E-Mail) sein. Anders als beim E-Mail-Kanal legt die Ticket-API
@@ -199,9 +217,13 @@ kubectl -n github-release-watcher create job --from=cronjob/github-release-watch
    `values.yaml`, Standard: alle 2 Stunden) einen Pod mit
    `python3 /app/watcher.py`
 2. Für jedes Repo in `github.repos`: `GET
-   https://api.github.com/repos/<owner>/<repo>/releases/latest`
-3. **App-Update-Liste (alle Repos, jeder Lauf):** `currentVersion` aus
-   `values.yaml` wird gegen die gerade abgefragte GitHub-Version verglichen,
+   https://api.github.com/repos/<owner>/<repo>/releases?per_page=100`, neuestes
+   Release ist die höchste Versionsnummer ohne Draft/Pre-Release (mit
+   `tagPrefix` nur passende Tags). Die installierte Version kommt aus
+   `currentFrom` (Contents-API auf `sourceRepo@sourceRef`).
+3. **App-Update-Liste (alle Repos, jeder Lauf):** Die installierte Version
+   wird gegen die gerade abgefragte GitHub-Version verglichen (Versionsnummern,
+   `v`-Präfix und `release-` spielen keine Rolle),
    das Ergebnis landet in der `updates`-ConfigMap im eigenen Namespace.
    `carplay-api` liest diese ConfigMap über ein eigenes, auf genau diese
    ConfigMap eingeschränktes RoleBinding (`templates/role.yaml`) und zeigt
