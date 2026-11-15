@@ -516,6 +516,10 @@ der NAS gefüllt) auf die `vaultwarden-data`-PVC zurück ([300a0](../../capulus-
 - **`xibo_kiosk`: Display-Skript ohne Endlosschleife.** `xibosignage-display-mode.sh` kennt nur noch `once` und `par`; der Poll-Zweig und `xibo_kiosk_display_poll_seconds` wurden nie benutzt.
 - **Offen:** Die Migrations-Tasks in `common`, `k3s_agent/ufw.yml`, `argocd`, `nightly_worker_wake` und `xibo_kiosk` bleiben, bis bestätigt ist, dass alle Hosts migriert sind.
 
+### tailscale: Wiederholungen beim Paket-Server
+
+`pkgs.tailscale.com` (CloudFront) setzt Verbindungen zeitweise zurück (`Connection reset by peer`, Lese-Timeout), über IPv4 wie IPv6, vom Homeserver wie vom Arbeitsrechner. Auch bei vorhandenem Schlüssel fragt `get_url` mit `force: false` den Server jedes Mal an, ob sich die Datei geändert hat, ein einzelner Abbruch ließ so ganze `make check`-Läufe scheitern. Schlüssel-Download, APT-Repository und Paketinstallation wiederholen deshalb bis zu fünfmal im Abstand von zehn Sekunden (`retries`/`until … is succeeded`). Die Prüfung des Schlüssel-Fingerprints danach bleibt unverändert.
+
 ### Konventionen der Linter-Konfiguration
 
 Begründungen zu `.ansible-lint` und `.yamllint` stehen in [600a0](../../capulus-core/6-hintergruende/600a0-ci-workflows-und-skripte.md#lint-konfiguration).

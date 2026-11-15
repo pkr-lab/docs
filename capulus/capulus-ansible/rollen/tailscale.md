@@ -64,6 +64,7 @@ sudo journalctl -u tailscaled -n 100 --no-pager
 | Symptom | Ursache | Lösung |
 |---|---|---|
 | `Der Fingerprint von …tailscale-archive-keyring.gpg weicht ab` | Signaturschlüssel stimmt nicht mit `tailscale_signing_key_fingerprint` überein | Schlüssel nicht vertrauen, Ursache klären |
+| `Download Tailscale GPG signing key` scheitert mit `Connection reset by peer` oder `The read operation timed out` | `pkgs.tailscale.com` setzt Verbindungen zeitweise zurück; die Rolle wiederholt fünfmal, danach bricht sie ab | Lauf erneut starten; bleibt es dauerhaft, `curl -v https://pkgs.tailscale.com/` vom Host prüfen ([Hintergrund](../6-hintergruende/60020-ansible-rollen.md#tailscale-wiederholungen-beim-paket-server)) |
 | `tailscale up` schlägt fehl (`invalid key`, `expired`) | Auth-Key abgelaufen oder verbraucht | neuen Auth-Key erzeugen, mit `ansible-vault encrypt_string` eintragen ([Tailscale](../../capulus-core/c-netzwerk-dns/c0010-tailscale.md#troubleshooting)) |
 | Subnetz nicht erreichbar über den Homeserver | Subnet-Route nicht genehmigt (nur der Homeserver ist Subnet-Router) | Admin-Konsole: Route genehmigen |
 | Route ist im Tailnet genehmigt, trotzdem nicht erreichbar | Client akzeptiert keine Subnetzrouten (`tailscale_accept_routes: false`, Rollen-Default) | `tailscale status --json` prüfen: `AllowedIPs` des eigenen Hosts zeigt nur die eigene `/32`; `tailscale_accept_routes: true` setzen ([50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-2-keine-neuen-bilder-falsches-routing-zum-nas)) |
