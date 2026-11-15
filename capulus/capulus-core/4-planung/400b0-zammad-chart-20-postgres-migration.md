@@ -2,7 +2,7 @@
 
 Plan und Runbook für das Upgrade des Zammad-Helm-Charts in `argocd/apps/tech/zammad/` von 16.4.x auf 20.0.2 (Zammad 7.2.2). Ab Chart 17.0.0 ersetzt Zammad die Bitnami-Subchart `postgresql` (PostgreSQL 17.5, StatefulSet `zammad-postgresql`) durch die CloudPirates-Subchart `postgres` (PostgreSQL 18.4, StatefulSet `zammad-postgres`) mit **neuem, leerem Volume**. Die Daten ziehen per `pg_dump`/`pg_restore` um.
 
-> **Stand (2026-11-15): vorbereitet, nicht ausgeführt.** Chart-Bump und Values liegen im Branch `chore/zammad-chart-20` (capulus-core). Der PR wird erst im Wartungsfenster gemergt, **nachdem** der Auto-Sync pausiert ist (Schritt 2). Nach der Umsetzung wandert der Ist-Zustand nach [30000](../3-apps-workloads/30000-zammad.md) und [60040](../6-hintergruende/60040-helm-charts-tech.md#zammad).
+> **Stand (2026-11-15): ausgeführt.** Chart 20.0.2 läuft seit 14:26 UTC mit PostgreSQL 18.4 (`zammad-postgres`), die Daten sind per Dump/Restore übernommen (Zählwerte identisch). Offen: Prüfungen aus Schritt 8 in der Oberfläche, Aufräumen (Schritt 9) frühestens am 2026-11-22. Die Korrekturen aus dem Lauf (doppeltes Chart-Archiv, `skipHooks`, Dump-Prüfung) sind unten eingearbeitet.
 
 > **Cluster:** TECH · `export KUBECONFIG=~/.kube/homeserver.yaml` · Zugriff je Cluster: [a0010](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster).
 
@@ -236,16 +236,23 @@ kubectl -n argocd patch applicationset home-server-apps-tech --type json \
   -p '[{"op":"remove","path":"/spec/ignoreApplicationDifferences"}]'
 sleep 30
 kubectl -n argocd get application zammad -o jsonpath='automated={.spec.syncPolicy.automated}{"\n"}'
-kubectl -n zammad get jobs,pods -w
 ```
 
-`zammad-nginx` und `zammad-railsserver` haben im Manifest keine `replicas` (HPA), und das ApplicationSet ignoriert dort `/spec/replicas`. Sie bleiben deshalb auf 0 und müssen von Hand hoch, Scheduler und Websocket stellt `selfHeal` selbst auf 1:
+**Der automatische Sync überspringt den Init-Job.** Am 2026-11-15 lief er mit `skipHooks=true` (Log `argocd-application-controller`): Für die Revision gab es schon den selektiven Sync aus Schritt 5, ArgoCD synchronisierte deshalb nur die abweichenden Ressourcen, und selektive Syncs führen keine Hooks aus. Deshalb gleich danach einen vollständigen Sync mit Hook-Strategie anstoßen:
+
+```bash
+kubectl -n argocd patch application zammad --type merge -p '{"operation":{"initiatedBy":{"username":"runbook-zammad-chart-20"},"sync":{"syncStrategy":{"hook":{}},"syncOptions":["ServerSideApply=true"]}}}'
+kubectl -n zammad get jobs -w
+kubectl -n zammad logs job/zammad-init-1 --all-containers -f
+```
+
+Erwartet: `zammad-init-1` `Complete` (2026-11-15: 31 s, Migrationen bis `AlternativeFqdnFrontend`), Log endet mit `init sequence complete :)`. Bis dahin starten railsserver, scheduler und websocket wegen `RAILS_CHECK_PENDING_MIGRATIONS` neu (2026-11-15: je drei Neustarts), danach laufen sie stabil. `-w` nimmt nur einen Ressourcentyp, `get jobs,pods -w` scheitert.
+
+`zammad-nginx` und `zammad-railsserver` haben im Manifest keine `replicas` (HPA), und das ApplicationSet ignoriert dort `/spec/replicas`. Am 2026-11-15 standen sie nach dem Sync trotzdem wieder auf 1. Bleiben sie auf 0, von Hand hochsetzen:
 
 ```bash
 kubectl -n zammad scale deploy zammad-nginx zammad-railsserver --replicas=1
 ```
-
-Bis der Init-Job fertig ist, starten die Rails-Pods wegen `RAILS_CHECK_PENDING_MIGRATIONS` eventuell ein- oder zweimal neu.
 
 ### 8. Prüfen
 
@@ -311,6 +318,7 @@ Den Dump aus Schritt 4 in eine leere Datenbank der laufenden Chart-Version einsp
 | `kubectl patch` an der Application allein | wird vom ApplicationSet-Controller zurückgesetzt, erst `ignoreApplicationDifferences` setzen |
 | nginx/railsserver bleiben nach Schritt 7 auf 0 | HPA skaliert nicht von 0, `/spec/replicas` ist im ApplicationSet ignoriert, von Hand auf 1 |
 | Selektiver Sync startet keinen Init-Job | gewollt, Hooks laufen bei selektiven Syncs nicht |
+| Auch der automatische Sync nach Schritt 7 startet keinen Init-Job (`skipHooks=true`) | gleiche Revision schon selektiv synchronisiert, ArgoCD synchronisiert nur noch die Abweichungen. Vollständigen Sync mit `syncStrategy.hook` anstoßen (Schritt 7) |
 | PVC `data-zammad-postgresql-0` gelöscht | `local-path` löscht die Daten mit, Rollback B ist dann nur noch über den Dump möglich |
 | Postgres startet nicht, `could not signal for checkpoint` | Kernel `7.0.0-42` auf `homeserver`, [50040](../5-incidents/50040-kernel-7042-apparmor-signale.md) |
 | `zammad` ist im neuen Postgres Superuser | Chart-Verhalten ab 17.0.0, bewusst hingenommen (siehe Tabelle oben) |
