@@ -365,7 +365,7 @@ Uptime Kuma (SQLite `kuma.db` auf `local-path`) sichert täglich um 02:50 über 
 
 ## restic für Zammad (im Cluster)
 
-Zammad (PostgreSQL auf `local-path`, Anhänge liegen in der Datenbank, `storageVolume` ist aus) sichert täglich um 03:00 über das `Backup` `zammad` in ein restic-Repository (PVC `zammad-restic`, StorageClass `nas`, 10 Gi). Der Operator zieht per `pg_dump -Fc` einen konsistenten Dump von `zammad_production` (Host `zammad-postgresql`, Passwort aus `zammad-secrets`), restic sichert ihn. Redis und Memcached sind Cache und werden nicht gesichert. Chart-Dateien unter `argocd/apps/tech/zammad/templates/restic-*.yaml`, hinter `resticBackup.enabled` (Standard `false`).
+Zammad (PostgreSQL auf `local-path`, Anhänge liegen in der Datenbank, `storageVolume` ist aus) sichert täglich um 03:00 über das `Backup` `zammad` in ein restic-Repository (PVC `zammad-restic`, StorageClass `nas`, 10 Gi). Der Operator zieht per `pg_dump -Fc` einen konsistenten Dump von `zammad_production` (Host `zammad-postgres`, Passwort aus `zammad-secrets`), restic sichert ihn. Redis und Memcached sind Cache und werden nicht gesichert. Chart-Dateien unter `argocd/apps/tech/zammad/templates/restic-*.yaml`, hinter `resticBackup.enabled` (Standard `false`).
 
 - **Einrichten (einmalig):** `./scripts/seal-restic-password.sh zammad`, Passwort in den Passwortmanager legen, danach Merge.
 - **Prüfen:** `kubectl -n zammad create job --from=cronjob/zammad restic-test`, Logs mit `kubectl -n zammad logs job/restic-test`, danach den Job löschen.

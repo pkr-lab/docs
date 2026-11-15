@@ -12,7 +12,7 @@ Die Deployment-Konfiguration liegt unter `argocd/apps/tech/zammad/`.
 | Komponente        | Technologie                       | Namespace   |
 |-------------------|-----------------------------------|-------------|
 | Zammad App        | Rails + Puma                      | `zammad`    |
-| Datenbank         | PostgreSQL (Bitnami Sub-Chart)     | `zammad`    |
+| Datenbank         | PostgreSQL 18 (CloudPirates Sub-Chart `postgres`, `local-path`) | `zammad`    |
 | Cache             | Memcached (CloudPirates OCI)       | `zammad`    |
 | Pub/Sub / Sessions| Redis (CloudPirates OCI Sub-Chart) | `zammad`    |
 | Volltextsuche     | PostgreSQL-basiert (eingebaut)     | —           |
@@ -23,12 +23,11 @@ Die Deployment-Konfiguration liegt unter `argocd/apps/tech/zammad/`.
 
 Das Kontaktformular der Website legt Tickets nicht mehr direkt an, sondern über [ticket-gate](300r0-ticket-gate.md) (E-Mail-Bestätigung per Code). Dafür sind `/api/v1/form_submit` und `/api/v1/form_config` auf dem öffentlichen Host gesperrt, die Kanäle *Formular* und *Chat* sind in der Administration deaktiviert, und ein Agent-Benutzer mit API-Token dient ticket-gate zum Anlegen der Tickets.
 
-PostgreSQL und Redis laufen mit `storageClassName: nas` (siehe
-[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)) — keine NodeAffinity mehr
-nötig, die PVCs sind von jedem Node aus erreichbar. Da Zammad Attachments
-standardmäßig in der Datenbank speichert (`storageVolume.enabled: false`),
-kann die PostgreSQL-PVC mit der Zeit groß werden — auf dem NAS statt der
-Homeserver-SSD ist das unkritisch.
+PostgreSQL läuft als StatefulSet `zammad-postgres` auf `local-path` und ist per `nodeSelector` an `homeserver` gebunden, Redis liegt auf
+`storageClassName: nas` (siehe [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md)).
+Da Zammad Attachments in der Datenbank speichert (`storageVolume.enabled: false`), wächst die PostgreSQL-PVC mit den Anhängen.
+Der Umstieg von der Bitnami-Subchart (`zammad-postgresql`, PG 17) auf das neue StatefulSet mit Chart 20 ist in
+[400b0](../4-planung/400b0-zammad-chart-20-postgres-migration.md) beschrieben.
 
 ---
 
@@ -77,7 +76,7 @@ echo -n "$DB_PASS" | kubeseal --raw \
   --from-file=/dev/stdin
 # → Ausgabe als encryptedPostgresPass eintragen
 
-# Key 2: postgresql-password (für den Bitnami-PostgreSQL-Sub-Chart)
+# Key 2: postgresql-password (für den Postgres-Sub-Chart, postgres.auth.secretKeys.adminPasswordKey)
 echo -n "$DB_PASS" | kubeseal --raw \
   --namespace $NS --name $SECRET_NAME \
   --controller-namespace $CONTROLLER_NS \
@@ -131,13 +130,12 @@ kubectl get pods -n zammad -w
 ```
 
 Typische Pod-Reihenfolge beim ersten Start:
-1. `zammad-postgresql-0` und `zammad-redis-*` — PVCs auf der `nas`-
-   StorageClass, können auf jedem Node starten
+1. `zammad-postgres-0` (PVC auf `local-path`, nur auf `homeserver`) und `zammad-redis-0` (PVC auf `nas`)
 2. `zammad-memcached-*` — startet parallel (kein PVC, läuft überall)
 3. `zammad-init-*` — führt Datenbankmigrationen durch
 4. `zammad-*` (App-Pod) — startet nach erfolgreichem Init
 
-> Falls `zammad-postgresql-0` / `zammad-redis-*` dauerhaft `Pending` bleiben:
+> Falls `zammad-redis-0` dauerhaft `Pending` bleibt:
 > das NAS ist offline oder die `nas`-StorageClass fehlt — siehe
 > [capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md) → Fehlerbehebung.
 
@@ -241,19 +239,19 @@ kubectl logs -n sealed-secrets -l app.kubernetes.io/name=sealed-secrets
 
 ```bash
 # PostgreSQL-Pod Status
-kubectl get pod -n zammad -l app.kubernetes.io/name=postgresql
+kubectl get pod -n zammad -l app.kubernetes.io/name=postgres
 
 # Direkte DB-Verbindung testen
-kubectl exec -it -n zammad zammad-postgresql-0 -- \
+kubectl exec -it -n zammad zammad-postgres-0 -- \
   psql -U zammad -d zammad_production -c '\dt'
 ```
 
-### PostgreSQL- / Redis-PVC bleibt `Pending`
+### Redis-PVC bleibt `Pending`
 
-Beide laufen auf der `nas`-StorageClass (NFS, UGREEN NAS):
+Redis läuft auf der `nas`-StorageClass (NFS, UGREEN NAS), PostgreSQL auf `local-path` und hängt nicht vom NAS ab:
 
 ```bash
-kubectl describe pvc -n zammad data-zammad-postgresql-0
+kubectl describe pvc -n zammad data-zammad-redis-0
 kubectl -n nas-storage get pods
 ```
 
@@ -276,16 +274,14 @@ argocd app sync zammad --force
 | Komponente     | CPU Request | RAM Request | RAM Limit | Storage              |
 |----------------|-------------|-------------|-----------|-----------------------|
 | Zammad App     | 100m        | 512Mi       | 1Gi       | —                      |
-| PostgreSQL     | 50m         | 256Mi       | 512Mi     | 50Gi (`nas`)           |
+| PostgreSQL     | 50m         | 256Mi       | 512Mi     | 50Gi (`local-path`)    |
 | Redis          | —           | —           | —         | 8Gi (`nas`)            |
 | Nginx Sidecar  | 25m         | 64Mi        | 128Mi     | —                      |
-| **Gesamt**     | ~200m       | ~896Mi      | ~1.8Gi    | 58Gi auf dem NAS       |
+| **Gesamt**     | ~200m       | ~896Mi      | ~1.8Gi    | 50Gi SSD, 8Gi NAS      |
 
-PostgreSQL- und Redis-Storage liegen bewusst auf dem UGREEN NAS statt auf
-der Homeserver-System-SSD — siehe
-[capulus-core/2-betrieb-hardware/20000-nas-storage.md](../2-betrieb-hardware/20000-nas-storage.md). Die 50Gi für PostgreSQL sind
-ein Startwert; da Attachments in der DB liegen, ggf. nach Bedarf erhöhen
-(`zammad.postgresql.primary.persistence.size`).
+Redis-Storage liegt auf dem UGREEN NAS, PostgreSQL auf `local-path`, weil der NFS-Export `all_squash` erzwingt
+([60040](../6-hintergruende/60040-helm-charts-tech.md#zammad)). `local-path` setzt die 50Gi nicht durch, sie sind nur der Wert im PVC
+(`zammad.postgres.persistence.size`).
 
 ---
 

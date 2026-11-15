@@ -490,15 +490,17 @@ Update-Strategie und Readiness (seit dem Vorfall [50020](../5-incidents/50020-pi
 
 ### zammad
 
-- **Secrets:** `postgresql-pass` (App-Container) und `postgresql-password` (Bitnami-Sub-Chart) müssen **dasselbe** Passwort enthalten,
+- **Secrets:** `postgresql-pass` (App-Container) und `postgresql-password` (Postgres-Sub-Chart, `postgres.auth.secretKeys.adminPasswordKey`) müssen **dasselbe** Passwort enthalten,
   `redis-password` gilt für den App-Container und den CloudPirates-Redis-Sub-Chart gemeinsam. **Redis ohne Passwort ist mit diesem Chart nicht
   nutzbar**: `REDIS_URL` wird immer als `redis://:$(REDIS_PASSWORD)@…` gebaut. Ohne definierte Variable landet der wörtliche String
   `$(REDIS_PASSWORD)` im Passwortfeld, und Zammad sendet ein `AUTH` an ein Redis ohne Auth.
 - **Init-Container `zammad-volume-permissions` ohne `privileged`.** Der Chart-Default startet ihn mit `privileged: true`, dabei ruft er nur `chmod 770 /opt/zammad/tmp` auf (die `emptyDir` ist von Haus aus für alle beschreibbar, Rubys `Tempfile.create` verlangt anderes). Der Container gehört root und braucht dafür keine Capability, weil der Eigentümer sein Verzeichnis immer ändern darf. `values.yaml` setzt deshalb `privileged: false` und `allowPrivilegeEscalation: false` (`drop: ALL` und `runAsUser: 0` bleiben). Der Befehl wurde lokal unter `--cap-drop ALL`, `--read-only` und einer `tmpfs` mit Modus `1777` geprüft. Achtung: `initContainers` steht in den Zammad-Values nur **einmal**, weitere Schlüssel gehören unter denselben Eintrag, ein zweiter überschreibt den ersten stillschweigend.
-- **Init-Job mit festem Namen:** Der Chart-Default (`randomName: true`) hängt `-{{uuidv4}}` an den Job-Namen. Damit entsteht bei **jedem** Helm-Render
-  (jedem ArgoCD-Sync, auch No-Op-Syncs) ein „neuer“ Job, den ArgoCD anlegen will, während der alte noch existiert bzw. gepruned wird, und die
-  Application zeigt dauerhaft „OutOfSync“. Der feste Name macht den Job wieder zu einem stabil vergleichbaren Objekt, `ttlSecondsAfterFinished` (Default
-  300 s) räumt ihn vor dem nächsten echten Upgrade weg.
+- **Init-Job als ArgoCD-Sync-Hook** (`zammadConfig.initJob.annotations`, `argocd.argoproj.io/hook: Sync`). Bis Chart 16 stand hier `randomName: false`:
+  ohne festen Namen erzeugte jeder Render einen neuen Job-Namen und die Application blieb `OutOfSync`. Der feste Name allein reichte aber nicht:
+  `ttlSecondsAfterFinished: 300` löschte den fertigen Job, `selfHeal` vermisste ihn und legte ihn neu an, sodass Migrationen und
+  `Locale.sync`/`Translation.sync` rund alle sechs Minuten liefen (beobachtet am 2026-11-15). Chart 18 hat `randomName` entfernt, der Job heißt
+  unter ArgoCD immer `zammad-init-1`. Als Hook gehört er nicht mehr zum Soll-Zustand und läuft nur bei einem echten Sync, wie im Chart-README
+  empfohlen. Selektive Syncs führen keine Hooks aus, das nutzt der Umstieg in [400b0](../4-planung/400b0-zammad-chart-20-postgres-migration.md).
 - **Elasticsearch ist deaktiviert** (Ressourcenersparnis): Zammad 7.x nutzt die PostgreSQL-Volltextsuche als Fallback, bei großem Ticketvolumen wäre ES
   zu aktivieren. `initialisation` ist standardmäßig `true`, **unabhängig von `enabled`**: Ohne diese Zeile versucht der `zammad-init`-Job trotzdem, ein
   nicht vorhandenes Elasticsearch zu initialisieren, und scheitert.
@@ -508,7 +510,11 @@ Update-Strategie und Readiness (seit dem Vorfall [50020](../5-incidents/50020-pi
   (529 Restarts in 18 Tagen), dabei gingen u. a. Mail-Jobs (Agent-Einladungsmails) mitten in der Verarbeitung verloren. Deshalb 1,5Gi. `postgresql-init`/`-post`
   haben dasselbe Limit wie railsserver (DB-Migrationen, Locale-Sync).
 - **Postgres** lag auf `nas`, bis das NAS `all_squash` erzwang und der Bitnami-Entrypoint (`chmod` auf das Datenverzeichnis) dauerhaft mit „Operation not
-  permitted“ scheiterte. Jetzt `local-path` mit `volumePermissions` (siehe oben). **Redis** liegt bewusst auf der NAS, damit kein Persistenzspeicher auf der
+  permitted“ scheiterte. Seitdem `local-path` mit `nodeSelector` auf `homeserver`. Seit Chart 17 kommt Postgres aus der CloudPirates-Subchart `postgres`
+  (offizielles Image, PG 18, StatefulSet `zammad-postgres`), `volumePermissions` gibt es dort nicht mehr. Der Benutzer `zammad` ist in dieser Subchart
+  **Superuser** (`POSTGRES_USER`). Das ist hingenommen, weil die Instanz nur Zammad dient; ein unprivilegierter Benutzer über `customUser` bräuchte ein
+  zweites versiegeltes Superuser-Passwort. Ein Wechsel der Subchart braucht immer Dump/Restore, weil die neue Subchart ein eigenes, leeres Volume anlegt
+  ([400b0](../4-planung/400b0-zammad-chart-20-postgres-migration.md)). **Redis** liegt bewusst auf der NAS, damit kein Persistenzspeicher auf der
   Homeserver-SSD landet. Zum Feature-Gate-Problem `MaxUnavailableStatefulSet` siehe [60030](60030-argocd-und-bootstrap.md#ignoredifferences-im-applicationset-template).
 - Der externe Host heißt bewusst `support`, nicht `zammad` (so lautet der öffentliche Hostname in cloudflared).
 
