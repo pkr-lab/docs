@@ -524,6 +524,10 @@ der NAS gefüllt) auf die `vaultwarden-data`-PVC zurück ([300a0](../../capulus-
 - Der Hauptaccount samt aller Passwörter und des eigenen 2FA/TOTP ist danach automatisch wieder da, weil das alles Teil derselben
   SQLite-Datei ist. Ein separater „User anlegen“-Schritt ist nicht nötig.
 
+### libvirt_host: Prüfungen im Dry-Run
+
+Im Check-Mode führt `ansible.builtin.command` nichts aus, meldet aber `rc: 0` mit leerer Ausgabe. `virsh dominfo` galt damit für jede VM als erfolgreich, und `from_json` auf der leeren Ausgabe von `qemu-img info` ließ `make check` abbrechen. Beide Befehle sind rein lesend und laufen deshalb mit `check_mode: false`; die Warnung zum Backing-File prüft zusätzlich, ob die Ausgabe leer ist. Allgemein gilt: Lesende `command`-Tasks, deren Ergebnis spätere Bedingungen steuern, brauchen `check_mode: false`, sonst bewertet der Dry-Run einen erfundenen Erfolg.
+
 ### Review-Befunde vom 2026-11-15
 
 - **Secrets nie über feste `/tmp`-Pfade oder `--diff`.** `cups_print_server` erzeugt das TLS-Schlüsselpaar in einem `tempfile`-Verzeichnis und räumt es im `always`-Zweig auf, der Schlüssel liegt mit `0600` unter `/etc/cups/ssl/` (cupsd liest ihn als root). Temp-Verzeichnis, `openssl` und Aufräumen laufen mit `check_mode: false`, weil `tempfile` im Dry-Run sonst kein Verzeichnis anlegt und die Folge-Tasks an der fehlenden `path` scheitern; die Kopien nach `/etc/cups/ssl/` bleiben im Dry-Run simuliert, die Schlüssel-Kopie läuft mit `diff: false`. `semaphore_secrets` reicht das Secret per `kubectl apply -f -` über `stdin` weiter statt über `/tmp/semaphore-bootstrap-secret.yaml`; ein älterer Lauf kann die Datei noch hinterlassen haben, die Rolle löscht sie. `slurp` von Schlüsseln und Tokens (`wireguard_backup`, `power_agent`) läuft mit `no_log`, Templates mit Secrets mit `diff: false`.
