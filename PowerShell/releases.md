@@ -4,7 +4,7 @@ Releases entstehen automatisch aus den Commit-Nachrichten. Der Prozess ist in al
 
 ## Ablauf
 
-1. Änderungen kommen per Pull Request nach `master`. Der Check **commitlint** prüft, dass alle Commits des Pull Requests dem Format [Conventional Commits](https://www.conventionalcommits.org/) folgen.
+1. Änderungen kommen per Pull Request nach `master`. Der Check **commitlint** prüft, dass alle Commits des Pull Requests dem Format [Conventional Commits](https://www.conventionalcommits.org/) folgen. Dazu laufen **PSScriptAnalyzer** und **shellcheck** ([Qualitätsprüfung](index.md#qualitätsprüfung)).
 2. Jeder Push auf `master` startet `.github/workflows/release.yml`. Der Workflow ruft den zentralen Release-Workflow auf (semantic-release).
 3. semantic-release bestimmt aus den Commits seit dem letzten Tag die nächste Version nach [SemVer](https://semver.org/), schreibt `CHANGELOG.md` fort (Commit `chore(release): X.Y.Z [skip ci]`), setzt den Git-Tag `vX.Y.Z` und veröffentlicht ein GitHub-Release mit Release Notes.
 
@@ -23,7 +23,7 @@ Die Versionierung beginnt bei `v1.0.0`. Der Standardbranch heißt noch `master`;
 
 ## Artefakte
 
-Pro Release hängt ein ZIP (`PowerShell-vX.Y.Z.zip`) mit allen Skripten und `Logging.psm1` am GitHub-Release; es dient als Vorlage für die Sync-Quelle.
+Pro Release hängt ein ZIP (`PowerShell-vX.Y.Z.zip`) mit allen Skripten, `Logging.psm1`, `Common.psm1` und `Konfiguration.example.psd1` am GitHub-Release; es dient als Vorlage für die Sync-Quelle. `Konfiguration.psd1` ist nie enthalten. Das ZIP baut `.github/release/build.sh` mit `git archive`, ohne `.github` und `.githooks`.
 
 ## Änderungsprotokoll
 

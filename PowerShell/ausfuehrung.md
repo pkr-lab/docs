@@ -1,6 +1,6 @@
 # Ausführung – Hilfsskripte für Einrichtung & Deployment
 
-Dieser Ordner enthält Skripte, die **einmalig oder manuell** ausgeführt werden – nicht durch den Watchdog-Prozess.
+Dieser Ordner (`Ausfuehrung/`) enthält Skripte, die **einmalig oder manuell** ausgeführt werden. Der Watchdog schließt den Ordner aus.
 
 ## Dateien
 
@@ -33,6 +33,8 @@ Dieser Ordner enthält Skripte, die **einmalig oder manuell** ausgeführt werden
 # Mit eigenen Parametern
 .\DateienSendenVM.ps1 -VMName "MeineVM" -GpoName "MeineGPO" -GpoBackupPath "D:\GPO-Backups"
 ```
+
+Ohne `-DestinationInVM` bildet Aktion 1 das Ziel aus `VmBenutzer` in `Konfiguration.psd1` (`C:\Users\<VmBenutzer>\Desktop\PowerShell.zip`).
 
 ---
 

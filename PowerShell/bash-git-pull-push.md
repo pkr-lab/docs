@@ -2,9 +2,11 @@
 
 Bash-Skript, das ein Git-Repository aktualisiert und bei einer neuen Version in ein Zielverzeichnis kopiert und dort einen Befehl ausführt (zum Beispiel `docker compose up -d`). Gedacht für Server, die von Git deployen sollen, ohne dass ein Dienst auf dem Server selbst Git-Zugriff von außen braucht. Das Skript ersetzt keinen GitOps-Controller. Das GitOps-Verfahren des Homelabs steht bei [ArgoCD](../capulus/capulus-core/b-kubernetes-gitops/b0010-argocd.md).
 
-Code: `bash/git-pull-push/git-pull-push.sh` und `README.md` im Repo [pkr-lab/PowerShell](https://github.com/pkr-lab/PowerShell). Stand der Prüfung (2026-10-21): Die Dateien liegen im lokalen Arbeitsverzeichnis, aber noch nicht im Git-Index. TODO: prüfen, ob sie committet wurden und in welchem Pfad.
+Code: `bash/git-pull-push/git-pull-push.sh` und `README.md` im Repo [pkr-lab/Scripts](https://github.com/pkr-lab/Scripts).
 
-Namensunterschied: Die Datei heißt `git-pull-push.sh`, die Hilfe, die Log-Zeilen (`[git-pull-deploy]`) und die README sprechen von `git-pull-deploy.sh`. Beim Installieren den gewünschten Namen wählen und konsistent verwenden (TODO: prüfen, welcher Name gelten soll).
+Name: Skript, Hilfe, Log-Präfix (`[git-pull-push]`) und README heißen `git-pull-push`. Nur die Zustandsdateien unter `<QUELLE>/.git/` heißen weiter `git-pull-deploy.stand` und `git-pull-deploy.lock`, damit bestehende Installationen ihren Stand behalten.
+
+`AUSNAHMEN` darf leer sein, auch auf bash vor 4.4 mit `set -u`.
 
 ---
 
@@ -99,7 +101,7 @@ Sicherheitsvorkehrungen: `ZIEL` darf nicht `/` sein und `QUELLE` weder enthalten
 
 ## Debugging und Fehlersuche
 
-Alle Meldungen gehen mit Zeitstempel und Präfix `[git-pull-deploy]` auf stderr. Das Skript hat kein eigenes Log-Level. Zum Nachverfolgen hilft `bash -x git-pull-push.sh --check`.
+Alle Meldungen gehen mit Zeitstempel und Präfix `[git-pull-push]` auf stderr. Das Skript hat kein eigenes Log-Level. Zum Nachverfolgen hilft `bash -x git-pull-push.sh --check`.
 
 | Meldung | Ursache | Lösung |
 |---|---|---|

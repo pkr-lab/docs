@@ -9,11 +9,24 @@ Werden automatisch vom Watchdog bei jedem Login ausgeführt.
 
 | Skript | Zweck | Admin? |
 |--------|-------|--------|
+| `10020115_Win_R_Firewall.ps1` | Windows-Firewall: alle Profile an, eingehend blockieren, Ping erlauben, RDP nur mit `RdpErlauben` | Ja |
 | `10020115_Win_R_Passwort.ps1` | PIN-Komplexität (Windows Hello) | Ja |
 | `10020115_Win_R_Personalisierung.ps1` | Desktop- und Sperrbildschirm-Hintergrund sperren | Ja |
 | `10020115_Win_R_SoftwareInstallUninstall.ps1` | Software-Richtlinien zurücksetzen (Rollback) | Ja |
 | `10020115_Win_R_SystemHilfe.ps1` | OEM-Branding und Legal Notice | Ja |
 | `10020115_Win_R_WinInstallStore.ps1` | Microsoft Store deaktivieren | Ja |
+
+---
+
+## `10020115_Win_R_Firewall.ps1`
+
+**Zweck:** Schaltet die Windows-Firewall für Domain, Private und Public ein und setzt eingehend auf Blockieren, ausgehend auf Erlauben. Aktiviert die Ping-Regeln (`FPS-ICMP4-ERQ-In`, `FPS-ICMP6-ERQ-In`) und härtet das Public-Profil.
+
+**Remotedesktop:** Die Regel `Remotedesktop-UserMode-In-TCP` schaltet das Skript nur ein, wenn in `Konfiguration.psd1` `RdpErlauben = $true` steht ([Konfiguration](konfiguration.md#lokale-konfiguration-konfigurationpsd1)). Der Standard ist aus. Eine früher aktivierte RDP-Regel schaltet das Skript nicht ab, dafür von Hand:
+
+```powershell
+Disable-NetFirewallRule -Name "Remotedesktop-UserMode-In-TCP"
+```
 
 ---
 
@@ -65,6 +78,8 @@ Werden automatisch vom Watchdog bei jedem Login ausgeführt.
 - `HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon` (Legal Notice)
 - `HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters` (Computerbeschreibung)
 
+**Konfiguration:** Die Support-Telefonnummer kommt aus `SupportTelefon` in `Konfiguration.psd1`. Ohne den Wert bricht das Skript ab, ohne etwas zu setzen.
+
 ---
 
 ## `10020115_Win_R_WinInstallStore.ps1`
@@ -94,6 +109,8 @@ Die Meldungen aller Skripte sammelt [Debugging und Fehlersuche](debugging.md), d
 | | `Fehler beim Setzen der ADMX-Richtlinien: …` | Rechte oder Pfad |
 | SystemHilfe | `OEM-Logo nicht gefunden (wird uebersprungen): <pfad>` | `$LogoPath` prüfen, Branding läuft ohne Logo |
 | | `Fehler beim OEM-Branding: …`, `Fehler beim Setzen der Legal Notice: …` | Registry-Rechte |
+| | `Konfiguration nicht verwendbar: …` | `SupportTelefon` fehlt in `Konfiguration.psd1` |
 | Firewall | `Fehler beim Aktivieren der Firewall: …`, `Fehler beim Setzen der Standardregeln: …` | `Set-NetFirewallProfile` abgelehnt, Fremd-Firewall |
 | | `Firewall-Regel nicht gefunden (uebersprungen): …` | Regel existiert in dieser Windows-Version nicht, Warnung |
+| | `RDP-Regel wird nicht aktiviert (…)` | gewollt, solange `RdpErlauben` nicht `$true` ist |
 | alle | Wirkung erst nach Neustart | OEM-Branding und Store-Einstellung brauchen einen Neustart, Rückbau: [Rollback](nutzung.md#rollback) |
