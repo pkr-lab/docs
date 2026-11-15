@@ -2,7 +2,7 @@
 
 Die Konfiguration ist eine PowerShell-Data-Datei (`.psd1`), geladen über das eingebaute
 `Import-PowerShellDataFile` (verfügbar seit PowerShell 5.0 - keine externen Module nötig). Defaults
-für fehlende optionale Felder setzt `Load-Config` (`scripts/DocFlowEngine/Config.ps1`).
+für fehlende optionale Felder setzt `Import-DocFlowConfig` (`scripts/DocFlowEngine/Config.ps1`, früher `Load-Config`, der alte Name funktioniert weiter als Alias).
 
 ## `paths` (optional, empfohlen) - Pfade nur ganz oben anpassen
 
@@ -29,10 +29,10 @@ stateFile    = '{shared}/.docflow-state.json'
 | Verkettung | Ein Wert in `paths` darf auf andere Werte in `paths` verweisen (`shared = '{material}/...'`). Die Reihenfolge der Einträge spielt keine Rolle. |
 | Ersetzte Felder | `sources[].path`, `targets[].path`, `aufgabenRoot`, `projectRoutesFile`, `projectRoutesSeedFile`, `stateFile`, `lockFile`, `log.file`, `reviewMarker.kuerzelRoutesFile`. |
 | Nicht ersetzt | Alle anderen Felder, insbesondere `namingConventions[].rename` und die Hinweis-Texte. Dort bleiben Platzhalter wie `{date}`, `{name}` oder `{fileName}` unverändert, auch wenn es einen gleichnamigen Eintrag in `paths` gäbe. |
-| Fehler | Ein Verweis auf einen nicht definierten Namen oder ein zirkulärer Verweis (`a = '{b}'`, `b = '{a}'`) bricht `Load-Config` mit einer Fehlermeldung ab, die den Namen nennt. |
+| Fehler | Ein Verweis auf einen nicht definierten Namen oder ein zirkulärer Verweis (`a = '{b}'`, `b = '{a}'`) bricht `Import-DocFlowConfig` mit einer Fehlermeldung ab, die den Namen nennt. |
 | Wildcards | `*`/`?` in den Werten bleiben erhalten und werden wie bisher erst zur Laufzeit aufgelöst. |
 
-Die Ersetzung geschieht in `Load-Config` (`Expand-DocFlowConfigPaths`, `Config.ps1`), also bevor
+Die Ersetzung geschieht in `Import-DocFlowConfig` (`Expand-DocFlowConfigPaths`, `Config.ps1`), also bevor
 irgendein anderer Teil der Engine die Pfade sieht. Ohne `paths`-Block funktionieren ausgeschriebene
 Pfade weiterhin unverändert.
 
@@ -51,7 +51,7 @@ sources = @(
         path             = 'C:/Users/p0*/OneDrive - D*/.../Austauschordner/'
         recursive        = $true
         includePatterns  = @('*.pdf', '*.docx')
-        excludePatterns  = @('.*', 'Thumbs.db', '~$*', '*.NAMENSKONVENTION-FEHLER.txt', '*.KUERZEL-UNBEKANNT.txt')
+        excludePatterns  = @('.*', 'Thumbs.db', '~$*')
     }
 )
 ```
@@ -61,7 +61,7 @@ sources = @(
 | `path` | string | ja | Ordnerpfad, darf `*`/`?`-Wildcards enthalten (z. B. für rechnerabhängige Benutzernamen). Wird über `Resolve-SourcePaths` (`Common.ps1`) zur Laufzeit aufgelöst; ein Wildcard-Pfad kann zu mehreren tatsächlichen Ordnern auflösen. |
 | `recursive` | bool | ja | `$true` durchsucht Unterordner. |
 | `includePatterns` | string[] | ja | Dateimuster (`-Filter`-Syntax von `Get-ChildItem`), z. B. `*.pdf`. |
-| `excludePatterns` | string[] | nein | Namensmuster (`-like`), die trotz `includePatterns` ausgeschlossen werden. **Muss** die eigenen Hinweisdatei-Suffixe enthalten (`*.NAMENSKONVENTION-FEHLER.txt`, `*.KUERZEL-UNBEKANNT.txt`), sonst werden diese beim nächsten Lauf fälschlich als Quelldateien erkannt. |
+| `excludePatterns` | string[] | nein | Namensmuster (`-like`), die trotz `includePatterns` ausgeschlossen werden. Die eigenen Hinweisdatei-Suffixe (`namingConventionHint.fileNameSuffix`, `duplicateHint.fileNameSuffix`, `*.KUERZEL-UNBEKANNT.txt`) ergänzt `Import-DocFlowConfig` automatisch und müssen nicht eingetragen werden. |
 
 Der `Korrigiert`-Unterordner (siehe `reviewMarker` unten) muss **nicht** separat in
 `excludePatterns` eingetragen werden - er wird unabhängig davon per Ordnername erkannt und
@@ -78,7 +78,7 @@ angelegt. Ohne `targets` gilt:
   abgeschaltet, wird `Kein Ziel für '...' ermittelbar ... Datei wird übersprungen.` geloggt.
 - Übersprungene Dateien werden **nicht** in die Zustandsdatei eingetragen. Nach einer Umbenennung
   durch den Schüler oder einer Ergänzung der Whitelist werden sie beim nächsten Lauf normal verarbeitet.
-- `Load-Config` verlangt dann `aufgabenRoot`; fehlen beide, bricht der Start mit einer Fehlermeldung ab.
+- `Import-DocFlowConfig` verlangt dann `aufgabenRoot`; fehlen beide, bricht der Start mit einer Fehlermeldung ab.
 
 Soll doch wieder ein Sammelordner genutzt werden, sieht ein Eintrag so aus:
 
