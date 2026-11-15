@@ -2,7 +2,7 @@
 
 `scripts/DocFlowEngine.psm1` ist das Root-Modul: Es lädt per Dot-Sourcing alle Teilmodule aus
 `scripts/DocFlowEngine/` (in dieser Reihenfolge: `Common.ps1`, `Config.ps1`, `State.ps1`,
-`Lock.ps1`, `Naming.ps1`, `CopyForward.ps1`, `CopyBack.ps1`) und stellt `Invoke-DocFlowEngine` als
+`Lock.ps1`, `Naming.ps1`, `CopyForward.ps1`, `CopyBack.ps1`, `Rename.ps1`) und stellt `Invoke-DocFlowEngine` als
 öffentlichen Einstiegspunkt bereit. `scripts/DocFlowEngine.ps1` ist der dünne CLI-Wrapper
 (`-ConfigPath`, `-DryRun`), den `README.md` in den Ausführungsbeispielen verwendet.
 
@@ -32,7 +32,7 @@ Sie heißen jetzt anders. Die alten Namen bleiben als exportierte Aliase erhalte
 
 | Funktion | Zweck |
 |---|---|
-| `Invoke-DocFlowEngine -ConfigPath <string> [-DryRun]` | Hauptablauf: Config laden, Lock erwerben, State laden, `Copy-NewFiles` + `Copy-ReviewedFiles` ausführen, State speichern, Lock freigeben. Einziger Ort, der die Teilmodule orchestriert. |
+| `Invoke-DocFlowEngine -ConfigPath <string> [-DryRun]` | Hauptablauf: Config laden, Lock erwerben, Laufkontext bauen (`New-DocFlowRunContext`), `Invoke-DocFlowCopyForward` + `Copy-ReviewedFiles` ausführen, State speichern, Lock freigeben. Einziger Ort, der die Teilmodule orchestriert. |
 
 ## `Common.ps1` - Logging, Pfade, generische Hilfsfunktionen
 
@@ -117,7 +117,10 @@ Sie heißen jetzt anders. Die alten Namen bleiben als exportierte Aliase erhalte
 | `Copy-DocFlowFileToTargets -File <FileInfo> -Targets <array> -TargetFileName <string> -SourceRoot <string> [-RetryCount <int>] [-RetryDelaySeconds <int>]` | Kopiert in alle Ziele (mit `preserveSubfolders`, Ordneranlage, Ziel-Existenz-Check, DryRun). Liefert `Succeeded` und `TargetPaths`. Nicht exportiert. |
 | `Complete-DocFlowProcessedFile -State <hashtable> -SourceKey <string> -File <FileInfo> [-TargetPaths <array>] [-HintSuffixes <array>]` | Schreibt den Zustandseintrag und entfernt die Hinweisdateien zur Datei. Nicht exportiert. |
 | `Write-DocFlowResubmissionHint -File <FileInfo> -Rules <array> [-DuplicateHint <hashtable>] [-TargetDirectory <string>] [-ReviewMarkerPattern <string>]` | Schreibt den `duplicateHint` mit Versionsvorschlag, falls aktiviert. Nicht exportiert. |
-| `Copy-NewFiles -Sources ... -Targets ... -State ... -Rules ... -DefaultNameFormat ... [-AufgabenRoot ...] [-PraefixSuffixRegistry ...] [-RegistryFilePath ...] [-KuerzelRoutes ...] [-KuerzelRoutesFilePath ...] [-KorrigiertFolderName ...] [-ReviewMarkerPattern ...] [-NamingConventionHint ...] [-DuplicateHint ...] [-MinFileAgeMinutes ...] [-RetryCount ...] [-RetryDelaySeconds ...] [-ExcludePaths ...]` | Kernfunktion des Vorwärtslaufs. Reihenfolge je Datei: Ausschlüsse → Zustand (unverändert: überspringen; ohne Größe/Zeit: nachtragen; überschrieben: `duplicateHint`) → `Test-DocFlowFileReady` → Routing nach `aufgabenRoot`/Präfix-Suffix-Paar/`categoryRoutes`/`targets` → gleichnamige Abgabe im Zielordner (identisch: übernehmen, sonst `duplicateHint`) → `Copy-DocFlowFileWithRetry` → Zustandseintrag nur bei Erfolg, danach Hinweisdateien zur Datei entfernen. Vorab werden verwaiste Hinweisdateien im Quellordner entfernt. |
+| `New-DocFlowRunContext -Config <hashtable>` | Baut aus der geladenen Konfiguration den Laufkontext: `State` und `StatePath` (lädt die Zustandsdatei), aufgelöstes `AufgabenRoot`, `PraefixSuffixRegistry` und `RegistryFilePath` (gleicht vorher mit `projectRoutesSeedFile` ab), `KuerzelRoutes` und `KuerzelRoutesFilePath` sowie `ExcludePaths` (alle `targets[].path` und `aufgabenRoot`). Ohne `projectRoutesFile` ist die Registry leer (`Praefixe`/`Suffixe` ohne `Paare`). |
+| `New-DocFlowRunContextObject -State <hashtable> [-StatePath ...] [-AufgabenRoot ...] [-PraefixSuffixRegistry ...] [-RegistryFilePath ...] [-KuerzelRoutes ...] [-KuerzelRoutesFilePath ...] [-ExcludePaths ...]` | Erzeugt das Kontext-Objekt aus Einzelwerten, ohne etwas zu laden. Gemeinsame Basis von `New-DocFlowRunContext` und `Copy-NewFiles`. Nicht exportiert. |
+| `Invoke-DocFlowCopyForward -Config <hashtable> -Context <PSCustomObject>` | Kernfunktion des Vorwärtslaufs. Liest die Einstellungen aus der Konfiguration (`sources`, `targets`, `namingConventions`, `defaultNameFormat`, `categoryRoutes`, `namingConventionHint`, `duplicateHint`, `minFileAgeMinutes`, `copyRetry`, `reviewMarker.korrigiertFolderName`/`pattern`), den Laufzustand aus dem Kontext. Erwartet eine Konfiguration, wie `Import-DocFlowConfig` sie liefert (alle Defaults gesetzt). Reihenfolge je Datei: Ausschlüsse → Zustand (unverändert: überspringen; ohne Größe/Zeit: nachtragen; überschrieben: `duplicateHint`) → `Test-DocFlowFileReady` → Routing nach `aufgabenRoot`/Präfix-Suffix-Paar/`categoryRoutes`/`targets` → gleichnamige Abgabe im Zielordner (identisch: übernehmen, sonst `duplicateHint`) → `Copy-DocFlowFileWithRetry` → Zustandseintrag nur bei Erfolg, danach Hinweisdateien zur Datei entfernen. Vorab werden verwaiste Hinweisdateien im Quellordner entfernt. |
+| `Copy-NewFiles -Sources ... -Targets ... -State ... -Rules ... -DefaultNameFormat ... [-AufgabenRoot ...] [-PraefixSuffixRegistry ...] [-RegistryFilePath ...] [-KuerzelRoutes ...] [-KuerzelRoutesFilePath ...] [-KorrigiertFolderName ...] [-ReviewMarkerPattern ...] [-NamingConventionHint ...] [-DuplicateHint ...] [-MinFileAgeMinutes ...] [-RetryCount ...] [-RetryDelaySeconds ...] [-ExcludePaths ...]` | Kompatibilitätshülle mit der bisherigen Signatur. Baut aus den Parametern Konfiguration und Kontext und ruft `Invoke-DocFlowCopyForward` auf; das Verhalten ist dasselbe. Neue Aufrufe sollten `Invoke-DocFlowCopyForward` verwenden. |
 
 ## `CopyBack.ps1` - "Korrigiert"-Rücklauf
 
@@ -127,17 +130,26 @@ Sie heißen jetzt anders. Die alten Namen bleiben als exportierte Aliase erhalte
 | `Register-Kuerzel -Routes <hashtable> [-RoutesFilePath <string>] -Kuerzel <string> -SourcePath <string>` | Trägt ein neues Kürzel einmalig ein (in-memory + Datei), no-op falls schon bekannt. Wird aus `Copy-NewFiles` heraus mit `$item.DirectoryName` aufgerufen (nicht der Quellwurzel - wichtig bei einem gemeinsamen, rekursiv gescannten Austauschordner mit Schüler-Unterordnern). |
 | `Copy-ReviewedFiles -AufgabenRoot <string> -ReviewMarker <hashtable> -KuerzelRoutes <hashtable> -State <hashtable> -Rules <array> [-UnknownKuerzelHint <hashtable>] [-RetryCount <int>] [-RetryDelaySeconds <int>]` | Marker-Erkennung ohne Rücksicht auf Groß-/Kleinschreibung; Kopie über `Copy-DocFlowFileWithRetry`, Zustandseintrag nur bei Erfolg; entfernt danach einen vorhandenen `.KUERZEL-UNBEKANNT.txt`-Hinweis sowie vorab alle verwaisten. | Durchsucht `aufgabenRoot` rekursiv nach `_k-...`-markierten Dateien. Der Marker-Text selbst wird nirgends ausgewertet - stattdessen entfernt die Funktion den Marker sowie ein führendes `{date}_` und ermittelt über `Get-FileInitialsFromName -Rules $Rules` das Schüler-Kürzel aus dem verbleibenden (unveränderten) Dateinamen. Schlägt dieses Kürzel in `KuerzelRoutes` nach, kopiert nach `<Schülerordner>/<Korrigiert>/`. Überspringt bereits zurückkopierte Dateien (State) und Dateien, die bereits im `Korrigiert`-Ordner selbst liegen. |
 
+## `Rename.ps1` - Hilfsfunktionen für `Rename-ExistingAufgaben.ps1`
+
+| Funktion | Zweck |
+|---|---|
+| `ConvertTo-DocFlowKuerzelByFolder -KuerzelRoutes <hashtable>` | Kehrt die Kürzel-Registry (Kürzel → Schülerordner) zu Ordner → Kürzel um. Abschließende `\`/`/` werden entfernt; zeigen mehrere Kürzel auf denselben Ordner, gilt das erste. |
+| `Get-DocFlowFolderInitials -Files <FileInfo[]> -Rules <array> [-Registry ...] [-KuerzelByFolder <hashtable>] [-Placeholder <string> = 'PLATZHALTER']` | Ermittelt pro Ordner die Initialen für Umbenennungen. Liefert eine `Hashtable` Ordner → Objekt mit `Initials` und `Source`. Reihenfolge: die häufigsten Initialen regelkonformer Dateien im Ordner (`aus regelkonformen Dateien im Ordner`), sonst der Eintrag aus der Kürzel-Registry (`aus der Kürzel-Registry`), sonst eindeutig erratene Initialen aus Dateien mit erkanntem Präfix oder Suffix (`aus anderen Dateinamen im Ordner`). Sind die erratenen Initialen mehrdeutig, fehlt der Ordner im Ergebnis. |
+| `Undo-DocFlowRename -ReportPath <string>` | Macht die Zeilen eines `-Apply`-Berichts mit `Ausgefuehrt = ja` in umgekehrter Reihenfolge rückgängig. Überspringt mit Warnung Dateien, die nicht mehr existieren, und alte Namen, die inzwischen wieder belegt sind. Liefert `Restored` und `Total`. Wirft, wenn der Bericht fehlt. |
+
 ## Aufrufreihenfolge in `Invoke-DocFlowEngine`
 
 ```
 Import-DocFlowConfig
   → Lock-DocFlowRun (falls lockFile konfiguriert und nicht -DryRun)
     → Initialize-DocFlowTargetDirectories
-    → Import-DocFlowState
-    → Sync-ProjectRoutesFromSeed (falls projectRoutesFile + projectRoutesSeedFile konfiguriert)
-    → Get-PraefixSuffixRegistry (falls projectRoutesFile konfiguriert)
-    → Get-KuerzelRoutes (falls reviewMarker.kuerzelRoutesFile konfiguriert)
-    → Copy-NewFiles           (Vorwärtslauf, inkl. Register-Kuerzel bei Bedarf)
+    → New-DocFlowRunContext
+        → Import-DocFlowState
+        → Sync-ProjectRoutesFromSeed (falls projectRoutesFile + projectRoutesSeedFile konfiguriert)
+        → Get-PraefixSuffixRegistry (falls projectRoutesFile konfiguriert)
+        → Get-KuerzelRoutes (falls reviewMarker.kuerzelRoutesFile konfiguriert)
+    → Invoke-DocFlowCopyForward (Vorwärtslauf, inkl. Register-Kuerzel bei Bedarf)
     → Copy-ReviewedFiles      (Rücklauf, nur falls aufgabenRoot + reviewMarker.enabled)
     → Remove-DocFlowExpiredState (falls stateRetentionYears > 0)
     → Save-State              (nicht im DryRun)
@@ -153,7 +165,7 @@ explizit so eingerichtet, siehe README).
 | Skript | Zweck |
 |---|---|
 | `scripts/Invoke-OneDriveSync.ps1` | Kein Modul-Import. Beendet den OneDrive-Prozess des Benutzers und startet ihn neu (`Stop-Process`/`Start-Process`), um einen frischen Sync-Check anzustoßen - kein offizieller, garantierter "Sync jetzt"-Befehl existiert. `-ExecutablePath` überschreibbar; ohne gefundene `OneDrive.exe` (z. B. `$env:LOCALAPPDATA` nicht gesetzt, wie auf macOS/Linux) bricht das Skript kontrolliert mit einer Warnung ab statt mit einem Fehler. |
-| `scripts/Rename-ExistingAufgaben.ps1 -Path <string> [-ConfigPath <string>] [-Apply]` | Manuell auszuführendes Migrationsskript für Alt-Bestand. Nutzt `Import-DocFlowConfig`/`Get-PraefixSuffixRegistry`/`Get-DocFlowNameProposal`/`New-DocFlowSubmissionStem`/`Lock-DocFlowRun`/`Import-DocFlowState`/`Save-State`. Ohne `-Apply` reine Vorschau (keine Änderung). Mit `-Apply`: benennt Dateien um (Kollisionsschutz durch angehängten Zähler) und registriert sie - falls `-Path` unterhalb eines konfigurierten `sources[]`-Eintrags liegt - unter demselben Dedup-Key-Format wie `Copy-NewFiles` (`"$($source.path)\|<relativer Pfad>"`) in `.docflow-state.json`, damit `Invoke-DocFlowEngine` sie beim nächsten Lauf nicht erneut als neue Datei behandelt. |
+| `scripts/Rename-ExistingAufgaben.ps1 [-Path <string[]>] [-ConfigPath <string>] [-Apply] [-ReportPath <string>] [-Undo <string>] [-MarkAsProcessed] [-IncludeUnrecognized] [-Placeholder <string>]` | Manuell auszuführendes Migrationsskript für Alt-Bestand. Ohne `-Path` werden alle `sources` durchsucht. Nutzt `Import-DocFlowConfig`, `Get-PraefixSuffixRegistry`, `ConvertTo-DocFlowKuerzelByFolder`, `Get-DocFlowFolderInitials`, `Get-DocFlowNameProposal`, `New-DocFlowSubmissionStem`, `Lock-DocFlowRun`, `Import-DocFlowState`, `Save-State` und für `-Undo` `Undo-DocFlowRename`. Ohne `-Apply` reine Vorschau (keine Änderung), der Bericht landet als CSV unter `-ReportPath`. Mit `-Apply`: benennt Dateien um; ist der Zielname schon vergeben, wird die Versionsangabe hochgezählt (`_v2`, `_v3`, …). Mit `-MarkAsProcessed` werden umbenannte Dateien unter demselben Dedup-Key-Format wie im Vorwärtslauf (`"$($source.path)\|<relativer Pfad>"`) in `.docflow-state.json` eingetragen, damit `Invoke-DocFlowEngine` sie beim nächsten Lauf nicht erneut als neue Datei behandelt. `-Undo <Bericht>` macht einen `-Apply`-Lauf rückgängig. |
 
 
 ---

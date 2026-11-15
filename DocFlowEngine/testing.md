@@ -1,8 +1,8 @@
 # Tests
 
 `tests/DocFlowEngine.Tests.ps1` enthält [Pester](https://pester.dev/)-Tests für alle Teilmodule.
-Stand der Prüfung (2026-11-15): 95 `It`-Blöcke in 28 `Describe`- und 6 `Context`-Blöcken. Mit den
-`-ForEach`-Testfällen ergibt das 111 Tests, alle grün mit Pester 5.7.1 und 6.2.0 unter PowerShell 7.4.
+Stand der Prüfung (2026-11-15): 104 `It`-Blöcke in 30 `Describe`- und 9 `Context`-Blöcken. Mit den
+`-ForEach`-Testfällen ergibt das 120 Tests, alle grün mit Pester 5.7.1 und 6.2.0 unter PowerShell 7.4.
 
 ## Voraussetzungen
 
@@ -83,7 +83,9 @@ Die CI prüft nur unter PowerShell 7 auf Linux. Windows PowerShell 5.1 wird nich
 | Namensvorschläge | `Get-DocFlowNameProposal` für Paare, zusammengeschriebene Namen, nur Suffix, nur Präfix, mehrdeutige Fälle, flache und fehlende Registry, Versions- und Kopie-Bereinigung, bekannte Initialen und Platzhalter; `New-DocFlowSubmissionStem`. |
 | `Resolve-PathOrAbsolute` | Existierende Pfade, Wildcard-Auflösung über das nächste vorhandene Elternverzeichnis, Fehler ohne solches Verzeichnis, relative Pfade. |
 | `Invoke-DocFlowEngine` | Ende-zu-Ende: DryRun ändert nur das Log; echter Lauf schreibt Kopien, Hinweise, Zustand, Kürzel-Registry und Log und gibt die Sperre frei; zweiter Lauf überspringt; aktive fremde Sperre blockiert den Lauf. |
+| Laufkontext | `New-DocFlowRunContext` bündelt Zustand, aufgelöste Pfade, Whitelist, Kürzel-Registry und Ausschlussordner; `Invoke-DocFlowCopyForward` kopiert damit wie `Copy-NewFiles`. Die übrigen `Copy-NewFiles`-Tests laufen weiter über die Kompatibilitätshülle. |
 | Skripte | `Rename-ExistingAufgaben.ps1` (Vorschau, `-Apply`, `-Undo`, `-MarkAsProcessed`); `Invoke-OneDriveSync.ps1` ohne `OneDrive.exe` (Warnung, Exit-Code 0). |
+| Rename-Hilfsfunktionen | `Get-DocFlowFolderInitials` mit allen drei Quellen und dem mehrdeutigen Fall; `Undo-DocFlowRename` mit fehlender Datei, belegtem altem Namen, nicht ausgeführten Zeilen und fehlendem Bericht; `ConvertTo-DocFlowKuerzelByFolder`. |
 | `Get-DocFlowRelativePath` | Plattformunabhängige, reine String-basierte Berechnung (kein `[Uri]`-basierter Ansatz, der unter Linux/macOS ohne `file://`-Schema fehlschlägt). |
 
 ## Testaufbau
