@@ -10,7 +10,7 @@ Repository: [pkr-lab/capulus-ansible](https://github.com/pkr-lab/capulus-ansible
 |---|---|
 | Playbooks | `site.yml` (Homeserver/TECH), `controlplane-1.yml`, `worker-1.yml`, `prod.yml`, `entw.yml`, Kiosk-Playbooks, `alert-caller.yml`, `vaultwarden-restore.yml`, `render-bootstrap.yml` |
 | Rollen | 33 Rollen nach dem Prinzip „eine Rolle pro Aufgabe“, siehe [Rollen](rollen/index.md) |
-| Inventory | `inventory/hosts.yml` mit den Gruppen `homeservers`, `k3s_agents`, `prod`, `entw`, `semaphore_targets`, `xibo_displays`, `banana_pis`, `raspberry_pis`, `alert_callers`, `alert_caller_pi` |
+| Inventory | `inventory/hosts.yml` mit den Gruppen `homeservers`, `k3s_agents`, `prod`, `entw`, `semaphore_targets`, `xibo_displays`, `banana_pis`, `alert_callers`, `alert_caller_pi` |
 | Variablen | `group_vars/` und `host_vars/<host>/{vars,vault}.yml`; Secrets als `!vault`-Werte |
 | Bedienung | `Makefile` mit einem Target je Rolle bzw. Playbook (`make help`) |
 

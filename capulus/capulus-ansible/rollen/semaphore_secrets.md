@@ -41,10 +41,9 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 16. Read Semaphore SSH public key
 17. Expose SSH keys as facts (hostvars for downstream roles)
 18. Ensure semaphore namespace exists
-19. Render bootstrap Secret manifest
-20. Apply bootstrap Secret to the cluster
-21. Remove temporary Secret manifest
-22. Display Semaphore bootstrap summary
+19. bootstrap-secret im cluster anlegen (`kubectl apply -f -` über stdin, keine Datei in `/tmp`)
+20. altes temporaeres secret-manifest entfernen
+21. Display Semaphore bootstrap summary
 
 ---
 

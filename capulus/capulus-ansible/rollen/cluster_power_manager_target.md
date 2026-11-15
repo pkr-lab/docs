@@ -10,13 +10,11 @@ autorisiert den Shutdown-Schlüssel, beschränkt auf `poweroff`. Mit `cluster_po
 
 ## Variablen
 
-Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`.
+Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`. `cluster_power_manager_ssh_user` (`ubuntu`) und `cluster_power_manager_ssh_key_path` (`/etc/cluster-power-manager/id_ed25519`) stehen in `group_vars/all.yml`, weil `cluster_power_manager`, `cluster_power_manager_target`, `power_agent` und `nightly_worker_wake` sie teilen.
 
 | Variable | Default | Bedeutung |
 |---|---|---|
 | `cluster_power_manager_target_enabled` | `true` | `false` entfernt den `authorized_keys`-Eintrag (`cluster-power-manager@homeserver`) und `/etc/sudoers.d/cluster-power-manager`. Auf `controlplane-1` gesetzt, damit der Homeserver ihn nicht mehr per SSH abschalten kann |
-| `cluster_power_manager_ssh_user` | `ubuntu` | – |
-| `cluster_power_manager_ssh_key_path` | `/etc/cluster-power-manager/id_ed25519` | – |
 | `cluster_power_manager_poweroff_bin` | `/usr/sbin/poweroff` | – |
 
 ## Ablauf
