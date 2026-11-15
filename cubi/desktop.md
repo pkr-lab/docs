@@ -64,16 +64,25 @@ Externe Programme laufen über `tokio::process::Command` mit Argumentlisten, nie
 
 ## Installation
 
-cubi-desktop läuft unter Linux und macOS (Apple Silicon und Intel). Build und Einrichtung sind auf beiden Systemen gleich:
+cubi-desktop läuft unter Linux und macOS (Apple Silicon und Intel). Ein Skript installiert die App auf beiden Systemen wie eine normale Desktop-App mit Icon:
 
 ```bash
 cd ~/git/github/tools/cubi/cubi-desktop
-cargo build --release
-mkdir -p ~/.config/cubi-desktop
-cp -r config/* ~/.config/cubi-desktop/
+./install.sh                 # bauen, installieren, Symbol auf dem Schreibtisch
+./install.sh --no-desktop    # ohne Symbol auf dem Schreibtisch
+./install.sh --uninstall     # App, Starter und Icons entfernen, Konfiguration bleibt
 ```
 
-Der Konfigurationsordner ist auf beiden Systemen `~/.config/cubi-desktop/`. Ist `XDG_CONFIG_HOME` gesetzt, liegt er dort.
+| System | Ergebnis |
+|---|---|
+| Linux | `~/.local/bin/cubi-desktop`, Eintrag „cubi“ im Anwendungsmenü (`~/.local/share/applications/cubi-desktop.desktop`), Icons in `~/.local/share/icons/hicolor`, Symbol auf dem Schreibtisch. Unter GNOME das Symbol beim ersten Mal per Rechtsklick „Start erlauben“. |
+| macOS | `~/Applications/cubi.app` mit Icon, startbar über Launchpad und Spotlight, Verknüpfung auf dem Schreibtisch. Fürs Dock: App starten, Rechtsklick aufs Dock-Symbol, „Im Dock behalten“. |
+
+Das Skript kopiert die Konfiguration nach `~/.config/cubi-desktop/`, auf beiden Systemen derselbe Ort (oder `$XDG_CONFIG_HOME/cubi-desktop/`). Vorhandene Dateien überschreibt es nicht. Nach einem `git pull` installiert ein erneutes `./install.sh` die neue Version.
+
+<img src="pics/desktop-icon.png" alt="cubi-Icon" width="96">
+
+Aus dem Terminal startet die App mit `cubi-desktop`, siehe [Nutzung](#nutzung).
 
 ### macOS
 
