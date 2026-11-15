@@ -31,6 +31,17 @@ def slug(heading: str) -> str:
     return h.replace(" ", "-")
 
 
+def iter_unfenced_lines(path: str):
+    in_fence = False
+    with open(path, encoding="utf-8") as fh:
+        for lineno, line in enumerate(fh, 1):
+            if FENCE.match(line):
+                in_fence = not in_fence
+                continue
+            if not in_fence:
+                yield lineno, line
+
+
 _anchor_cache: dict = {}
 
 
@@ -39,39 +50,25 @@ def anchors(path: str) -> set:
         return _anchor_cache[path]
     seen: dict = {}
     result = set()
-    in_fence = False
-    with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            if FENCE.match(line):
-                in_fence = not in_fence
-                continue
-            if in_fence:
-                continue
-            for m in HTML_ID.finditer(line):
-                result.add(m.group(1))
-            m = HEADING.match(line)
-            if m:
-                base = slug(m.group(1))
-                n = seen.get(base, 0)
-                seen[base] = n + 1
-                result.add(base if n == 0 else f"{base}-{n}")
+    for _, line in iter_unfenced_lines(path):
+        for m in HTML_ID.finditer(line):
+            result.add(m.group(1))
+        m = HEADING.match(line)
+        if m:
+            base = slug(m.group(1))
+            n = seen.get(base, 0)
+            seen[base] = n + 1
+            result.add(base if n == 0 else f"{base}-{n}")
     _anchor_cache[path] = result
     return result
 
 
 def iter_links(path: str):
-    in_fence = False
-    with open(path, encoding="utf-8") as fh:
-        for lineno, line in enumerate(fh, 1):
-            if FENCE.match(line):
-                in_fence = not in_fence
-                continue
-            if in_fence:
-                continue
-            stripped = re.sub(r"``.+?``|`[^`]*`", lambda m: " " * len(m.group(0)), line)
-            for rx in (LINK, IMAGE):
-                for m in rx.finditer(stripped):
-                    yield lineno, m.group(1)
+    for lineno, line in iter_unfenced_lines(path):
+        stripped = re.sub(r"``.+?``|`[^`]*`", lambda m: " " * len(m.group(0)), line)
+        for rx in (LINK, IMAGE):
+            for m in rx.finditer(stripped):
+                yield lineno, m.group(1)
 
 
 def check(path: str) -> list:
