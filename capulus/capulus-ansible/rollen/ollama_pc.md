@@ -19,8 +19,9 @@ Defaults aus `defaults/main.yml`. Überschreiben in `host_vars/ollama-pc/vars.ym
 
 | Variable | Default | Bedeutung |
 |---|---|---|
-| `ollama_pc_install_script_url` | `https://ollama.com/install.sh` | offizielles Installationsskript |
-| `ollama_pc_version` | `` | leer = aktuelle Version, sonst `OLLAMA_VERSION` für das Skript |
+| `ollama_pc_version` | `0.40.16` | gepinnte Ollama-Version (`OLLAMA_VERSION` für das Skript und Tag der Skript-URL) |
+| `ollama_pc_install_script_url` | `https://raw.githubusercontent.com/ollama/ollama/v{{ ollama_pc_version }}/scripts/install.sh` | Installationsskript am Release-Tag |
+| `ollama_pc_install_script_sha256` | `25f64b81…` | SHA-256 des Skripts, mit der Version zusammen erneuern |
 | `ollama_pc_listen` | `0.0.0.0:11434` | `OLLAMA_HOST` |
 | `ollama_pc_port` | `11434` | Port für UFW und Health-Check |
 | `ollama_pc_keep_alive` | `30m` | `OLLAMA_KEEP_ALIVE` |

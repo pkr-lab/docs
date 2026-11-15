@@ -12,7 +12,7 @@ Alle Befehle laufen im Verzeichnis von capulus-ansible. Das Vault-Passwort wird 
 | Alles ausrollen | `make install` |
 | Worker einbinden oder aktualisieren | `make controlplane-1`, `make worker-1` |
 | PROD- oder ENTW-Cluster ausrollen | `make prod`, `make entw` |
-| Vault-Variablen bearbeiten | `make vault-edit`, `make user-inventory-edit` |
+| Vault-Variablen bearbeiten | `make vault-edit` (Klartext mit inline verschlüsselten Werten), `make vault-encrypt-string NAME=<variable>`, `make user-inventory-edit` |
 | ArgoCD-Bootstrap in capulus-core neu erzeugen | `make render-bootstrap CORE_DIR=../capulus-core` |
 | Lint | `make lint` |
 
@@ -34,7 +34,7 @@ Die Tags je Rolle stehen auf den [Rollen-Seiten](rollen/index.md).
 | `make deps` | Install required Ansible Galaxy collections. |
 | `make ping` | Verify Ansible can reach the server. |
 | `make check` | Dry-run the full playbook (no changes applied). |
-| `make ssh-hardening` | Apply the ssh_hardening role (key-only SSH) on the k3s servers, worker-1, prod-vm, entw-vm and the kiosk Pis. |
+| `make ssh-hardening` | Apply the ssh_hardening role (key-only SSH) on the k3s servers, worker-1, prod-vm, entw-vm, the kiosk Pis, ollama-pc and alert-caller-vm. |
 | `make install` | Provision the home server end-to-end. |
 | `make common` | Run only the `common` role (base OS, firewall, packages). |
 | `make crowdsec` | Run only the `crowdsec` role (SSH + Traefik brute-force protection). |
@@ -68,8 +68,6 @@ Die Tags je Rolle stehen auf den [Rollen-Seiten](rollen/index.md).
 | `make k3s-upgrade-check` | Dry-run des k3s-Upgrades (keine Änderungen). |
 | `make nightly-worker-wake` | Re-deploy only the nightly_worker_wake role on controlplane-0 (01:00 Uhr WoL+Update+Poweroff-Zyklus). |
 | `make worker-apt-update` | Manuelles apt-Update auf controlplane-1 + worker-1 (läuft normalerweise nachts automatisch über nightly-worker-wake). |
-| `make alarm-kiosks` | Alarmmonitor-Kiosks einrichten (Raspberry Pis, ALAMOS AMweb). |
-| `make alarm-kiosks-check` | Dry-run des Alarmmonitor-Kiosk-Playbooks (keine Änderungen). |
 | `make xibo-kiosks` | xibosignage-Displays einrichten (Raspberry Pi 3B+, Bilder-Slideshow, Tailscale). |
 | `make xibo-kiosks-check` | Dry-run des xibosignage-Displays-Playbooks (keine Änderungen). |
 | `make banana-pi-kiosks` | Banana-Pi-Alarmmonitore einrichten (Armbian, ALAMOS AMweb + Server-Fallback). |
@@ -81,7 +79,8 @@ Die Tags je Rolle stehen auf den [Rollen-Seiten](rollen/index.md).
 | `make alert-caller-pi-check` | Dry-run des Pi-Notfall-Callers (keine Änderungen). |
 | `make lint` | Lint YAML and Ansible. |
 | `make render-bootstrap` | Regenerate argocd/bootstrap/ in a capulus-core checkout: make render-bootstrap CORE_DIR=/path/to/capulus-core |
-| `make vault-edit` | Edit the vault-encrypted vars file. |
+| `make vault-edit` | group_vars/all.yml im Editor öffnen (Klartext mit inline verschlüsselten !vault-Werten). |
+| `make vault-encrypt-string` | Einen Wert für group_vars/host_vars verschlüsseln: make vault-encrypt-string NAME=<variable> |
 | `make user-inventory-edit` | Edit the encrypted Immich/Vaultwarden user inventory (docs/4-planung/40080, Baustein 7). First run: ansible-vault create $(USER_INVENTORY_FILE). |
 | `make vaultwarden-restore` | Vaultwarden-Daten aus der NAS-Backup-PVC wiederherstellen (ueberschreibt Live-Daten!). Erst mit FORCE_RESTORE=true bestaetigen. |
 | `make clean` | Remove cached collections and temp artifacts. |

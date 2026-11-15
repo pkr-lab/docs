@@ -24,14 +24,15 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 1. Restore ohne force_restore=true ablehnen
 2. Vaultwarden-Deployment auf 0 Replicas skalieren
 3. Warten bis der Vaultwarden-Pod terminiert ist
-4. Eventuellen Restore-Job aus einem vorherigen Lauf entfernen
-5. Restore-Job-Manifest rendern
-6. Restore-Job anwenden
-7. Warten bis der Restore-Job abgeschlossen ist
-8. Gerendertes Job-Manifest wieder entfernen
-9. Vaultwarden-Deployment wieder auf 1 Replica skalieren
-10. Warten bis Vaultwarden wieder Ready ist
-11. Erreichbarkeit nach dem Restore pruefen (/alive)
+4. restore-job ausfuehren und vaultwarden danach immer wieder starten (Block)
+   1. Eventuellen Restore-Job aus einem vorherigen Lauf entfernen
+   2. Restore-Job-Manifest rendern
+   3. Restore-Job anwenden
+   4. Warten bis der Restore-Job abgeschlossen ist
+   - bei Fehler: logs des fehlgeschlagenen restore-jobs lesen, fehlgeschlagenen restore melden
+   - immer: Gerendertes Job-Manifest wieder entfernen, Vaultwarden-Deployment wieder auf 1 Replica skalieren
+5. Warten bis Vaultwarden wieder Ready ist
+6. Erreichbarkeit nach dem Restore pruefen (/alive)
 
 ## Templates
 

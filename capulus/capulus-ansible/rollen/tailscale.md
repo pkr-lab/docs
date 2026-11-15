@@ -22,31 +22,30 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Create directory for APT keyrings
-2. Download Tailscale GPG signing key
-3. Check whether the Tailscale keyring exists
-4. Install gnupg for the key fingerprint check
-5. Create temporary GnuPG home
-6. Read Tailscale signing key fingerprint
-7. Remove temporary GnuPG home
-8. Verify Tailscale signing key fingerprint
-9. Add Tailscale APT repository
-10. Install (or upgrade) tailscale package
-11. Enable and start tailscaled service
-12. Wait for tailscaled to be ready
-13. Check current Tailscale connection status
-14. Parse Tailscale status
-15. Display current Tailscale state
-16. Authenticate with Tailscale using auth key
-17. Create temporary file for auth key
-18. Write auth key to temporary file
-19. Connect to Tailscale and advertise the local subnet
-20. Remove temporary auth key file
-21. Refresh Tailscale options (already connected — update hostname/routes)
-22. Get final Tailscale status
-23. Get Tailscale IP address
-24. Display Tailscale connection info
-25. Ensure tailscaled is enabled at boot
+1. verzeichnis für apt-keyrings anlegen
+2. gpg-signaturschlüssel von tailscale herunterladen
+3. prüfen ob der tailscale-keyring existiert
+4. gnupg für die fingerprint-prüfung installieren
+5. temporäres gnupg-home anlegen
+6. fingerprint des tailscale-signaturschlüssels lesen
+7. temporäres gnupg-home entfernen
+8. fingerprint des tailscale-signaturschlüssels prüfen
+9. apt-repository für tailscale eintragen
+10. paket tailscale installieren (oder aktualisieren)
+11. dienst tailscaled aktivieren und starten
+12. warten bis tailscaled bereit ist
+13. aktuellen verbindungsstatus von tailscale prüfen
+14. tailscale-status auswerten
+15. aktuellen tailscale-zustand anzeigen
+16. bei tailscale mit auth-key anmelden
+17. temporäre datei für den auth-key anlegen
+18. auth-key in die temporäre datei schreiben
+19. mit tailscale verbinden und das lokale subnetz ankündigen
+20. temporäre auth-key-datei entfernen
+21. tailscale-optionen auffrischen (schon verbunden — hostname/routen aktualisieren)
+22. abschließenden tailscale-status lesen
+23. tailscale-ip-adresse lesen
+24. tailscale-verbindungsdaten anzeigen
 
 ---
 
@@ -64,6 +63,7 @@ sudo journalctl -u tailscaled -n 100 --no-pager
 | Symptom | Ursache | Lösung |
 |---|---|---|
 | `Der Fingerprint von …tailscale-archive-keyring.gpg weicht ab` | Signaturschlüssel stimmt nicht mit `tailscale_signing_key_fingerprint` überein | Schlüssel nicht vertrauen, Ursache klären |
+| `Download Tailscale GPG signing key` scheitert mit `Connection reset by peer` oder `The read operation timed out` | `pkgs.tailscale.com` setzt Verbindungen zeitweise zurück; die Rolle wiederholt fünfmal, danach bricht sie ab | Lauf erneut starten; bleibt es dauerhaft, `curl -v https://pkgs.tailscale.com/` vom Host prüfen ([Hintergrund](../6-hintergruende/60020-ansible-rollen.md#tailscale-wiederholungen-beim-paket-server)) |
 | `tailscale up` schlägt fehl (`invalid key`, `expired`) | Auth-Key abgelaufen oder verbraucht | neuen Auth-Key erzeugen, mit `ansible-vault encrypt_string` eintragen ([Tailscale](../../capulus-core/c-netzwerk-dns/c0010-tailscale.md#troubleshooting)) |
 | Subnetz nicht erreichbar über den Homeserver | Subnet-Route nicht genehmigt (nur der Homeserver ist Subnet-Router) | Admin-Konsole: Route genehmigen |
 | Route ist im Tailnet genehmigt, trotzdem nicht erreichbar | Client akzeptiert keine Subnetzrouten (`tailscale_accept_routes: false`, Rollen-Default) | `tailscale status --json` prüfen: `AllowedIPs` des eigenen Hosts zeigt nur die eigene `/32`; `tailscale_accept_routes: true` setzen ([50030](../../capulus-core/5-incidents/50030-infotafel-altes-bildformat-und-nas-sync.md#problem-2-keine-neuen-bilder-falsches-routing-zum-nas)) |

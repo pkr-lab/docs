@@ -36,12 +36,14 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 7. Reboot-erforderlich -- Node vor dem Neustart cordon/drain (auf homeserver)
 8. kubectl cordon {{ worker_apt_update_k3s_node_name }}
 9. kubectl drain {{ worker_apt_update_k3s_node_name }}
-10. Reboot-erforderlich -- {{ inventory_hostname }} jetzt automatisch neu starten
-11. Reboot-erforderlich -- Abschluss melden (für den nightly_worker_wake-Bericht)
+10. drain-ergebnis auswerten (Erfolg oder Node „not found“)
+11. node nach fehlgeschlagenem drain wieder freigeben und neustart auslassen
+12. Reboot-erforderlich -- {{ inventory_hostname }} jetzt automatisch neu starten (nur nach erfolgreichem Drain)
+13. Reboot-erforderlich -- Abschluss melden (für den nightly_worker_wake-Bericht)
 
 ## Handler
 
-- Netplan-Konfiguration anwenden
+- netplan-konfiguration anwenden
 
 ## Templates
 

@@ -32,7 +32,6 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `xibo_kiosk_image_max_height` | `1080` | Zielhöhe der Skalierung |
 | `xibo_kiosk_image_jpeg_quality` | `85` | Qualität beim Skalieren |
 | `xibo_kiosk_cursor_hide_seconds` | `3` | Idle-Zeit bis der Mauszeiger verschwindet |
-| `xibo_kiosk_display_poll_seconds` | `5` | Abstand der Prüfung auf den nativen Bildschirmmodus |
 | `xibo_kiosk_display_mode` | `1920x1080` | erzwungener Modus (immer aktiv, kein Scan nach der tatsächlichen Auflösung mehr) |
 | `xibo_kiosk_pixel_aspect` | `auto` | Seitenverhältnis-Korrektur der Seite: `auto`, `off` oder fester Faktor |
 | `xibo_kiosk_edid_force` | `false` | erzwingt eine synthetische EDID per `drm.edid_firmware=`, wenn der Bildschirm selbst keine liefert (Kernel-Parameter, Reboot nötig) |
@@ -71,9 +70,9 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Reload systemd
-- Restart xibosignage sync timer
-- Hinweis auf nötigen Reboot nach EDID-Erzwingung
+- systemd für xibo-kiosk neu laden
+- sync-timer von xibosignage neu starten
+- hinweis auf nötigen reboot nach edid-erzwingung
 
 ## Templates
 

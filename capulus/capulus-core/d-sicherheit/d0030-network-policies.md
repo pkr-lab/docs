@@ -92,7 +92,7 @@ den kompletten Apply fehlschlagen, obwohl alle anderen 35 Policies
 problemlos durchgingen (`kubectl apply` verarbeitet trotzdem jedes
 Dokument, meldet aber am Ende den Gesamtfehler).
 
-**Fix:** Neuer Task „Get existing namespaces" vor dem Templating holt die
+**Fix:** Neuer Task „vorhandene namespaces lesen“ vor dem Templating holt die
 aktuell existierenden Namespaces per `kubectl get namespaces`; das Template
 ([bootstrap-networkpolicies.yaml.j2](https://github.com/pkr-lab/capulus-ansible/blob/main/roles/argocd/templates/bootstrap-networkpolicies.yaml.j2))
 überspringt Apps, deren Namespace noch nicht existiert. Ein fehlender
@@ -452,7 +452,7 @@ Intra-Tier stillschweigend erlaubt, jetzt durch je eine gezielte
 | `ntfy-bridge` | `monitoring` | vmalertmanager-Webhook |
 | `ntfy` | (+ `ntfy-bridge`, zusätzlich zu `carplay-api`/`alamos-apager` aus Batch 3) | `ntfy-bridge/values.yaml` |
 | `ntfy` | (+ `n8n`) | Push-Nodes in den n8n-Workflows (`zammad-tickets-verarbeiten`, `email-to-whatsapp-kanal`); ohne die Freigabe meldet n8n `ECONNREFUSED` auf den ntfy-Service, gefunden am 26.09.2026 |
-| `minio` | `argo-workflows` | Artifact-Storage-Endpoint in `argo-workflows/values.yaml` |
+| `garage` (bis 2026-11 `minio`) | `argo-workflows` | Artifact-Storage-Endpoint in `argo-workflows/values.yaml` |
 | `monitoring` | (+ `argo-workflows`, zusätzlich zu `carplay-api`/`n8n` aus Batch 3) | Alertmanager-URL in `maintenance-workflowtemplate.yaml` |
 
 Alle per `grep -rln "\.<ns>\.svc\|<ns>\.svc\.cluster" argocd/apps/`

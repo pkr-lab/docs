@@ -26,23 +26,23 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `resource_watchdog_cpu_warn_sustain_seconds` | `60` | – |
 | `resource_watchdog_ram_warn_threshold` | `80` | – |
 | `resource_watchdog_ram_warn_sustain_seconds` | `60` | – |
-| `resource_watchdog_ntfy_host` | `ntfy.tech.homeserver` | – |
-| `resource_watchdog_ntfy_ip` | `{{ network_static_ip }}` | – |
-| `resource_watchdog_ntfy_topic` | `Home-Lab-System` | – |
+| `resource_watchdog_ntfy_host` | `{{ homelab_ntfy_host }}` | – |
+| `resource_watchdog_ntfy_ip` | `{{ homelab_ntfy_ip }}` | – |
+| `resource_watchdog_ntfy_topic` | `{{ homelab_ntfy_topic }}` | – |
 | `resource_watchdog_metrics` | `[{name: cpu, sustain_seconds: '{{ resource_watchdog_cpu_sustain_seconds }}', threshold:…` | – |
 
 ## Ablauf
 
-1. Deploy resource watchdog script
-2. Ensure resource watchdog config directory exists
-3. Deploy per-metric environment files
-4. Deploy resource watchdog systemd template unit
-5. Enable and start resource watchdog instances
-6. Disable resource watchdog instances if turned off via resource_watchdog_enabled
+1. resource-watchdog-skript ablegen
+2. sicherstellen dass das konfigurationsverzeichnis des resource-watchdogs existiert
+3. umgebungsdateien je metrik ablegen
+4. systemd-template-unit des resource-watchdogs ablegen
+5. resource-watchdog-instanzen aktivieren und starten
+6. resource-watchdog-instanzen deaktivieren, wenn resource_watchdog_enabled aus ist
 
 ## Handler
 
-- Restart resource watchdogs
+- resource-watchdogs neu starten
 
 ## Templates
 

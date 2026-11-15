@@ -162,7 +162,7 @@ Aktuell tragen diese Apps zusätzlich einen `*-pkr-lab.de`-Host:
 | Immich | `immich-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
 | Xibo CMS | `xibo-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
 
-Alle anderen Apps (Semaphore, Pi-hole, MinIO, Headlamp, Paperless-ngx, n8n, ...) bleiben
+Alle anderen Apps (Semaphore, Pi-hole, Headlamp, Paperless-ngx, n8n, ...) bleiben
 ausschließlich LAN/Tailscale-erreichbar, auch wenn ihr Hostname theoretisch unter die Wildcard-Regel
 fiele, weil ihnen schlicht der zweite Ingress-Host fehlt.
 
@@ -221,7 +221,7 @@ angepasst wurden:
 | ntfy-Watchdogs (Cluster-Power-Manager, Resource-/Thermal-Watchdog) | ntfy | `capulus-ansible/roles/{cluster_power_manager,resource_watchdog,thermal_watchdog}/defaults/main.yml` |
 | Semaphore-Ansible-Rollen (`semaphore_bootstrap`, `semaphore_secrets`) | Semaphore-REST-API | `capulus-ansible/roles/semaphore_bootstrap/defaults/main.yml`, `capulus-ansible/roles/semaphore_secrets/tasks/main.yml` |
 | vmagent auf den Banana-Pis | VictoriaMetrics remote-write (`vm-write`) | `capulus-ansible/group_vars/banana_pis.yml` |
-| Alamos-/Banana-Pi-Kiosk-Rollen | alamos-apager | `capulus-ansible/roles/{alamos_kiosk,banana_pi_kiosk}/defaults/main.yml` |
+| Alamos-/Banana-Pi-Kiosk-Rollen | alamos-apager | `capulus-ansible/roles/banana_pi_kiosk/defaults/main.yml` |
 | iOS-App "Homeserver Dashboard" | carplay-api + alle in der App verlinkten Self-Hosted-Services | `capulus-ios/HomeserverDashboard/Utilities/Constants.swift` |
 
 **Faustregel für neue Cross-App-Referenzen:** Der Tier eines Hostnamens

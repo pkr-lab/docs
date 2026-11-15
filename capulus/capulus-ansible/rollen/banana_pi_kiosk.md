@@ -40,51 +40,53 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 ## Ablauf
 
 1. Sicherstellen dass banana_pi_kiosk_station gesetzt ist
-2. Sicherstellen dass banana_pi_kiosk_fallback_url gesetzt und entschluesselt ist
+2. Sicherstellen dass banana_pi_kiosk_fallback_url gesetzt und entschlüsselt ist
 3. Kiosk-Pakete installieren (Debian-Paketnamen, nicht Raspbian)
-4. Homeserver-Root-CA-Zertifikat deployen
+4. homeserver-root-ca verteilen (Rolle [`homeserver_ca`](homeserver_ca.md))
 5. NSS-Datenbank-Verzeichnis des Kiosk-Users anlegen
-6. Pruefen ob Homeserver-Root-CA bereits in NSS-Datenbank des Kiosk-Users vertraut ist
+6. Prüfen ob Homeserver-Root-CA bereits in NSS-Datenbank des Kiosk-Users vertraut ist
 7. Homeserver-Root-CA in NSS-Datenbank des Kiosk-Users importieren
 8. lightdm stoppen und deaktivieren (falls vorhanden)
-9. Verzeichnis fuer getty@tty1-Drop-in anlegen
-10. Autologin-Drop-in fuer getty@tty1 deployen
-11. .bash_profile von {{ banana_pi_kiosk_user }} um automatischen startx-Aufruf ergaenzen
+9. Verzeichnis für getty@tty1-Drop-in anlegen
+10. Autologin-Drop-in für getty@tty1 deployen
+11. .bash_profile von {{ banana_pi_kiosk_user }} um automatischen startx-Aufruf ergänzen
 12. .xinitrc deployen
-13. Kiosk-Supervisor-Skript deployen
-14. Screenshot-Skript deployen
-15. wakeonlan installieren
-16. Wake-on-LAN-Skript deployen
-17. Config-Verzeichnis für WoL-HTTP-Agent anlegen
-18. Bearer-Token für WoL-HTTP-Agent erzeugen (falls noch nicht vorhanden)
-19. Token-Datei-Rechte absichern
-20. Erzeugtes WoL-Agent-Token einlesen
-21. TLS-Zertifikat und -Schlüssel für den WoL-HTTP-Agent prüfen
-22. TLS-Zertifikat für den WoL-HTTP-Agent ablegen
-23. TLS-Schlüssel für den WoL-HTTP-Agent ablegen
-24. TLS-Dateien des WoL-HTTP-Agent entfernen, falls TLS aus
-25. WoL-HTTP-Agent-Skript deployen
-26. WoL-HTTP-Agent-Konfiguration templaten
-27. WoL-HTTP-Agent-systemd-Unit deployen
-28. WoL-HTTP-Agent aktivieren und starten
-29. WoL-HTTP-Agent deaktivieren, falls banana_pi_kiosk_wol_agent_enabled false
-30. Hinweis zum WoL-Agent-Token ausgeben
-31. Heartbeat-Skript deployen
-32. Heartbeat-Environment-Datei deployen
-33. Heartbeat-systemd-Service + Timer deployen
-34. Heartbeat-Timer aktivieren
-35. Heartbeat-Timer deaktivieren (banana_pi_kiosk_enabled false)
-36. Daily-Reboot-systemd-Service + Timer deployen
-37. Daily-Reboot-Timer aktivieren
-38. Daily-Reboot-Timer deaktivieren (banana_pi_kiosk_daily_reboot_enabled false)
+13. konfigurationsverzeichnis für den kiosk-supervisor anlegen (`/etc/banana-pi-kiosk`, `0750`)
+14. fallback-url des kiosk-supervisors ablegen (`supervisor.env`, `0640`, `no_log`, ohne Diff)
+15. Kiosk-Supervisor-Skript deployen (liest die Fallback-URL aus `supervisor.env`)
+16. Screenshot-Skript deployen
+17. wakeonlan installieren
+18. Wake-on-LAN-Skript deployen
+19. Config-Verzeichnis für WoL-HTTP-Agent anlegen
+20. Bearer-Token für WoL-HTTP-Agent erzeugen (falls noch nicht vorhanden)
+21. Token-Datei-Rechte absichern
+22. Erzeugtes WoL-Agent-Token einlesen
+23. TLS-Zertifikat und -Schlüssel für den WoL-HTTP-Agent prüfen
+24. TLS-Zertifikat für den WoL-HTTP-Agent ablegen
+25. TLS-Schlüssel für den WoL-HTTP-Agent ablegen
+26. TLS-Dateien des WoL-HTTP-Agent entfernen, falls TLS aus
+27. WoL-HTTP-Agent-Skript deployen
+28. WoL-HTTP-Agent-Konfiguration templaten
+29. WoL-HTTP-Agent-systemd-Unit deployen
+30. WoL-HTTP-Agent aktivieren und starten
+31. WoL-HTTP-Agent deaktivieren, falls banana_pi_kiosk_wol_agent_enabled false
+32. Hinweis zum WoL-Agent-Token ausgeben
+33. Heartbeat-Skript deployen
+34. Heartbeat-Environment-Datei deployen
+35. Heartbeat-systemd-Service + Timer deployen
+36. Heartbeat-Timer aktivieren
+37. Heartbeat-Timer deaktivieren (banana_pi_kiosk_enabled false)
+38. Daily-Reboot-systemd-Service + Timer deployen
+39. Daily-Reboot-Timer aktivieren
+40. Daily-Reboot-Timer deaktivieren (banana_pi_kiosk_daily_reboot_enabled false)
 
 ## Handler
 
-- Homeserver-CA-Vertrauensspeicher aktualisieren
-- Restart banana-pi heartbeat timer
-- Reload getty@tty1
-- Restart banana-pi daily reboot timer
-- Restart banana-pi wol agent
+- system-vertrauensspeicher aktualisieren (Rolle [`homeserver_ca`](homeserver_ca.md))
+- heartbeat-timer des banana pi neu starten
+- getty@tty1 neu laden
+- timer für den täglichen reboot des banana pi neu starten
+- wol-agent des banana pi neu starten
 
 ## Templates
 

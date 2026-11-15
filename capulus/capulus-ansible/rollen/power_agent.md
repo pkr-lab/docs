@@ -54,7 +54,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Restart power agent
+- power-agent neu starten
 
 ## Templates
 

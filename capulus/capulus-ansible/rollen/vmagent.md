@@ -45,7 +45,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Restart vmagent
+- vmagent neu starten
 
 ## Templates
 

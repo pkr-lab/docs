@@ -2,9 +2,9 @@
 
 [Argo Workflows](https://argo-workflows.readthedocs.io) läuft als
 ArgoCD-verwaltete App (`argocd/apps/tech/argo-workflows/`) und ist die private
-CI-Engine des Home-Servers. Es ist mit einer kleinen MinIO-Instanz
-(`argocd/apps/tech/minio/`) gekoppelt, die als S3-kompatibles Artifact-Repository
-und Log-Archiv dient.
+CI-Engine des Home-Servers. Es ist mit einer kleinen Garage-Instanz
+(`argocd/apps/tech/garage/`, [300p0](../3-apps-workloads/300p0-garage.md)) gekoppelt,
+die als S3-kompatibles Artifact-Repository und Log-Archiv dient (bis 2026-11 MinIO).
 
 Aufgabenteilung:
 
@@ -24,7 +24,9 @@ ArgoCD          =  CD   (argocd/apps/* in den Cluster deployen)
 | Dienst         | URL                                    | Hinweise                    |
 |----------------|-----------------------------------------|------------------------------|
 | Argo Workflows | http://argo-workflows.tech.homeserver  | UI + API (Server-Auth-Mode) |
-| MinIO-Konsole  | http://minio.tech.homeserver           | Objekt-Browser              |
+
+Garage hat keine Weboberfläche, die S3-API ist nur cluster-intern erreichbar
+(`garage.garage.svc.cluster.local:3900`, Region `garage`).
 
 ---
 
@@ -48,26 +50,21 @@ seal() {  # seal <namespace> <secret-name> <value-on-stdin>
 }
 ```
 
-### 1.1 MinIO-Root-Credentials (Namespace `minio`)
+### 1.1 Garage-Schlüssel und Argo-Artifact-S3-Zugriff
 
-User/Passwort wählen, beide versiegeln, in `argocd/apps/tech/minio/values.yaml`
-einfügen (`rootCreds.encryptedRootUser` / `encryptedRootPassword`):
-
-```bash
-printf 'argo'                | seal minio minio-root   # -> encryptedRootUser
-printf 'CHANGE-ME-strong-pw' | seal minio minio-root   # -> encryptedRootPassword
-```
-
-### 1.2 Argo-Artifact-S3-Zugriff (Namespace `argo-workflows`)
-
-**Dieselben Werte** wie die MinIO-Root-Credentials — einfügen in
-`argocd/apps/tech/argo-workflows/values.yaml`
-(`artifactSecret.encryptedAccessKey` / `encryptedSecretKey`):
+Das Skript `scripts/seal-garage.sh` (capulus-core) erzeugt RPC-Secret, Access-Key-ID (`GK…`) und
+Secret-Key neu, versiegelt sie für `garage/garage-secrets` und denselben Key für
+`argo-workflows/argo-artifacts-s3` und schreibt alles in
+`argocd/apps/tech/garage/values.yaml` (`secrets.*`) und
+`argocd/apps/tech/argo-workflows/values.yaml` (`artifactSecret.*`):
 
 ```bash
-printf 'argo'                | seal argo-workflows argo-artifacts-s3  # -> encryptedAccessKey
-printf 'CHANGE-ME-strong-pw' | seal argo-workflows argo-artifacts-s3  # -> encryptedSecretKey
+export KUBECONFIG=~/.kube/homeserver.yaml
+./scripts/seal-garage.sh
 ```
+
+Garage legt Key und Bucket beim Start an. Ein neuer Key ersetzt den alten nicht
+(siehe [300p0](../3-apps-workloads/300p0-garage.md#zugangsdaten)).
 
 ### 1.3 GHCR-Push-Credentials (Namespace `argo-workflows`)
 
@@ -88,7 +85,7 @@ Wenn Image-Builds noch nicht benötigt werden, stattdessen
 
 Nach dem Einfügen aller Werte: committen + pushen. ArgoCD synct innerhalb von
 ~3 Minuten; der Sealed-Secrets-Controller entschlüsselt die SealedSecrets zu
-echten Secrets und die MinIO- + Argo-Pods starten.
+echten Secrets und die Garage- und Argo-Pods starten.
 
 ---
 
@@ -96,8 +93,8 @@ echten Secrets und die MinIO- + Argo-Pods starten.
 
 ```bash
 SSH="ssh -i ~/.ssh/id_ed25519 ubuntu@192.168.178.94"
-$SSH 'sudo kubectl -n argocd get application minio argo-workflows'
-$SSH 'sudo kubectl -n minio get pods'
+$SSH 'sudo kubectl -n argocd get application garage argo-workflows'
+$SSH 'sudo kubectl -n garage get pods'
 $SSH 'sudo kubectl -n argo-workflows get pods'
 ```
 
@@ -140,7 +137,7 @@ argo submit -n argo-workflows --from workflowtemplate/git-ci \
 ```
 
 Das Git-Repo wird als Input-Artifact unter `/work` ausgecheckt; Step-Logs
-werden nach MinIO archiviert (Bucket `argo-artifacts`). Ein `Succeeded`-Status
+werden nach Garage archiviert (Bucket `argo-artifacts`). Ein `Succeeded`-Status
 mit sichtbaren archivierten Logs bestätigt, dass das Artifact-Repository
 korrekt verdrahtet ist.
 
@@ -168,10 +165,10 @@ argo cron resume -n argo-workflows nightly-home-server-lint
   nicht entschlüsseln. §1 erneut prüfen, mit `kubectl -n <ns> get secret
   <name>` verifizieren, dass das Secret existiert.
 - **`git-ci` läuft erfolgreich durch, aber Logs werden nicht archiviert** —
-  die Werte des `argo-artifacts-s3`-Secrets stimmen nicht mit den
-  MinIO-Root-Credentials überein, oder MinIO ist nicht erreichbar.
-  `kubectl -n minio logs deploy/minio` prüfen und sicherstellen, dass der
-  Bucket `argo-artifacts` existiert.
+  die Werte des `argo-artifacts-s3`-Secrets stimmen nicht mit dem
+  Garage-Key in `garage-secrets` überein, oder Garage ist nicht erreichbar.
+  `kubectl -n garage logs deploy/garage` prüfen (beim Start meldet Garage
+  angelegten Key und Bucket), Region muss `garage` sein.
 - **CRDs beim ersten Sync nicht gefunden** — die WorkflowTemplate-/
   CronWorkflow-Custom-Resources und die Argo-CRDs landen im selben Sync. Das
   ApplicationSet setzt bereits `SkipDryRunOnMissingResource=true` + Retry,
