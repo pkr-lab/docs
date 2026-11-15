@@ -349,6 +349,7 @@ Pläne und Analysen. Ein Doc trägt in seiner Statuszeile, wie weit es umgesetzt
 | [Einsatz-Alarm per E-Mail](4-planung/40060-alamos-einsatz-email-benachrichtigung.md) | E-Mail mit den wichtigsten Einsatzdaten |
 | [Multi-Cluster ENTW/PROD/TECH](4-planung/40080-multi-cluster-entw-prod-tech.md) | Architektur und Umsetzungsplan der Drei-Cluster-Umstellung, Phasen und offene Punkte |
 | [Zwei Control-Planes im TECH-Cluster](4-planung/400a0-controlplane-ha-zwei-server.md) | Umstellung auf embedded etcd mit ControlPlane-0 und -1, ControlPlane-2 vorbereitet, Namensschema, Runbooks |
+| [Zammad-Chart 20 und neues Postgres](4-planung/400b0-zammad-chart-20-postgres-migration.md) | Upgrade 16.4 → 20.0.2, Dump/Restore von Bitnami-PG 17 nach PG 18, Auto-Sync-Pause, Rollback |
 
 ### Incidents (`5-incidents/`)
 
