@@ -6,8 +6,27 @@
 öffentlichen Einstiegspunkt bereit. `scripts/DocFlowEngine.ps1` ist der dünne CLI-Wrapper
 (`-ConfigPath`, `-DryRun`), den `README.md` in den Ausführungsbeispielen verwendet.
 
-Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich und in
-`tests/DocFlowEngine.Tests.ps1` mindestens einmal direkt getestet.
+Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich, sofern nicht
+„Nicht exportiert“ dabeisteht.
+
+### Umbenannte Funktionen (Aliase als Übergang)
+
+Drei Funktionen trugen nicht zugelassene PowerShell-Verben und lösten beim Import eine Warnung aus.
+Sie heißen jetzt anders. Die alten Namen bleiben als exportierte Aliase erhalten, auch beim Import
+über `DocFlowEngine.psd1` (`AliasesToExport`). Neue Aufrufe sollten die neuen Namen verwenden.
+
+| Neuer Name | Alter Name (Alias) |
+|---|---|
+| `Import-DocFlowConfig` | `Load-Config` |
+| `Import-DocFlowState` | `Load-State` |
+| `Initialize-DocFlowTargetDirectories` | `Ensure-TargetDirectories` |
+
+### Entfernte Funktionen
+
+`Get-FileProject`, `Get-ProjectRoutes` und `Resolve-ProjectTarget` (Legacy-Routing über eine
+`project`-Regexgruppe) und der Parameter `Copy-NewFiles -ProjectRoutes` sind entfernt.
+`Invoke-DocFlowEngine` hat dieses Routing nie angeschlossen. Das Kategorie-Routing
+(`Get-FileCategory` / `Resolve-CategoryTarget`) bleibt bestehen.
 
 ## `DocFlowEngine.psm1` (Root)
 
@@ -24,9 +43,9 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 | `Resolve-PathOrAbsolute -PathValue <string>` | Löst einen (ggf. wildcardhaltigen) Pfad zu einem absoluten Pfad auf, auch wenn er noch nicht existiert (schneidet Segmente vom Ende ab, bis ein existierender - ggf. ebenfalls wildcardhaltiger - Elternordner gefunden wird). |
 | `Resolve-SourcePaths -PathValue <string>` | Löst einen Quellpfad zu allen tatsächlich existierenden, passenden Ordnern auf (`Resolve-Path`, kann bei Wildcards mehrere Treffer liefern). |
 | `Test-PathExcluded -FullName <string> -ExcludePaths <array>` | Prüft, ob ein Pfad unterhalb eines der übergebenen Ausschlussordner liegt (Präfixvergleich). |
-| `ConvertTo-DocFlowHashtable -InputObject <object>` | Wandelt rekursiv `PSCustomObject` (aus `ConvertFrom-Json`) in verschachtelte `Hashtable`s um - Ersatz für `ConvertFrom-Json -AsHashtable`, das erst ab PowerShell 6 existiert. |
+| `ConvertTo-DocFlowHashtable -InputObject <object>` | Wandelt rekursiv `PSCustomObject` (aus `ConvertFrom-Json`) in verschachtelte `Hashtable`s um - Ersatz für `ConvertFrom-Json -AsHashtable`, das erst ab PowerShell 6 existiert. Arrays bleiben Arrays, auch mit nur einem oder keinem Element. |
 | `Get-DocFlowRelativePath -BasePath <string> -FullPath <string>` | Berechnet den relativen Pfad rein per String-Verarbeitung (bewusst **kein** `[Uri]::MakeRelativeUri` - das erkennt POSIX-Pfade ohne `file://`-Schema nicht zuverlässig als absolut). Grundlage für den rechnerunabhängigen Dedup-Key in `Copy-NewFiles`. |
-| `Copy-DocFlowFileWithRetry -Source <string> -Destination <string> [-RetryCount <int> = 2] [-RetryDelaySeconds <int> = 5]` | Kopiert mit bis zu `RetryCount` Wiederholungen und prüft nach jedem Versuch, ob die Zieldatei existiert und gleich groß ist. Gibt `$true`/`$false` zurück; loggt fehlgeschlagene Einzelversuche als `Warning`, das endgültige Scheitern als `Error`. |
+| `Copy-DocFlowFileWithRetry -Source <string> -Destination <string> [-RetryCount <int> = 2] [-RetryDelaySeconds <int> = 5]` | Kopiert (mit `-LiteralPath`, damit `[ ]` im Dateinamen nicht als Wildcard gilt) mit bis zu `RetryCount` Wiederholungen und prüft nach jedem Versuch, ob die Zieldatei existiert und gleich groß ist. Gibt `$true`/`$false` zurück; loggt fehlgeschlagene Einzelversuche als `Warning`, das endgültige Scheitern als `Error`. |
 | `Test-DocFlowFileReady -File <FileInfo> [-MinAgeMinutes <double>]` | `$false`, wenn die Datei jünger als `MinAgeMinutes` ist oder sich nicht exklusiv öffnen lässt (wird noch geschrieben/synchronisiert). |
 | `Write-DocFlowHintFile -Path <string> -Content <string> -LogMessage <string>` | Schreibt eine Hinweisdatei, falls sie noch nicht existiert. Fehler beim Schreiben werden als `Error` geloggt statt den Lauf abzubrechen. |
 | `Remove-DocFlowHintFile -Path <string> -Reason <string>` | Löscht eine Hinweisdatei (falls vorhanden) und loggt den Grund. Im DryRun nur Ankündigung. |
@@ -36,7 +55,9 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 
 | Funktion | Zweck |
 |---|---|
-| `Load-Config -Path <string>` | Lädt die `.psd1`-Konfiguration, validiert Pflichtfelder (`sources`, `namingConventions`, sowie `aufgabenRoot` oder `targets`), setzt Defaults für alle optionalen Felder und ersetzt zum Schluss die `{name}`-Verweise auf den `paths`-Block. Details siehe [Configuration.md](konfiguration.md). |
+| `Import-DocFlowConfig -Path <string>` (Alias `Load-Config`) | Lädt die `.psd1`-Konfiguration, validiert Pflichtfelder (`sources`, `namingConventions`, sowie `aufgabenRoot` oder `targets`), setzt Defaults für alle optionalen Felder, ergänzt die Hinweisdatei-Suffixe in `sources[].excludePatterns` und ersetzt zum Schluss die `{name}`-Verweise auf den `paths`-Block. Details siehe [Configuration.md](konfiguration.md). |
+| `Get-DocFlowConfigSection -Config <hashtable> -Name <string>` | Liefert einen Abschnitt der Konfiguration (z. B. `duplicateHint`) und legt ihn als leere `Hashtable` an, falls er fehlt. Nicht exportiert. |
+| `Set-DocFlowDefaults -Section <hashtable> [-IfMissing <hashtable>] [-IfEmpty <hashtable>]` | Setzt Standardwerte in einem Abschnitt. `-IfMissing` füllt nur fehlende Schlüssel (ein ausdrückliches `$false` oder `0` bleibt erhalten, z. B. `enabled`, `minFileAgeMinutes`, `copyRetry.count`). `-IfEmpty` ersetzt auch leere Werte (z. B. Suffixe, Meldungen, `stateFile`). Nicht exportiert. |
 | `Resolve-DocFlowPathVariables -Paths <hashtable>` | Löst die Einträge des `paths`-Blocks auf, inklusive Verweisen untereinander. Wirft bei unbekannten Namen und zirkulären Verweisen. |
 | `Expand-DocFlowPathValue -Value <string> -PathVariables <hashtable> [-FieldName <string>]` | Ersetzt alle `{name}`-Verweise in einem einzelnen Pfadwert. `FieldName` erscheint in der Fehlermeldung, wenn ein Name fehlt. |
 | `Expand-DocFlowConfigPaths -Config <hashtable>` | Wendet `Expand-DocFlowPathValue` auf alle Pfadfelder der Konfiguration an (Liste siehe [Configuration.md](konfiguration.md#paths-optional-empfohlen---pfade-nur-ganz-oben-anpassen)). |
@@ -45,7 +66,7 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 
 | Funktion | Zweck |
 |---|---|
-| `Load-State -StatePath <string>` | Lädt `.docflow-state.json`; liefert `@{ processed = @{}; reviewedFiles = @{} }`, falls die Datei fehlt oder nicht lesbar ist. |
+| `Import-DocFlowState -StatePath <string>` (Alias `Load-State`) | Lädt `.docflow-state.json`; liefert `@{ processed = @{}; reviewedFiles = @{} }`, falls die Datei fehlt oder nicht lesbar ist. Listen wie `targets` bleiben auch mit einem oder keinem Element Listen. |
 | `Save-State -StatePath <string> -State <hashtable>` | Schreibt den State als JSON zurück, legt das Zielverzeichnis bei Bedarf an. |
 | `Remove-DocFlowExpiredState -State <hashtable> -RetentionYears <int>` | Entfernt aus `processed` und `reviewedFiles` alle Einträge, deren `processedAt` älter als `RetentionYears` ist (Einträge ohne auswertbaren Zeitstempel bleiben erhalten). Gibt die Anzahl entfernter Einträge zurück. Wird in `Invoke-DocFlowEngine` vor `Save-State` aufgerufen (siehe [Configuration.md](konfiguration.md), `stateRetentionYears`). |
 
@@ -63,7 +84,6 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 |---|---|
 | `Get-TargetFileName -File <FileInfo> -Rules <array> -DefaultFormat <string>` | Ermittelt den Zieldateinamen anhand der ersten passenden `namingConventions`-Regel (per `[regex]::Match`, nicht `-match`/`$Matches` - damit liefert eine nicht getroffene optionale Gruppe wie `versiontag` garantiert einen leeren String statt eines fehlenden Platzhalters). Fällt sonst auf `DefaultFormat` zurück. |
 | `Get-FileCategory` / `Resolve-CategoryTarget` | Legacy-Routing über führende Buchstaben + `categoryRoutes`; in der aktuellen Konfiguration ungenutzt. |
-| `Get-FileProject` / `Get-ProjectRoutes` / `Resolve-ProjectTarget` | Legacy-Routing über eine `project`-Regexgruppe; in der aktuellen Konfiguration ungenutzt (nicht zu verwechseln mit der Präfix/Suffix-Whitelist in `project-routes.txt`, die trotz des Dateinamens ein eigenständiger Mechanismus ist). |
 | `Get-FilePraefixSuffix -File <FileInfo> -Rules <array>` | Extrahiert `praefix`/`suffix` aus dem ersten Regel-Treffer mit beiden benannten Gruppen. |
 | `Get-FileInitialsFromName -Name <string> -Rules <array>` | Extrahiert die `initials`-Gruppe (Schüler-Kürzel) aus einem Dateinamen (ohne Endung) anhand des ersten Regel-Treffers mit dieser Gruppe (per `[regex]::Match`, nicht `-match`/`$Matches`, analog zu `Get-TargetFileName`). Kernfunktion, von `Get-FileInitials` (Vorwärtslauf) und `Copy-ReviewedFiles` (Rücklauf, auf den vom `_k-...`-Marker befreiten Namen angewendet) gemeinsam genutzt. |
 | `Get-FileInitials -File <FileInfo> -Rules <array>` | Dünner Wrapper um `Get-FileInitialsFromName` für den `FileInfo`-Fall. |
@@ -72,24 +92,32 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 | `ConvertTo-DocFlowRegistryStructure -Lines <string[]>` / `ConvertFrom-DocFlowRegistryStructure -Structure <object>` | Wandelt Whitelist-Zeilen in eine nach Präfix gruppierte Struktur (`Groups`, `Orphans`, `Invalid`) und zurück in Zeilen. Basis für Laden und Abgleich. Nicht exportiert. |
 | `Get-PraefixSuffixRegistry -Path <string>` | Lädt `project-routes.txt`: `Paare` (Präfix → `HashSet` erlaubter Suffixe) sowie zur Abwärtskompatibilität `Praefixe` und `Suffixe` (alle case-insensitive). Protokolliert Pfad und Anzahl der Kombinationen (`Info`), die vollständige Liste (`Debug`) sowie ungültige Zeilen und Suffixe vor dem ersten Präfix (`Warning`). |
 | `Sync-ProjectRoutesFromSeed -SeedPath <string> -TargetPath <string>` | Legt `TargetPath` aus der Seed-Datei an, falls er fehlt. Sonst werden beide nach Präfix gruppiert zusammengeführt (fehlende Kombinationen aus der Seed-Datei unter den passenden Präfix, eigene Kombinationen bleiben) und die Datei nur bei einer Änderung neu geschrieben (UTF-8). No-op, falls beide Pfade identisch sind oder die Seed-Datei fehlt. |
-| `Write-NamingConventionHint -File <FileInfo> -HintConfig <hashtable> [-PraefixSuffix <PSCustomObject>]` | Erzeugt die individuelle Hinweisdatei `<Dateiname><fileNameSuffix>` neben der betroffenen Datei (keine Wirkung, falls die Datei schon existiert). `-PraefixSuffix` optional, damit die Meldung `{praefix}`/`{suffix}` referenzieren kann. |
+| `Write-NamingConventionHint -File <FileInfo> -HintConfig <hashtable> [-PraefixSuffix <PSCustomObject>]` | Erzeugt über `Write-DocFlowHintFile` die individuelle Hinweisdatei `<Dateiname><fileNameSuffix>` neben der betroffenen Datei (keine Wirkung, falls die Datei schon existiert). `-PraefixSuffix` optional, damit die Meldung `{praefix}`/`{suffix}` referenzieren kann. |
 | `Get-DocFlowSubmissionParts -Name <string> -Rules <array>` | Zerlegt einen Dateinamen (ohne Endung) in `Initials`, `Version` (ohne `_v` = 1), `Praefix`, `Suffix`, `Aufgabennummer`. |
 | `Find-DocFlowExistingSubmission -File <FileInfo> -TargetDirectory <string>` | Sucht im Zielordner eine Datei `<Datum>_<gleicher Dateiname>`. |
-| `Get-DocFlowSuggestedVersionName -File <FileInfo> -Rules <array> [-TargetDirectory <string>]` | Schlägt den Dateinamen mit der nächsten freien Versionsnummer vor (höchste Version derselben Aufgabe im Schüler- und Zielordner + 1). |
+| `New-DocFlowSubmissionStem -Initials <string> [-Version <int> = 0] -Praefix <string> -Suffix <string> -Aufgabennummer <string>` | Setzt den Dateinamen-Stamm `initialen[_vN]_praefix_suffix_aufgabennummer` zusammen (ohne `_vN` bei Version 0). Einzige Stelle für dieses Schema, genutzt von `Get-DocFlowSuggestedVersionName`, `Get-DocFlowNameProposal` und `Rename-ExistingAufgaben.ps1`. |
+| `Get-DocFlowSuggestedVersionName -File <FileInfo> -Rules <array> [-TargetDirectory <string>] [-ReviewMarkerPattern <string> = '_k-[A-Za-z0-9]+$']` | Schlägt den Dateinamen mit der nächsten freien Versionsnummer vor (höchste Version derselben Aufgabe im Schüler- und Zielordner + 1). Korrigierte Versionen werden mitgezählt; `Copy-NewFiles` übergibt dafür das konfigurierte `reviewMarker.pattern`. |
 | `Write-DocFlowDuplicateHint -File <FileInfo> -HintConfig <hashtable> [-SuggestedName <string>]` | Schreibt den `.BEREITS-ABGEGEBEN.txt`-Hinweis (`duplicateHint`). |
-| `Get-DocFlowMigratedFileName -Name <string> -Rules <array> [-Registry <hashtable>] [-Placeholder <string> = 'PLATZHALTER']` | Best-effort-Ableitung eines regelkonformen Namens aus einem beliebigen Alt-Dateinamen: unverändert, falls `Name` bereits einer `Rules`-Regel entspricht; sonst Token-Suche nach genau einem bekannten Präfix/Suffix aus `Registry` (`Get-PraefixSuffixRegistry`), führende 2-5 Buchstaben als Initialen, letztes verbleibendes Token als Aufgabennummer - für jeden nicht bestimmbaren Teil `Placeholder`. Kernlogik von `scripts/Rename-ExistingAufgaben.ps1` (siehe unten). |
+| `Get-DocFlowNameProposal -Name <string> -Rules <array> [-Registry <hashtable>] [-KnownInitials <string>] [-Placeholder <string> = 'PLATZHALTER']` | Liefert den Namensvorschlag als Objekt (`Stem`, `Compliant`, `Initials`, `Version`, `Praefix`, `Suffix`, `Aufgabennummer`, `HasPlaceholder`, `Notes`). Die Teilschritte liegen in den nicht exportierten Funktionen `Get-DocFlowNameTokens` (Umlaute ersetzen, Kopie-Zusätze entfernen, in Tokens zerlegen), `Find-DocFlowTokenIndex`, `Find-DocFlowPraefixSuffixInTokens` (Registry mit Paaren, flache Registry oder keine) und `Find-DocFlowRegistryPairInTokens` (Paar-Erkennung: beide Tokens, zusammengeschrieben, nur Suffix, nur Präfix, mehrdeutig). |
+| `Get-DocFlowMigratedFileName -Name <string> -Rules <array> [-Registry <hashtable>] [-Placeholder <string> = 'PLATZHALTER']` | Liefert nur `Stem` aus `Get-DocFlowNameProposal`. Best-effort-Ableitung eines regelkonformen Namens aus einem beliebigen Alt-Dateinamen: unverändert, falls `Name` bereits einer `Rules`-Regel entspricht; sonst Token-Suche nach genau einem bekannten Präfix/Suffix aus `Registry` (`Get-PraefixSuffixRegistry`), führende 2-5 Buchstaben als Initialen, letztes verbleibendes Token als Aufgabennummer - für jeden nicht bestimmbaren Teil `Placeholder`. Kernlogik von `scripts/Rename-ExistingAufgaben.ps1` (siehe unten). |
 
 ## `CopyForward.ps1` - Quell-Scan und Vorwärtskopie
 
 | Funktion | Zweck |
 |---|---|
 | `Get-SourceFiles -Source <hashtable> -ResolvedPath <string>` | Scannt einen aufgelösten Quellordner nach `includePatterns`, wendet `excludePatterns` an. |
-| `Ensure-TargetDirectories -Targets <array>` | Legt fehlende Zielordner an (sofern `createIfMissing` nicht `$false` ist) und normalisiert `target.path` auf den aufgelösten Pfad. |
+| `Initialize-DocFlowTargetDirectories -Targets <array>` (Alias `Ensure-TargetDirectories`) | Legt fehlende Zielordner an (sofern `createIfMissing` nicht `$false` ist) und normalisiert `target.path` auf den aufgelösten Pfad. |
 | `Test-DocFlowInsideNamedFolder -DirectoryName <string> -FolderName <string>` | Prüft, ob ein Pfad-Segment exakt `FolderName` entspricht (z. B. `Korrigiert`) - robuster als ein `-like`-Muster auf den Dateinamen, da er auf ganzen Pfadsegmenten statt nur dem Dateinamen prüft. |
 | `Get-DocFlowFileFingerprint -File <FileInfo>` | Liefert `Length` und `LastWriteUtcSeconds` einer Datei für den Zustandseintrag. |
 | `Test-DocFlowSameFileVersion -Entry <hashtable> -File <FileInfo> [-ToleranceSeconds <int> = 2]` | Vergleicht einen Zustandseintrag mit der aktuellen Datei (gleiche Größe, Änderungszeit innerhalb der Toleranz). |
-| `Test-DocFlowHintFileName -Name <string> [-HintSuffixes <string[]>]` | `$true`, wenn der Name auf eine der Hinweis-Endungen endet. |
-| `Copy-NewFiles -Sources ... -Targets ... -State ... -Rules ... -DefaultNameFormat ... [-AufgabenRoot ...] [-PraefixSuffixRegistry ...] [-RegistryFilePath ...] [-KuerzelRoutes ...] [-KuerzelRoutesFilePath ...] [-KorrigiertFolderName ...] [-NamingConventionHint ...] [-DuplicateHint ...] [-MinFileAgeMinutes ...] [-RetryCount ...] [-RetryDelaySeconds ...] [-ExcludePaths ...]` | Kernfunktion des Vorwärtslaufs. Reihenfolge je Datei: Ausschlüsse → Zustand (unverändert: überspringen; ohne Größe/Zeit: nachtragen; überschrieben: `duplicateHint`) → `Test-DocFlowFileReady` → Routing nach `aufgabenRoot`/Präfix-Suffix-Paar/Legacy-Routing/`targets` → gleichnamige Abgabe im Zielordner (identisch: übernehmen, sonst `duplicateHint`) → `Copy-DocFlowFileWithRetry` → Zustandseintrag nur bei Erfolg, danach Hinweisdateien zur Datei entfernen. Vorab werden verwaiste Hinweisdateien im Quellordner entfernt. |
+| `Test-DocFlowHintFileName -Name <string> [-HintSuffixes <string[]>]` | `$true`, wenn der Name auf eine der Hinweis-Endungen endet. Nicht exportiert. |
+| `Test-DocFlowKnownFileUnchanged -Entry <hashtable> -File <FileInfo>` | `$true`, wenn ein bereits verarbeiteter Eintrag zur aktuellen Datei passt. Trägt bei alten Einträgen ohne Größe/Zeit beides nach und gilt dann als unverändert. Nicht exportiert. |
+| `Resolve-DocFlowAufgabenRoute -File <FileInfo> [-PraefixSuffix ...] -AufgabenRoot <string> -Rules <array> [-PraefixSuffixRegistry ...] [-RegistryFilePath ...] [-NamingConventionHint ...] [-KuerzelRoutes ...] [-KuerzelRoutesFilePath ...]` | Routing nach `aufgabenRoot`: liefert `TargetPath` (`<aufgabenRoot>/<Präfix>/<Suffix>`, registriert dabei das Kürzel) oder `Rejected` (Warnung plus Hinweisdatei, falls `namingConventionHint` aktiv). Ist der Hinweis abgeschaltet, geht die Datei an das übrige Routing weiter. Nicht exportiert. |
+| `Get-DocFlowWhitelistRejectionReason -PraefixSuffix <PSCustomObject> [-Registry ...]` | Text für die Whitelist-Warnung: unbekanntes Präfix, Suffix nicht für dieses Präfix erlaubt, oder (ohne Paare) unbekanntes Präfix und/oder Suffix. Nicht exportiert. |
+| `Copy-DocFlowFileToTargets -File <FileInfo> -Targets <array> -TargetFileName <string> -SourceRoot <string> [-RetryCount <int>] [-RetryDelaySeconds <int>]` | Kopiert in alle Ziele (mit `preserveSubfolders`, Ordneranlage, Ziel-Existenz-Check, DryRun). Liefert `Succeeded` und `TargetPaths`. Nicht exportiert. |
+| `Complete-DocFlowProcessedFile -State <hashtable> -SourceKey <string> -File <FileInfo> [-TargetPaths <array>] [-HintSuffixes <array>]` | Schreibt den Zustandseintrag und entfernt die Hinweisdateien zur Datei. Nicht exportiert. |
+| `Write-DocFlowResubmissionHint -File <FileInfo> -Rules <array> [-DuplicateHint <hashtable>] [-TargetDirectory <string>] [-ReviewMarkerPattern <string>]` | Schreibt den `duplicateHint` mit Versionsvorschlag, falls aktiviert. Nicht exportiert. |
+| `Copy-NewFiles -Sources ... -Targets ... -State ... -Rules ... -DefaultNameFormat ... [-AufgabenRoot ...] [-PraefixSuffixRegistry ...] [-RegistryFilePath ...] [-KuerzelRoutes ...] [-KuerzelRoutesFilePath ...] [-KorrigiertFolderName ...] [-ReviewMarkerPattern ...] [-NamingConventionHint ...] [-DuplicateHint ...] [-MinFileAgeMinutes ...] [-RetryCount ...] [-RetryDelaySeconds ...] [-ExcludePaths ...]` | Kernfunktion des Vorwärtslaufs. Reihenfolge je Datei: Ausschlüsse → Zustand (unverändert: überspringen; ohne Größe/Zeit: nachtragen; überschrieben: `duplicateHint`) → `Test-DocFlowFileReady` → Routing nach `aufgabenRoot`/Präfix-Suffix-Paar/`categoryRoutes`/`targets` → gleichnamige Abgabe im Zielordner (identisch: übernehmen, sonst `duplicateHint`) → `Copy-DocFlowFileWithRetry` → Zustandseintrag nur bei Erfolg, danach Hinweisdateien zur Datei entfernen. Vorab werden verwaiste Hinweisdateien im Quellordner entfernt. |
 
 ## `CopyBack.ps1` - "Korrigiert"-Rücklauf
 
@@ -102,10 +130,10 @@ Alle unten aufgeführten Funktionen sind über `Export-ModuleMember` öffentlich
 ## Aufrufreihenfolge in `Invoke-DocFlowEngine`
 
 ```
-Load-Config
+Import-DocFlowConfig
   → Lock-DocFlowRun (falls lockFile konfiguriert und nicht -DryRun)
-    → Ensure-TargetDirectories
-    → Load-State
+    → Initialize-DocFlowTargetDirectories
+    → Import-DocFlowState
     → Sync-ProjectRoutesFromSeed (falls projectRoutesFile + projectRoutesSeedFile konfiguriert)
     → Get-PraefixSuffixRegistry (falls projectRoutesFile konfiguriert)
     → Get-KuerzelRoutes (falls reviewMarker.kuerzelRoutesFile konfiguriert)
@@ -125,7 +153,7 @@ explizit so eingerichtet, siehe README).
 | Skript | Zweck |
 |---|---|
 | `scripts/Invoke-OneDriveSync.ps1` | Kein Modul-Import. Beendet den OneDrive-Prozess des Benutzers und startet ihn neu (`Stop-Process`/`Start-Process`), um einen frischen Sync-Check anzustoßen - kein offizieller, garantierter "Sync jetzt"-Befehl existiert. `-ExecutablePath` überschreibbar; ohne gefundene `OneDrive.exe` (z. B. `$env:LOCALAPPDATA` nicht gesetzt, wie auf macOS/Linux) bricht das Skript kontrolliert mit einer Warnung ab statt mit einem Fehler. |
-| `scripts/Rename-ExistingAufgaben.ps1 -Path <string> [-ConfigPath <string>] [-Apply]` | Manuell auszuführendes Migrationsskript für Alt-Bestand. Nutzt `Load-Config`/`Get-PraefixSuffixRegistry`/`Get-DocFlowMigratedFileName`/`Lock-DocFlowRun`/`Load-State`/`Save-State`. Ohne `-Apply` reine Vorschau (keine Änderung). Mit `-Apply`: benennt Dateien um (Kollisionsschutz durch angehängten Zähler) und registriert sie - falls `-Path` unterhalb eines konfigurierten `sources[]`-Eintrags liegt - unter demselben Dedup-Key-Format wie `Copy-NewFiles` (`"$($source.path)\|<relativer Pfad>"`) in `.docflow-state.json`, damit `Invoke-DocFlowEngine` sie beim nächsten Lauf nicht erneut als neue Datei behandelt. |
+| `scripts/Rename-ExistingAufgaben.ps1 -Path <string> [-ConfigPath <string>] [-Apply]` | Manuell auszuführendes Migrationsskript für Alt-Bestand. Nutzt `Import-DocFlowConfig`/`Get-PraefixSuffixRegistry`/`Get-DocFlowNameProposal`/`New-DocFlowSubmissionStem`/`Lock-DocFlowRun`/`Import-DocFlowState`/`Save-State`. Ohne `-Apply` reine Vorschau (keine Änderung). Mit `-Apply`: benennt Dateien um (Kollisionsschutz durch angehängten Zähler) und registriert sie - falls `-Path` unterhalb eines konfigurierten `sources[]`-Eintrags liegt - unter demselben Dedup-Key-Format wie `Copy-NewFiles` (`"$($source.path)\|<relativer Pfad>"`) in `.docflow-state.json`, damit `Invoke-DocFlowEngine` sie beim nächsten Lauf nicht erneut als neue Datei behandelt. |
 
 
 ---
