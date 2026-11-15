@@ -43,7 +43,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Netplan-Konfiguration anwenden
+- netplan-konfiguration anwenden
 
 ## Templates
 

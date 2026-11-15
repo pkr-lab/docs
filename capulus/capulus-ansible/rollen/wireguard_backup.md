@@ -21,20 +21,20 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Install WireGuard tools
-2. Ensure /etc/wireguard exists with restrictive permissions
-3. Check whether a server private key already exists
-4. Generate server private key (first run only)
-5. Read server private key
-6. Derive server public key
-7. Template WireGuard backup tunnel config
-8. Allow WireGuard backup port through UFW
-9. Enable and start wg-quick service for the backup tunnel
-10. Display server public key and connection info
+1. wireguard-tools installieren
+2. sicherstellen dass /etc/wireguard mit restriktiven rechten existiert
+3. prüfen ob schon ein privater server-schlüssel existiert
+4. privaten server-schlüssel erzeugen (nur beim ersten lauf)
+5. privaten server-schlüssel lesen
+6. öffentlichen server-schlüssel ableiten
+7. konfiguration des wireguard-backup-tunnels templaten
+8. backup-port von wireguard in ufw freigeben
+9. wg-quick-dienst für den backup-tunnel aktivieren und starten
+10. öffentlichen server-schlüssel und verbindungsdaten anzeigen
 
 ## Handler
 
-- Restart wireguard backup tunnel
+- wireguard-backup-tunnel neu starten
 
 ## Templates
 

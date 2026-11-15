@@ -46,13 +46,13 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 6. Aktuelle cupsd-Einstellungen auslesen
 7. CUPS-Sharing/Remote-Zugriff setzen
 8. Aktuelle Subject-Alternative-Names des cupsd-TLS-Zertifikats auslesen
-9. TLS-Zertifikat fuer cupsd mit allen bekannten Selbst-Identifikationsnamen erzeugen (siehe docs/2-betrieb-hardware/20040-printer.md)
-10. temporaeres verzeichnis fuer das schluesselpaar anlegen (`tempfile`)
-11. Temporaeres Schluessel-/Zertifikatspaar generieren
+9. TLS-Zertifikat für cupsd mit allen bekannten Selbst-Identifikationsnamen erzeugen (Anleitung: [20040](../2-betrieb-hardware/20040-printer.md))
+10. temporäres verzeichnis für das schlüsselpaar anlegen (`tempfile`)
+11. Temporäres Schlüssel-/Zertifikatspaar generieren
 12. Zertifikat unter allen Selbst-Identifikationsnamen ablegen (`0644`)
 13. Key unter allen Selbst-Identifikationsnamen ablegen (`0600`)
-14. Temporaere Zertifikatsdateien entfernen (`always`, auch nach Fehlern)
-15. bestehende tls-schluessel auf modus 0600 setzen
+14. Temporäre Zertifikatsdateien entfernen (`always`, auch nach Fehlern)
+15. bestehende tls-schlüssel auf modus 0600 setzen
 16. Build-Abhängigkeiten für den QPDL-Treiber installieren
 17. QPDL-Treiber-Quellcode klonen (gepinnter Commit)
 18. Patch: PPDFile::getDefaultChoice() deklarieren (ppdfile.h)
@@ -82,7 +82,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Restart cups
+- cups neu starten
 
 ---
 

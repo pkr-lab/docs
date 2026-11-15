@@ -19,8 +19,8 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Fetch Semaphore public key from the home-server
-2. Authorize Semaphore key for {{ semaphore_authorize_user }}
+1. öffentlichen schlüssel von semaphore vom home-server holen
+2. semaphore-schlüssel für {{ semaphore_authorize_user }} autorisieren
 
 ---
 

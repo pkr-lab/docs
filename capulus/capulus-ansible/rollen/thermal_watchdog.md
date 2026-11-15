@@ -24,15 +24,15 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Install lm-sensors (hwmon kernel modules / sysfs helpers)
-2. Deploy thermal watchdog script
-3. Deploy thermal watchdog systemd unit
-4. Enable and start thermal watchdog
-5. Disable thermal watchdog if turned off via thermal_watchdog_enabled
+1. lm-sensors installieren (hwmon-kernel-module / sysfs-hilfen)
+2. thermal-watchdog-skript ablegen
+3. systemd-unit des thermal-watchdogs ablegen
+4. thermal-watchdog aktivieren und starten
+5. thermal-watchdog deaktivieren, wenn thermal_watchdog_enabled aus ist
 
 ## Handler
 
-- Restart thermal-watchdog
+- thermal-watchdog neu starten
 
 ## Templates
 
