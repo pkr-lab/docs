@@ -18,23 +18,23 @@ Das Template legt `address=`-Einträge für die Hosts an: `homeserver` und `cont
 
 ## Ablauf
 
-1. Install dnsmasq
-2. Deploy dnsmasq configuration
-3. dnsmasq - automatischer Neustart bei Fehlern (systemd-Drop-in)
-4. Drop-in-Verzeichnis anlegen
-5. Drop-in schreiben
-6. Allow DNS from local subnet (UFW)
-7. Allow DNS from Tailnet (UFW)
-8. Enable and start dnsmasq
-9. Ensure systemd-resolved drop-in directory exists
-10. Point systemd-resolved at dnsmasq (primary) + gateway (fallback)
-11. Ensure /etc/resolv.conf is the systemd-resolved stub symlink
+1. dnsmasq installieren
+2. dnsmasq-konfiguration ablegen
+3. automatischen neustart von dnsmasq bei fehlern einrichten (systemd-drop-in)
+4. drop-in-verzeichnis anlegen
+5. drop-in schreiben
+6. dns aus dem lokalen subnetz erlauben (ufw)
+7. dns aus dem tailnet erlauben (ufw)
+8. dnsmasq aktivieren und starten
+9. sicherstellen dass das drop-in-verzeichnis von systemd-resolved existiert
+10. systemd-resolved auf dnsmasq (primär) und gateway (fallback) zeigen lassen
+11. sicherstellen dass /etc/resolv.conf der stub-symlink von systemd-resolved ist
 
 ## Handler
 
-- systemd nach dnsmasq-Drop-in neu laden
-- Restart dnsmasq
-- Restart systemd-resolved
+- systemd nach dnsmasq-drop-in neu laden
+- dnsmasq neu starten
+- systemd-resolved neu starten
 
 ## Templates
 

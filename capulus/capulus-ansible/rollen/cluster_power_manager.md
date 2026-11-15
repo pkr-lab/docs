@@ -47,7 +47,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Restart cluster power manager
+- cluster-power-manager neu starten
 
 ## Templates
 

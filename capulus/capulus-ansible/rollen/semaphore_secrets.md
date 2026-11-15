@@ -23,27 +23,26 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Ensure semaphore state directory exists
-2. Check whether the admin password file already exists
-3. Generate a random admin password (first run only)
-4. Persist the admin password on disk (first run only)
-5. Read admin password from disk
-6. Expose admin password as a fact
-7. Check whether the access key encryption file already exists
-8. Generate the access key encryption key (first run only)
-9. Lock down the access key encryption file
-10. Read access key encryption key from disk
-11. Expose access key encryption key as a fact
-12. Generate Semaphore SSH keypair (first run only)
-13. Lock down SSH private key permissions
-14. Lock down SSH public key permissions
-15. Read Semaphore SSH private key
-16. Read Semaphore SSH public key
-17. Expose SSH keys as facts (hostvars for downstream roles)
-18. Ensure semaphore namespace exists
-19. bootstrap-secret im cluster anlegen (`kubectl apply -f -` über stdin, keine Datei in `/tmp`)
-20. altes temporaeres secret-manifest entfernen
-21. Display Semaphore bootstrap summary
+1. sicherstellen dass das semaphore-statusverzeichnis existiert
+2. prüfen ob die datei mit dem admin-passwort schon existiert
+3. zufälliges admin-passwort erzeugen (nur beim ersten lauf)
+4. admin-passwort auf der platte ablegen (nur beim ersten lauf)
+5. admin-passwort von der platte lesen
+6. admin-passwort als fakt bereitstellen
+7. schlüssel für die verschlüsselung der zugangsschlüssel erzeugen (nur beim ersten lauf)
+8. rechte der datei mit dem verschlüsselungsschlüssel einschränken
+9. verschlüsselungsschlüssel für die zugangsschlüssel von der platte lesen
+10. verschlüsselungsschlüssel für die zugangsschlüssel als fakt bereitstellen
+11. ssh-schlüsselpaar für semaphore erzeugen (nur beim ersten lauf)
+12. rechte des privaten ssh-schlüssels einschränken
+13. rechte des öffentlichen ssh-schlüssels einschränken
+14. privaten ssh-schlüssel von semaphore lesen
+15. öffentlichen ssh-schlüssel von semaphore lesen
+16. ssh-schlüssel als fakten bereitstellen (hostvars für nachfolgende rollen)
+17. sicherstellen dass der namespace semaphore existiert
+18. bootstrap-secret im cluster anlegen (`kubectl apply -f -` über stdin, keine Datei in `/tmp`)
+19. altes temporäres secret-manifest entfernen
+20. zusammenfassung des semaphore-bootstraps anzeigen
 
 ---
 
