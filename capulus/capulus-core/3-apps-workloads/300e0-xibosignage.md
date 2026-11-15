@@ -411,7 +411,7 @@ Ausführlich (Startablauf, Mauszeiger, Cache, Systemdateien, Messung) in
 
 Das Semaphore-Projekt **"xibo-displays"** ist nach `make semaphore-bootstrap`
 automatisch in der UI verfügbar (siehe [capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md](../../capulus-ansible/b-kubernetes-gitops/b0030-semaphore.md))
-— **bewusst ohne** automatischen Schedule, analog zu `alarm-kiosks`.
+— **bewusst ohne** automatischen Schedule, analog zu `banana-pi-kiosks`.
 
 ---
 

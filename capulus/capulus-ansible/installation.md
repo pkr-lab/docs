@@ -48,7 +48,6 @@ make libvirt-host
 make worker-1-libvirt-host
 make prod
 make entw
-make alarm-kiosks
 make xibo-kiosks
 ```
 

@@ -10,7 +10,7 @@ weckt Worker per WoL, fährt sie per SSH wieder herunter. Seit der Umstellung au
 
 ## Variablen
 
-Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`.
+Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`. `cluster_power_manager_ssh_user` (`ubuntu`) und `cluster_power_manager_ssh_key_path` (`/etc/cluster-power-manager/id_ed25519`) stehen in `group_vars/all.yml`, weil `cluster_power_manager`, `cluster_power_manager_target`, `power_agent` und `nightly_worker_wake` sie teilen.
 
 | Variable | Default | Bedeutung |
 |---|---|---|
@@ -25,13 +25,11 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `cluster_power_manager_scale_down_sustain_seconds` | `900` | – |
 | `cluster_power_manager_min_uptime_seconds` | `300` | – |
 | `cluster_power_manager_ready_timeout_seconds` | `120` | – |
-| `cluster_power_manager_ssh_user` | `ubuntu` | – |
-| `cluster_power_manager_ssh_key_path` | `/etc/cluster-power-manager/id_ed25519` | – |
 | `cluster_power_manager_state_dir` | `/var/lib/cluster-power-manager` | – |
 | `cluster_power_manager_kubeconfig` | `/etc/rancher/k3s/k3s.yaml` | – |
-| `cluster_power_manager_ntfy_host` | `ntfy.tech.homeserver` | – |
-| `cluster_power_manager_ntfy_ip` | `{{ network_static_ip }}` | – |
-| `cluster_power_manager_ntfy_topic` | `Home-Lab-System` | – |
+| `cluster_power_manager_ntfy_host` | `{{ homelab_ntfy_host }}` | – |
+| `cluster_power_manager_ntfy_ip` | `{{ homelab_ntfy_ip }}` | – |
+| `cluster_power_manager_ntfy_topic` | `{{ homelab_ntfy_topic }}` | – |
 | `cluster_power_manager_workers` | `[{name: worker-1, ansible_host: …, mac_address: …}]` | Liste der per WoL gesteuerten Worker. `nightly_worker_wake` und `power_agent_targets` übernehmen sie. Die Hochskalier-Logik (erste Stufe nach `scale_up_sustain_seconds`, jede weitere um `scale_up_sustain_seconds_stage2` später) bleibt generisch und hat mit einem Eintrag nur eine Stufe |
 
 ## Ablauf
@@ -49,7 +47,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Restart cluster power manager
+- cluster-power-manager neu starten
 
 ## Templates
 

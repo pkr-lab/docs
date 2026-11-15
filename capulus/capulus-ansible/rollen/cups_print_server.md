@@ -46,41 +46,43 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 6. Aktuelle cupsd-Einstellungen auslesen
 7. CUPS-Sharing/Remote-Zugriff setzen
 8. Aktuelle Subject-Alternative-Names des cupsd-TLS-Zertifikats auslesen
-9. TLS-Zertifikat fuer cupsd mit allen bekannten Selbst-Identifikationsnamen erzeugen (siehe docs/2-betrieb-hardware/20040-printer.md)
-10. Temporaeres Schluessel-/Zertifikatspaar generieren
-11. Zertifikat unter allen Selbst-Identifikationsnamen ablegen
-12. Key unter allen Selbst-Identifikationsnamen ablegen
-13. Temporaere Zertifikatsdateien entfernen
-14. Build-Abhängigkeiten für den QPDL-Treiber installieren
-15. QPDL-Treiber-Quellcode klonen (gepinnter Commit)
-16. Patch: PPDFile::getDefaultChoice() deklarieren (ppdfile.h)
-17. Patch: PPDFile::getDefaultChoice() implementieren (ppdfile.cpp)
-18. Patch: Printer::loadInformation() erzwingt PPD-PageSize (printer.cpp)
-19. QPDL-Filter kompilieren
-20. QPDL-Filter + PPDs installieren
-21. Install-Ausgabe des QPDL-Treibers anzeigen
-22. Handler sofort ausführen, damit lpinfo -m die neue PPD sieht
-23. Verfügbare Drucker-Device-URIs ermitteln
-24. Erkannte Device-URIs anzeigen
-25. Verfügbare PPDs ermitteln
-26. Samsung/SPL-passende PPDs anzeigen
-27. Warnen, wenn Device-URI/PPD noch nicht gesetzt sind
-28. Druckerwarteschlange anlegen/aktualisieren
-29. Warteschlange aktivieren
-30. Job-Annahme für Warteschlange aktivieren
-31. Warteschlange als System-Default setzen
-32. Extra-Queues: Splix-Katalog nach passenden PPDs durchsuchen (Debug)
-33. Extra-Queues: warnen, wenn ppd noch nicht gesetzt ist
-34. Extra-Queues: Warteschlange anlegen/aktualisieren
-35. Extra-Queues: Warteschlange aktivieren
-36. Extra-Queues: Job-Annahme aktivieren
-37. Extra-Queues: als System-Default setzen (falls gewünscht)
-38. Status aller Warteschlangen anzeigen
-39. Warteschlangen-Status ausgeben
+9. TLS-Zertifikat für cupsd mit allen bekannten Selbst-Identifikationsnamen erzeugen (Anleitung: [20040](../2-betrieb-hardware/20040-printer.md))
+10. temporäres verzeichnis für das schlüsselpaar anlegen (`tempfile`)
+11. Temporäres Schlüssel-/Zertifikatspaar generieren
+12. Zertifikat unter allen Selbst-Identifikationsnamen ablegen (`0644`)
+13. Key unter allen Selbst-Identifikationsnamen ablegen (`0600`)
+14. Temporäre Zertifikatsdateien entfernen (`always`, auch nach Fehlern)
+15. bestehende tls-schlüssel auf modus 0600 setzen
+16. Build-Abhängigkeiten für den QPDL-Treiber installieren
+17. QPDL-Treiber-Quellcode klonen (gepinnter Commit)
+18. Patch: PPDFile::getDefaultChoice() deklarieren (ppdfile.h)
+19. Patch: PPDFile::getDefaultChoice() implementieren (ppdfile.cpp)
+20. Patch: Printer::loadInformation() erzwingt PPD-PageSize (printer.cpp)
+21. QPDL-Filter kompilieren
+22. QPDL-Filter + PPDs installieren
+23. Install-Ausgabe des QPDL-Treibers anzeigen
+24. Handler sofort ausführen, damit lpinfo -m die neue PPD sieht
+25. Verfügbare Drucker-Device-URIs ermitteln
+26. Erkannte Device-URIs anzeigen
+27. Verfügbare PPDs ermitteln
+28. Samsung/SPL-passende PPDs anzeigen
+29. Warnen, wenn Device-URI/PPD noch nicht gesetzt sind
+30. Druckerwarteschlange anlegen/aktualisieren
+31. Warteschlange aktivieren
+32. Job-Annahme für Warteschlange aktivieren
+33. Warteschlange als System-Default setzen
+34. Extra-Queues: Splix-Katalog nach passenden PPDs durchsuchen (Debug)
+35. Extra-Queues: warnen, wenn ppd noch nicht gesetzt ist
+36. Extra-Queues: Warteschlange anlegen/aktualisieren
+37. Extra-Queues: Warteschlange aktivieren
+38. Extra-Queues: Job-Annahme aktivieren
+39. Extra-Queues: als System-Default setzen (falls gewünscht)
+40. Status aller Warteschlangen anzeigen
+41. Warteschlangen-Status ausgeben
 
 ## Handler
 
-- Restart cups
+- cups neu starten
 
 ---
 

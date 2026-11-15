@@ -84,7 +84,7 @@ kubectl -n argocd get applications.argoproj.io | grep -v 'Synced.*Healthy'
 | Renovate-PRs fehlen | Zeitplan, Token | [Renovate](../f-cicd-automatisierung/f0020-renovate.md#troubleshooting) |
 | GitLab-Spiegel veraltet | Mirror-Token | [GitLab-Mirror](../f-cicd-automatisierung/f0050-gitlab-mirror.md#troubleshooting) |
 | Neue Version eines Fremdprojekts wird nicht gemeldet | Release-Watcher | [GitHub Release Watcher](../f-cicd-automatisierung/f0040-github-release-watcher.md#troubleshooting) |
-| Argo-Workflow-Lauf scheitert | Artefaktspeicher, Rechte | [Argo Workflows](../f-cicd-automatisierung/f0000-argo-workflows.md#4-troubleshooting), [MinIO](../3-apps-workloads/300p0-minio.md#fehlersuche) |
+| Argo-Workflow-Lauf scheitert | Artefaktspeicher, Rechte | [Argo Workflows](../f-cicd-automatisierung/f0000-argo-workflows.md#4-troubleshooting), [Garage](../3-apps-workloads/300p0-garage.md#fehlersuche) |
 | Security-Issue oder CodeQL-Befund | Alerts | [CodeQL und Dependabot](../d-sicherheit/d0080-codeql-dependabot.md#troubleshooting) |
 | Token läuft ab, Rotation | Token-Register | [Secrets-Rotation](../d-sicherheit/d0060-secrets-rotation.md#fehlersuche), [cubi: Tokens](../../../cubi/tokens.md#debugging-und-fehlersuche) |
 | Docs im Wiki nicht aktuell | wiki-docs-sync | [wiki-sync](../wiki-sync.md#fehlersuche) |
@@ -118,7 +118,7 @@ kubectl -n argocd get applications.argoproj.io | grep -v 'Synced.*Healthy'
 | ISC Urkunden melden | [300m0](../3-apps-workloads/300m0-isc-urkunden-melden.md#troubleshooting) |
 | Headlamp | [300n0](../3-apps-workloads/300n0-headlamp.md#fehlersuche) |
 | kubeseal-webgui | [300o0](../3-apps-workloads/300o0-kubeseal-webgui.md#fehlersuche) |
-| MinIO | [300p0](../3-apps-workloads/300p0-minio.md#fehlersuche) |
+| Garage | [300p0](../3-apps-workloads/300p0-garage.md#fehlersuche) |
 | ntfy | [10010](../1-benachrichtigungen/10010-ntfy.md#troubleshooting) |
 | ntfy-bridge | [10030](../1-benachrichtigungen/10030-ntfy-bridge.md#fehlersuche) |
 | lldap | [d0072](../d-sicherheit/d0072-lldap.md#troubleshooting) |

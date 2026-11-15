@@ -29,28 +29,28 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 ## Ablauf
 
 1. systemd-journal-remote installieren (liefert systemd-journal-upload)
-2. Homeserver-Root-CA-Zertifikat deployen (TLS-Pruefung des Log-Endpunkts)
-3. Log-Endpunkt per /etc/hosts aufloesen (unabhaengig von DNS)
-4. Drop-in-Verzeichnis fuer systemd-journal-upload anlegen
-5. Dauerhaften Neustart fuer systemd-journal-upload konfigurieren
-6. Gruppe fuer die Zugangsdaten des Log-Endpunkts anlegen
-7. Dienst fuer den Zugriff auf die Zugangsdaten berechtigen
-8. journal-upload.conf deployen
-9. Startpunkt fuer systemd-journal-upload setzen (kein Upload des Alt-Journals)
-10. State-Verzeichnis pruefen
-11. State-Datei pruefen
-12. Aktuellen Journal-Cursor ermitteln
-13. State-Verzeichnis anlegen
-14. State-Datei mit Startpunkt anlegen
-15. Handler sofort ausfuehren (Start-Limit zuruecksetzen, bevor der Dienst gestartet wird)
-16. systemd-journal-upload aktivieren und starten
-17. systemd-journal-upload deaktivieren (journal_upload_enabled false)
+2. homeserver-root-ca verteilen (Rolle [`homeserver_ca`](homeserver_ca.md), tls-prüfung des log-endpunkts)
+3. journal-upload nach einem ca-wechsel neu starten
+4. Log-Endpunkt per /etc/hosts auflösen (unabhängig von DNS)
+5. Drop-in-Verzeichnis für systemd-journal-upload anlegen
+6. Dauerhaften Neustart für systemd-journal-upload konfigurieren
+7. Gruppe für die Zugangsdaten des Log-Endpunkts anlegen
+8. Dienst für den Zugriff auf die Zugangsdaten berechtigen
+9. journal-upload.conf deployen
+10. Startpunkt für systemd-journal-upload setzen (kein Upload des Alt-Journals)
+11. State-Verzeichnis prüfen
+12. State-Datei prüfen
+13. Aktuellen Journal-Cursor ermitteln
+14. State-Verzeichnis anlegen
+15. State-Datei mit Startpunkt anlegen
+16. Handler sofort ausführen (Start-Limit zurücksetzen, bevor der Dienst gestartet wird)
+17. systemd-journal-upload aktivieren und starten
+18. systemd-journal-upload deaktivieren (journal_upload_enabled false)
 
 ## Handler
 
-- Homeserver-CA-Vertrauensspeicher aktualisieren
-- Start-Limit des Dienstes zuruecksetzen (nach Endlos-Fehlschlaegen)
-- Restart systemd-journal-upload
+- start-limit des dienstes zurücksetzen (nach endlos-fehlschlägen)
+- systemd-journal-upload neu starten
 
 ## Templates
 

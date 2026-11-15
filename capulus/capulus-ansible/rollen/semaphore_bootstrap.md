@@ -35,82 +35,83 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `semaphore_default_keys` | `[{login: '{{ semaphore_ssh_login }}', name: semaphore-ssh-key, type: ssh}, {name: git-n…` | – |
 | `semaphore_default_environment` | `{env: {ANSIBLE_VAULT_PASSWORD_FILE: /var/run/semaphore-secrets/ansible_vault_password},…` | – |
 | `semaphore_projects` | `[{description: Deploy / re-provision the home-server itself., environments: ['{{ semaph…` | – |
+| `semaphore_bootstrap_delete_orphan_projects` | `true` | löscht Semaphore-Projekte, die nicht in `semaphore_projects` stehen; `false` lässt von Hand angelegte Projekte stehen |
 
 ## Ablauf
 
-1. List existing environments in project {{ project_spec.name }}
-2. Decide if environment exists for {{ env_spec.name }}
-3. Find existing environment id for {{ env_spec.name }}
-4. Create environment {{ env_spec.name }}
-5. Update environment {{ env_spec.name }}
-6. List existing inventories in project {{ project_spec.name }}
-7. Decide if inventory exists for {{ inventory_spec.name }}
-8. Find existing inventory id for {{ inventory_spec.name }}
-9. Create inventory {{ inventory_spec.name }}
-10. Update inventory {{ inventory_spec.name }}
-11. Fail with HTTP details if inventory update failed
-12. List existing keys in project {{ project_spec.name }}
-13. Decide if key exists in project {{ project_spec.name }}
-14. Read Semaphore SSH private key from disk
-15. Create SSH access key in project {{ project_spec.name }}
-16. Fail with visible HTTP details if SSH key creation failed
-17. Find existing ssh key id for {{ key_spec.name }}
-18. Update SSH key {{ key_spec.name }} in project {{ project_spec.name }}
-19. Create None access key in project {{ project_spec.name }}
-20. Create login_password key in project {{ project_spec.name }}
-21. Fail with HTTP details if vault key creation failed
-22. Find existing login_password key id for {{ key_spec.name }}
-23. Update login_password key {{ key_spec.name }} in project {{ project_spec.name }}
-24. Read admin password from disk
-25. Set admin password fact
-26. Login to Semaphore
-27. Fail if Semaphore rejected the admin credentials
-28. Capture session cookie
-29. Set newline-char fact for PEM body construction
-30. Pre-flight — semaphore_vault_password must not be empty
-31. Wait for the semaphore Deployment to be created
-32. Wait for the semaphore Deployment to roll out
-33. Wait for the Semaphore HTTP API to respond
-34. Authenticate against Semaphore
-35. Provision each Semaphore project
-36. List all projects for orphan cleanup
-37. Delete orphan projects not in semaphore_projects
-38. Display Semaphore bootstrap summary
-39. List existing projects for {{ project_spec.name }}
-40. Find project id for {{ project_spec.name }}
-41. Create project {{ project_spec.name }}
-42. Capture new project id for {{ project_spec.name }}
-43. Provision default access keys in project {{ project_spec.name }}
-44. Re-list keys in project {{ project_spec.name }}
-45. Build key name→id map for project {{ project_spec.name }}
-46. Provision repository for project {{ project_spec.name }}
-47. Provision inventories for project {{ project_spec.name }}
-48. Re-list inventories in project {{ project_spec.name }}
-49. Build inventory name→id map for project {{ project_spec.name }}
-50. Provision environments for project {{ project_spec.name }}
-51. Re-list environments in project {{ project_spec.name }}
-52. Build environment name→id map for project {{ project_spec.name }}
-53. Provision templates for project {{ project_spec.name }}
-54. Re-list templates in project {{ project_spec.name }}
-55. Build template name→id map for project {{ project_spec.name }}
-56. Provision schedules for project {{ project_spec.name }}
-57. List existing repositories in project {{ project_spec.name }}
-58. Find repository id in project {{ project_spec.name }}
-59. Assert git-none key exists in project {{ project_spec.name }}
-60. Create repository in project {{ project_spec.name }}
-61. Capture new repository id for project {{ project_spec.name }}
-62. List existing schedules in project {{ project_spec.name }}
-63. Decide if schedule '{{ schedule_spec.name }}' exists
-64. Find existing schedule id for '{{ schedule_spec.name }}
-65. Assert template '{{ schedule_spec.template }}' exists for schedule '{{ schedule_spec.name }}
-66. Create schedule '{{ schedule_spec.name }}
-67. Update schedule '{{ schedule_spec.name }}
-68. List existing templates in project {{ project_spec.name }}
-69. Decide if template exists for {{ template_spec.name }}
-70. Find existing template id for {{ template_spec.name }}
-71. Assert inventory '{{ template_spec.inventory }}' exists in project {{ project_spec.name }}
-72. Create template {{ template_spec.name }}
-73. Update template {{ template_spec.name }}
+1. vorhandene environments im projekt {{ project_spec.name }} auflisten
+2. feststellen ob environment {{ env_spec.name }} existiert
+3. id des vorhandenen environments {{ env_spec.name }} ermitteln
+4. environment {{ env_spec.name }} anlegen
+5. environment {{ env_spec.name }} aktualisieren
+6. vorhandene inventories im projekt {{ project_spec.name }} auflisten
+7. feststellen ob inventory {{ inventory_spec.name }} existiert
+8. id des vorhandenen inventorys {{ inventory_spec.name }} ermitteln
+9. inventory {{ inventory_spec.name }} anlegen
+10. inventory {{ inventory_spec.name }} aktualisieren
+11. mit http-details abbrechen, wenn das inventory-update fehlschlug
+12. vorhandene keys im projekt {{ project_spec.name }} auflisten
+13. feststellen ob der key im projekt {{ project_spec.name }} existiert
+14. privaten ssh-schlüssel von semaphore von der platte lesen
+15. ssh-zugangsschlüssel im projekt {{ project_spec.name }} anlegen
+16. mit sichtbaren http-details abbrechen, wenn das anlegen des ssh-schlüssels fehlschlug
+17. id des vorhandenen ssh-schlüssels {{ key_spec.name }} ermitteln
+18. ssh-schlüssel {{ key_spec.name }} im projekt {{ project_spec.name }} aktualisieren
+19. zugangsschlüssel vom typ none im projekt {{ project_spec.name }} anlegen
+20. schlüssel vom typ login_password im projekt {{ project_spec.name }} anlegen
+21. mit http-details abbrechen, wenn das anlegen des vault-schlüssels fehlschlug
+22. id des vorhandenen login_password-schlüssels {{ key_spec.name }} ermitteln
+23. login_password-schlüssel {{ key_spec.name }} im projekt {{ project_spec.name }} aktualisieren
+24. admin-passwort von der platte lesen
+25. admin-passwort als fakt setzen
+26. bei semaphore anmelden
+27. abbrechen, wenn semaphore die admin-zugangsdaten ablehnt
+28. session-cookie übernehmen
+29. zeilenumbruch als fakt für den pem-body setzen
+30. vorabprüfung — semaphore_vault_password darf nicht leer sein
+31. warten bis das semaphore-deployment angelegt ist
+32. warten bis das semaphore-deployment ausgerollt ist
+33. warten bis die http-api von semaphore antwortet
+34. bei semaphore authentifizieren
+35. jedes semaphore-projekt einrichten
+36. alle projekte für das aufräumen verwaister projekte auflisten
+37. verwaiste projekte löschen, die nicht in semaphore_projects stehen (nur mit `semaphore_bootstrap_delete_orphan_projects: true`)
+38. zusammenfassung des semaphore-bootstraps anzeigen
+39. vorhandene projekte für {{ project_spec.name }} auflisten
+40. projekt-id für {{ project_spec.name }} ermitteln
+41. projekt {{ project_spec.name }} anlegen
+42. neue projekt-id für {{ project_spec.name }} übernehmen
+43. standard-zugangsschlüssel im projekt {{ project_spec.name }} einrichten
+44. keys im projekt {{ project_spec.name }} erneut auflisten
+45. zuordnung key-name→id für das projekt {{ project_spec.name }} bilden
+46. repository für das projekt {{ project_spec.name }} einrichten
+47. inventories für das projekt {{ project_spec.name }} einrichten
+48. inventories im projekt {{ project_spec.name }} erneut auflisten
+49. zuordnung inventory-name→id für das projekt {{ project_spec.name }} bilden
+50. environments für das projekt {{ project_spec.name }} einrichten
+51. environments im projekt {{ project_spec.name }} erneut auflisten
+52. zuordnung environment-name→id für das projekt {{ project_spec.name }} bilden
+53. templates für das projekt {{ project_spec.name }} einrichten
+54. templates im projekt {{ project_spec.name }} erneut auflisten
+55. zuordnung template-name→id für das projekt {{ project_spec.name }} bilden
+56. schedules für das projekt {{ project_spec.name }} einrichten
+57. vorhandene repositories im projekt {{ project_spec.name }} auflisten
+58. repository-id im projekt {{ project_spec.name }} ermitteln
+59. sicherstellen dass der key git-none im projekt {{ project_spec.name }} existiert
+60. repository im projekt {{ project_spec.name }} anlegen
+61. neue repository-id für das projekt {{ project_spec.name }} übernehmen
+62. vorhandene schedules im projekt {{ project_spec.name }} auflisten
+63. feststellen ob schedule '{{ schedule_spec.name }}' existiert
+64. id des vorhandenen schedules '{{ schedule_spec.name }}' ermitteln
+65. sicherstellen dass template '{{ schedule_spec.template }}' für schedule '{{ schedule_spec.name }}' existiert
+66. schedule '{{ schedule_spec.name }}' anlegen
+67. schedule '{{ schedule_spec.name }}' aktualisieren
+68. vorhandene templates im projekt {{ project_spec.name }} auflisten
+69. feststellen ob template {{ template_spec.name }} existiert
+70. id des vorhandenen templates {{ template_spec.name }} ermitteln
+71. sicherstellen dass inventory '{{ template_spec.inventory }}' im projekt {{ project_spec.name }} existiert
+72. template {{ template_spec.name }} anlegen
+73. template {{ template_spec.name }} aktualisieren
 
 ---
 

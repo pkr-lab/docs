@@ -20,34 +20,34 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Install gnupg for the key handling
-2. Create APT keyrings directory
-3. Check whether the CrowdSec repository keyring exists
-4. Download CrowdSec repository key
-5. Create temporary GnuPG home
-6. Convert CrowdSec repository key to a keyring
-7. Remove downloaded CrowdSec repository key
-8. Read CrowdSec keyring fingerprint
-9. Remove temporary GnuPG home
-10. Verify CrowdSec repository key fingerprint
-11. Write CrowdSec APT repository
-12. Install crowdsec package
-13. Enable and start crowdsec service
-14. Wait for the local CrowdSec API to accept connections
-15. Install crowdsec-firewall-bouncer package (iptables backend, matches UFW)
-16. Enable and start crowdsec-firewall-bouncer service
-17. Install CrowdSec collections
-18. Ensure acquisition.d directory exists
-19. Deploy SSH log acquisition config (journald)
-20. Deploy Traefik log acquisition config
-21. Deploy CIDR whitelist for LAN + Tailscale
-22. Flush handlers so acquisition/whitelist changes are live before verifying
-23. Verify firewall bouncer registered with the local API
-24. Warn if no bouncer is registered
+1. gnupg für die schlüsselbehandlung installieren
+2. verzeichnis für apt-keyrings anlegen
+3. prüfen ob der keyring des crowdsec-repositorys existiert
+4. schlüssel des crowdsec-repositorys herunterladen
+5. temporäres gnupg-home anlegen
+6. schlüssel des crowdsec-repositorys in einen keyring umwandeln
+7. heruntergeladenen schlüssel des crowdsec-repositorys entfernen
+8. fingerprint des crowdsec-keyrings lesen
+9. temporäres gnupg-home entfernen
+10. fingerprint des crowdsec-repository-schlüssels prüfen
+11. apt-repository für crowdsec eintragen
+12. paket crowdsec installieren
+13. dienst crowdsec aktivieren und starten
+14. warten bis die lokale crowdsec-api verbindungen annimmt
+15. paket crowdsec-firewall-bouncer installieren (iptables-backend, passend zu ufw)
+16. dienst crowdsec-firewall-bouncer aktivieren und starten
+17. crowdsec-collections installieren
+18. sicherstellen dass das verzeichnis acquisition.d existiert
+19. acquisition-konfiguration für ssh-logs ablegen (journald)
+20. acquisition-konfiguration für traefik-logs ablegen
+21. cidr-whitelist für lan und tailscale ablegen
+22. handler sofort ausführen, damit acquisition und whitelist vor der prüfung wirken
+23. prüfen dass der firewall-bouncer bei der lokalen api registriert ist
+24. warnen wenn kein bouncer registriert ist
 
 ## Handler
 
-- Restart crowdsec
+- crowdsec neu starten
 
 ## Templates
 

@@ -18,12 +18,10 @@ Im Modus `init` und `join` ist `k3s_version` Pflicht (alle Server brauchen diese
 
 ## Variablen
 
-Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`.
+Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_vars/`. `k3s_installer_url` und `k3s_installer_sha256` stehen gemeinsam für `k3s` und `k3s_agent` in `group_vars/all.yml`, `k3s_version` und `k3s_server_host` des TECH-Clusters kommen aus `k3s_cluster_version` und `k3s_cluster_server_host` (ebenfalls `group_vars/all.yml`).
 
 | Variable | Default | Bedeutung |
 |---|---|---|
-| `k3s_installer_url` | `https://raw.githubusercontent.com/k3s-io/k3s/2977c525a2e7a487886107ce4df43630ae9b03b2/i…` | – |
-| `k3s_installer_sha256` | `e5cc3b3d9dfc1662c2d9be6da5abc9a4cd317d6abc3a5ffc02e3dd3248207fee` | – |
 | `k3s_node_name` | `{{ inventory_hostname }}` | Nodename in k3s (`node-name`). `controlplane-0` setzt `homeserver` in den `host_vars`, weil ein Nodename nicht änderbar ist |
 | `k3s_mode` | `single` | `single`, `init` oder `join`, siehe oben |
 | `k3s_primary_host` | erster Host der Gruppe `k3s_primary` | Quelle von Join-Token und `server:`-URL |
@@ -44,7 +42,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `k3s_snapshot_mount_point` | `/mnt/k3s-etcd-snapshots` | Mount-Punkt der Freigabe. Das Kopierskript versucht den Mount einmal (`mount <Mount-Punkt>`, 45 s), bevor es „nicht eingebunden“ meldet |
 | `k3s_snapshot_copy_calendar` | `*-*-* 00,06,12,18:20:00` | Zeitpunkt der Kopie (20 Minuten nach dem Snapshot) |
 | `k3s_snapshot_copy_keep_days` | `14` | Aufbewahrung auf der NAS |
-| `k3s_ntfy_host`, `k3s_ntfy_ip`, `k3s_ntfy_topic` | `ntfy.tech.homeserver`, `{{ network_static_ip }}`, `Home-Lab-System` | Ziel der Fehlermeldung des Kopier-Skripts (nutzt Zugangsdaten und CA der Rolle `ntfy_publisher`) |
+| `k3s_ntfy_host`, `k3s_ntfy_ip`, `k3s_ntfy_topic` | `{{ homelab_ntfy_host }}`, `{{ homelab_ntfy_ip }}`, `{{ homelab_ntfy_topic }}` (Werte in `group_vars/all.yml`) | Ziel der Fehlermeldung des Kopier-Skripts (nutzt Zugangsdaten und CA der Rolle `ntfy_publisher`) |
 | `k3s_ufw_enable` | `true` | legt die Server-Regeln an (Modi `init` und `join`) |
 | `k3s_ufw_api_sources` | LAN und `100.64.0.0/10` | Quellen für Port 6443 |
 | `k3s_ufw_etcd_extra_peers` | `[]` | zusätzliche etcd-Peers (Port 2379–2380), später ControlPlane-2 |
@@ -57,37 +55,37 @@ Vor den bekannten Schritten: Version prüfen, abbrechen wenn noch `k3s-agent.ser
 
 ## Ablauf
 
-1. Create /etc/rancher/k3s directory
-2. Template kube-apiserver audit policy
-3. Create /var/log/k3s directory for audit log output
-4. Template k3s server configuration
-5. Check if k3s is already installed
-6. Get current k3s version (if installed)
-7. Decide whether to (re)run the k3s installer
-8. Download k3s install script
-9. Install or upgrade k3s (pinned version or latest in channel)
-10. Remove k3s install script
-11. Enable and start k3s service
-12. Wait for k3s API server to be reachable (port 6443)
-13. Wait for k3s node to be in Ready state
-14. Display node status
-15. Create .kube directory for ubuntu user
-16. Copy k3s kubeconfig to ubuntu user
-17. Set KUBECONFIG in /etc/environment (system-wide)
-18. Set KUBECONFIG in ubuntu user's .bashrc
-19. Add kubectl completion and `k` alias to ubuntu user's .bashrc
-20. Check if Helm is already installed
-21. Get installed Helm version
-22. Decide whether to (re)install Helm
-23. Download Helm release
-24. Install Helm binary
-25. Set Helm binary permissions
-26. Remove Helm archive
-27. Verify Helm installation
-28. Display Helm version
-29. Wait for core system pods to be ready
-30. Get system pod status
-31. Show system pod status
+1. verzeichnis /etc/rancher/k3s anlegen
+2. audit-policy für kube-apiserver templaten
+3. verzeichnis /var/log/k3s für das audit-log anlegen
+4. k3s-server-konfiguration templaten
+5. prüfen ob k3s bereits installiert ist
+6. aktuelle k3s-version lesen (falls installiert)
+7. entscheiden ob der k3s-installer (erneut) laufen muss
+8. k3s-installationsskript herunterladen
+9. k3s installieren oder aktualisieren (gepinnte version oder neueste im kanal)
+10. k3s-installationsskript entfernen
+11. dienst k3s aktivieren und starten
+12. warten bis der k3s-api-server erreichbar ist (port 6443)
+13. warten bis der k3s-node ready ist
+14. node-status anzeigen
+15. verzeichnis .kube für den benutzer ubuntu anlegen
+16. k3s-kubeconfig für den benutzer ubuntu kopieren
+17. KUBECONFIG in /etc/environment setzen (systemweit)
+18. KUBECONFIG in der .bashrc des benutzers ubuntu setzen
+19. kubectl-vervollständigung und alias `k` in der .bashrc des benutzers ubuntu eintragen
+20. prüfen ob helm bereits installiert ist
+21. installierte helm-version lesen
+22. entscheiden ob helm (erneut) installiert werden muss
+23. helm-release herunterladen
+24. helm-binary installieren
+25. rechte des helm-binarys setzen
+26. helm-archiv entfernen
+27. helm-installation prüfen
+28. helm-version anzeigen
+29. warten bis die system-pods bereit sind
+30. status der system-pods lesen
+31. status der system-pods anzeigen
 
 ## Templates
 

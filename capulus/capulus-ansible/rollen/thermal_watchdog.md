@@ -18,21 +18,21 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `thermal_watchdog_threshold_c` | `100` | – |
 | `thermal_watchdog_sustain_seconds` | `90` | – |
 | `thermal_watchdog_poll_seconds` | `10` | – |
-| `thermal_watchdog_ntfy_host` | `ntfy.tech.homeserver` | – |
-| `thermal_watchdog_ntfy_ip` | `{{ network_static_ip }}` | – |
-| `thermal_watchdog_ntfy_topic` | `Home-Lab-System` | – |
+| `thermal_watchdog_ntfy_host` | `{{ homelab_ntfy_host }}` | – |
+| `thermal_watchdog_ntfy_ip` | `{{ homelab_ntfy_ip }}` | – |
+| `thermal_watchdog_ntfy_topic` | `{{ homelab_ntfy_topic }}` | – |
 
 ## Ablauf
 
-1. Install lm-sensors (hwmon kernel modules / sysfs helpers)
-2. Deploy thermal watchdog script
-3. Deploy thermal watchdog systemd unit
-4. Enable and start thermal watchdog
-5. Disable thermal watchdog if turned off via thermal_watchdog_enabled
+1. lm-sensors installieren (hwmon-kernel-module / sysfs-hilfen)
+2. thermal-watchdog-skript ablegen
+3. systemd-unit des thermal-watchdogs ablegen
+4. thermal-watchdog aktivieren und starten
+5. thermal-watchdog deaktivieren, wenn thermal_watchdog_enabled aus ist
 
 ## Handler
 
-- Restart thermal-watchdog
+- thermal-watchdog neu starten
 
 ## Templates
 

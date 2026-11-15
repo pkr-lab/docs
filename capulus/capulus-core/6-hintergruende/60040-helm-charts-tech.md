@@ -83,9 +83,9 @@ die im Image gesetzte UID nur der Image-Default, das `securityContext` des Deplo
   ([600a0](600a0-ci-workflows-und-skripte.md), [f0060](../f-cicd-automatisierung/f0060-build-images.md)).
 - Ist das GHCR-Package privat, braucht der Namespace ein Pull-Secret:
   `kubectl -n carplay-api create secret docker-registry ghcr-pull --docker-server=ghcr.io --docker-username=<user> --docker-password=<pat>`.
-- **Chart-Versionen schweben:** `argo-workflows` und `minio` hängen mit `version: "*"` an ihren Community-Charts (beobachtet zum Zeitpunkt
-  der Erstellung: argo-helm 1.0.x bzw. `charts.min.io` 5.x). Ein neuer Upstream-Stand wird also automatisch gezogen. Eine konkrete Version
-  festlegen, sobald sie mit `helm search repo` geprüft ist.
+- **Chart-Versionen schweben:** `argo-workflows` hängt mit `version: "*"` am Community-Chart (beobachtet zum Zeitpunkt
+  der Erstellung: argo-helm 1.0.x). Ein neuer Upstream-Stand wird also automatisch gezogen. Eine konkrete Version
+  festlegen, sobald sie mit `helm search repo` geprüft ist. Das frühere `minio`-Chart ist mit dem Wechsel auf Garage entfallen.
 
 ### Externe Hosts, Namen und ForwardAuth
 
@@ -179,7 +179,7 @@ leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
   `GET /heartbeat?station=<name>` → Lebenszeichen des Pi, `GET /metrics` → Prometheus-Metriken. Ein Hintergrund-Thread prüft
   periodisch, ob ein Standort länger als `HEARTBEAT_TIMEOUT_SECONDS` keinen Heartbeat gesendet hat, und meldet das per ntfy (kein
   Zammad-Ticket, [30010](../3-apps-workloads/30010-alamos-apager.md)). Der Timeout soll **deutlich über dem Heartbeat-Intervall** des
-  Pi-Timers liegen (`alamos_kiosk_heartbeat_interval`), damit ein einzelner verpasster Ping keinen Fehlalarm auslöst.
+  Pi-Timers liegen (Timer der Rolle `banana_pi_kiosk`), damit ein einzelner verpasster Ping keinen Fehlalarm auslöst.
 - **`/metrics`** exportiert je Standort den Zeitstempel der letzten erfolgreichen `/start`-Anfrage (= der Kiosk-Browser hat die echte
   AMweb-URL tatsächlich angefragt) und des letzten Heartbeats. Genutzt vom n8n-Workflow „Banana-Pi-Down → Zammad-Ticket“, um im Ticket zu
   zeigen, wann der Standort zuletzt erfolgreich war ([30020](../../capulus-ansible/3-apps-workloads/30020-vereinsheim-alarmmonitor.md)). Es wird
@@ -205,15 +205,16 @@ leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
   n8n-Seite spiegelt das über `argocd_network_policy_extra_ingress → n8n` in `capulus-ansible/roles/argocd/defaults/main.yml`, sonst blockt
   n8ns eigene verfeinerte Policy den Namespace weiterhin ([d0030](../d-sicherheit/d0030-network-policies.md), Schritt 2).
 
-### argo-workflows und minio
+### argo-workflows und garage
 
 - **Kaniko ist entfernt (2026-10-18).** Das WorkflowTemplate `kaniko-build-push` lief mit `gcr.io/kaniko-project/executor` (zuletzt auf `v1.24.0` fixiert, gleicher Digest wie `latest`); das kaniko-Projekt von Google ist archiviert, der Scan zeigte 5 CRITICAL / rund 150 HIGH, und `build-images.yml` hat das Template ersetzt. Zuletzt lief es vor rund 61 Tagen. Der alte Docker-Config-Secret `ghcr-push` ist übrig (siehe [f0000](../f-cicd-automatisierung/f0000-argo-workflows.md)).
 
 - **`clusterWorkflowTemplates.enabled: false` für Server und Controller.** Mit `singleNamespace: true` legt das Chart (2.0.13) zwar die ClusterRoleBindings `argo-workflows-server-cluster-template` und `argo-workflows-workflow-controller-cluster-template` an, aber nicht die dazugehörigen ClusterRoles (deren Template verlangt `not singleNamespace`). Die Bindings zeigten ins Leere, und jede künftig angelegte ClusterRole mit diesem Namen hätte sofort Rechte an die beiden ServiceAccounts vergeben. Es gibt keine `ClusterWorkflowTemplate` im Cluster, die Funktion wird nicht gebraucht; wer sie später nutzen will, muss `singleNamespace` auf `false` stellen und beide Schalter wieder einschalten.
 
 - **argo-workflows:** Controller und Server sind auf den Release-Namespace beschränkt (einfacher und sicherer als cluster-weit für ein
-  Ein-Nutzer-Heim-CI). HTTP im Klartext, TLS endet bzw. entfällt hinter Traefik im LAN. Artefakt-Repository und Log-Archiv liegen auf MinIO
-  (cluster-intern), die Zugangsdaten kommen aus dem Secret `argo-artifacts-s3` und **müssen den MinIO-Root-Zugangsdaten entsprechen**.
+  Ein-Nutzer-Heim-CI). HTTP im Klartext, TLS endet bzw. entfällt hinter Traefik im LAN. Artefakt-Repository und Log-Archiv liegen auf Garage
+  (cluster-intern, `region: garage`), die Zugangsdaten kommen aus dem Secret `argo-artifacts-s3` und **müssen dem Key in `garage-secrets`
+  entsprechen** (beide aus einem Lauf von `scripts/seal-garage.sh`).
   Eine ClusterRole erlaubt dem `argo-workflow`-ServiceAccount, Pods und
   Workloads in allen Namespaces zu lesen, zu skalieren und zu überwachen, ausschließlich vom Workflow `nightly-pod-maintenance` genutzt.
 - **minio:** Der Chart-Default für `replicas` ist 16 (verteilt), im Standalone-Betrieb muss das überschrieben werden, damit Scheduling und
