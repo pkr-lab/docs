@@ -26,17 +26,17 @@ Ein Commit-Hook prüft Conventional Commits (`.githooks/commit-msg`, aktivieren 
 
 - Reines SwiftUI, keine Drittbibliotheken, kein Swift Package.
 - **MVVM light:** Ansichten beobachten `DashboardViewModel.shared` und `PowerViewModel.shared` (Singleton, `@MainActor`, `ObservableObject`). Ansichten des Alltag-Modus halten ihren Zustand selbst in `@State` und rufen die Clients direkt.
-- **Clients** sind einfache Klassen mit `URLSession` und `async/await`. `HomeserverAPIClient` und `RemoteWolAgentClient` nutzen `MTLSDelegate` und verpacken `dataTask` in `withCheckedThrowingContinuation`.
+- **Clients** sind einfache Klassen mit `async/await` und je einer geteilten Instanz (`.shared`). Die gemeinsame Netzwerk-Basis steht in `Utilities/HTTPSupport.swift` (`HomeserverHTTP`): `session` mit `MTLSDelegate` für `carplay-api` und den WoL-Agent, `publicSession` für Wetter, Pegel, Tankerkönig und News (beide mit `Constants.requestTimeout`), der Continuation-Wrapper um `dataTask`, die Statusprüfung (200 bis 299) und das Token aus dem Keychain (fehlt es: `APIError.missingToken`).
 - **Modelle** sind `Codable` und decodieren tolerant (Standardwerte für fehlende Listen, Rückfallwerte für unbekannte Enum-Strings).
 - Adressen und feste Werte stehen zentral in `Utilities/Constants.swift`.
 
 ### Neuen Tab oder neue Datenquelle ergänzen
 
 1. Modell in `Models/` (Codable, tolerant).
-2. Client in `Services/` (für `*.homeserver`-Hosts mit `MTLSDelegate`, sonst Standard-Session).
-3. Ansicht in `Views/` mit `ScreenBackground`, `SectionCard` aus `Theme.swift`, Fehlertext als rote Zeile.
+2. Client in `Services/` mit `static let shared` (für `*.homeserver`-Hosts `HomeserverHTTP.session`, sonst `HomeserverHTTP.publicSession`).
+3. Ansicht in `Views/` mit `ScreenBackground`, `SectionCard`, `glassTile()`, `StatusDot` und `NoDataText` aus `Theme.swift`, Fehlertext als rote Zeile.
 4. Tab in `RootTabView.swift` dem passenden Modus zuordnen.
-5. Neue Hosts oder Schlüssel in `Constants.swift`. Neue Geheimnisse als eigenes Konto in `Constants.Keychain` und in `KeychainService` und `SettingsView`.
+5. Neue Hosts oder Schlüssel in `Constants.swift`. Neue Geheimnisse als eigenes Konto in `Constants.Keychain`, in `KeychainService` und als weiterer `KeychainSecretSection` in `SettingsView`.
 6. Standort- oder andere Berechtigungen in `project.yml` unter `info.properties`.
 7. Seite hier ergänzen, mit Fehlertabelle.
 
@@ -75,4 +75,4 @@ Renovate (`renovate.json`) läuft montags, pinnt GitHub-Actions auf Digests und 
 
 ## Release
 
-Die Marketing-Version in `project.yml` (`MARKETING_VERSION`) wird getrennt von den Repo-Releases gepflegt. Eine signierte `.ipa` entsteht nicht in der CI. Der Build für TestFlight läuft lokal in Xcode. Siehe [Releases](releases.md).
+Die Marketing-Version setzt das Build-Skript „Version aus Git-Tag“ aus dem letzten Release-Tag, `MARKETING_VERSION` in `project.yml` ist nur der Rückfallwert. Eine signierte `.ipa` entsteht nicht in der CI. Der Build für TestFlight läuft lokal in Xcode. Siehe [Releases](releases.md).

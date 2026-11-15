@@ -27,6 +27,9 @@ Die App hat keine Konfigurationsdatei und keine Feature-Flags. Alle Adressen und
 | `News.tagesschauURL`, `heiseFeedURL`, `weltFeedURL` | Tagesschau-API, Heise-Atom, WELT-RSS | Nachrichtenquellen |
 | `News.maxSummaryLength` | 160 | Zusammenfassung wird gekürzt |
 | `Keychain.service` | `com.yourname.homeserver-dashboard` | Dienstname aller Keychain-Einträge |
+| `timeZoneIdentifier`, `timeZone` | `Europe/Berlin` | Zeitzone für Open-Meteo und die Datumsformate |
+| `locationPurposeKey` | `TankstellenSuche` | Schlüssel in `NSLocationTemporaryUsageDescriptionDictionary` (`project.yml`) für die genaue Standortfreigabe |
+| `HostID.homeserver`, `controlPlane1`, `worker1` | `homeserver`, `controlplane-1`, `worker-1` | Host-IDs aus dem Dashboard, die die Steuerung für den Online-Status nutzt |
 
 Die Host-Karten der Übersicht (Homeserver, NAS, ControlPlane-1, Worker 1) werden nicht in der App festgelegt, sondern vom Backend geliefert (`config.hosts` in den Helm-Values von `carplay-api`, siehe [carplay-api: Konfiguration](../capulus-core/3-apps-workloads/300d0-carplay-api.md#konfiguration-valuesyaml)). Die App zeigt nur die Hosts, die online sind.
 
@@ -50,7 +53,7 @@ Das Einstellungs-Sheet (Zahnrad) öffnen nur die Tabs **Steuerung** und **Tankst
 
 Die App hat keine App-Transport-Security-Ausnahme: Jede Anfrage muss HTTPS sein. Traefik leitet HTTP global auf HTTPS um und liefert `*.tech.homeserver` und `*.prod.homeserver` mit Zertifikaten einer privaten Root-CA aus ([Internes TLS](../capulus-core/d-sicherheit/d0040-internal-tls.md)).
 
-Für alle Hosts mit Endung `.homeserver` und für `100.123.214.4` validiert `MTLSDelegate` das Serverzertifikat **nur** gegen die mitgelieferte Root-CA `homeserver-root-ca.pem` (`SecTrustSetAnchorCertificates` plus `SecTrustSetAnchorCertificatesOnly`), nicht gegen den Trust Store des Geräts. Ein Zertifikat einer anderen CA wird abgelehnt, auch wenn der Nutzer sie auf dem iPhone installiert hat. Ein Konfigurationsprofil mit der Root-CA auf dem Gerät ist für diese App nicht mehr nötig. Fehlt die Datei im Bundle, schlagen alle gepinnten Anfragen fehl (fail closed). Alle anderen Hosts (Wetter, News, Tankpreise) nutzen den Standard.
+Für alle Hosts mit Endung `.homeserver` und für den Host aus `wolAgentBaseURL` (`100.123.214.4`) validiert `MTLSDelegate` das Serverzertifikat **nur** gegen die mitgelieferte Root-CA `homeserver-root-ca.pem` (`SecTrustSetAnchorCertificates` plus `SecTrustSetAnchorCertificatesOnly`), nicht gegen den Trust Store des Geräts. Ein Zertifikat einer anderen CA wird abgelehnt, auch wenn der Nutzer sie auf dem iPhone installiert hat. Ein Konfigurationsprofil mit der Root-CA auf dem Gerät ist für diese App nicht mehr nötig. Fehlt die Datei im Bundle, schlagen alle gepinnten Anfragen fehl (fail closed). Alle anderen Hosts (Wetter, News, Tankpreise) nutzen den Standard.
 
 Die Root-CA läuft 2036-08-10 ab. Bei einem Wechsel muss `Resources/homeserver-root-ca.pem` ersetzt und die App neu gebaut werden. Der CI-Job `ca-checksum` vergleicht die Datei mit `pki/homeserver-root-ca.pem` in capulus-core und schlägt bei Abweichung fehl. Details: [Verbindung und Sicherheit](verbindung-und-sicherheit.md).
 
@@ -60,9 +63,10 @@ Die Root-CA läuft 2036-08-10 ab. Bei einem Wechsel muss `Resources/homeserver-r
 
 | Schlüssel | Wert | Wirkung |
 |---|---|---|
-| `deploymentTarget.iOS` | `15.0` | Mindestversion |
+| `options.deploymentTarget.iOS` | `15.0` | Mindestversion (nur hier gesetzt, gilt für das Target mit) |
 | `PRODUCT_BUNDLE_IDENTIFIER` | `com.yourname.homeserver-dashboard` | Platzhalter, anpassen |
-| `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` | `1.0.0`, `1` | wird getrennt von den Repo-Releases gepflegt |
+| `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` | `1.0.0`, `1` | Rückfallwert; das Build-Skript „Version aus Git-Tag“ setzt `CFBundleShortVersionString` im gebauten `Info.plist` auf den letzten Tag `vX.Y.Z` (ohne `v`) |
+| `ENABLE_USER_SCRIPT_SANDBOXING` | `false` | nötig, damit das Versions-Skript `git` und das gebaute `Info.plist` erreicht |
 | `TARGETED_DEVICE_FAMILY` | `1,2` | iPhone und iPad |
 | `UIRequiresFullScreen` | `true` | kein Split View auf dem iPad |
 | `UISupportedInterfaceOrientations` | iPhone: Hochformat. iPad: alle vier | |

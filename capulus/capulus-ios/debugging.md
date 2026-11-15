@@ -7,9 +7,9 @@ Zentrale Seite für die iOS-App. Funktionsspezifisches steht auf den Seiten [Üb
 ## Wie die App Fehler behandelt
 
 - Es gibt **keine Logs** in der App: kein `print`, kein `os.Logger`, kein Debug-Schalter. Es gibt kein Log-Level, das man hochdrehen könnte.
-- Fehler werden je Ansicht als rote Zeile angezeigt (Steuerung, Alltag-Modus, Einstellungen) oder stumm verworfen: Die Übersicht und die Alerts zeigen **keine** Fehlermeldung, nur den gelben Hinweis „Homeserver nicht erreichbar — zeige letzten bekannten Stand.“. Der Abruf der Update-Liste verwirft Fehler ohne Spur.
+- Fehler werden je Ansicht als rote Zeile angezeigt (Steuerung, Alltag-Modus, Einstellungen). Die Übersicht zeigt den Fehlertext im gelben Hinweis „Homeserver nicht erreichbar …“, Fehler der Update-Liste stehen in der Karte „Updates“.
 - Der Fehlertext stammt aus `LocalizedError.errorDescription` der eigenen Typen oder aus dem Systemtext von `URLError`.
-- Unbekannte Werte in Antworten werden tolerant behandelt (Alert-Stufe → `info`, Monitor-Status → `down`, fehlende Listen → leer). Fehlen Pflichtfelder (`status`, `updated_at` im Dashboard), schlägt das Decodieren fehl.
+- Unbekannte oder fehlende Werte werden tolerant behandelt (Alert-Stufe → `info`, Monitor-Status → `unknown`, fehlende Listen → leer, fehlende Felder einzelner Einträge → Standardwerte). Das Decodieren scheitert nur noch bei falschen Typen.
 
 ---
 
@@ -19,11 +19,12 @@ Zentrale Seite für die iOS-App. Funktionsspezifisches steht auf den Seiten [Üb
 
 | Meldung | Ursache | Lösung |
 |---|---|---|
-| `carplay-api returned HTTP <n>` | Statuscode ≠ 200 ohne `error` im Body | Code deuten: 401 Token, 403 Allowlist, 429 Rate-Limit, 502 power-agent, 503 fehlendes Secret ([carplay-api](../capulus-core/3-apps-workloads/300d0-carplay-api.md#fehlerbehebung)) |
+| `Server antwortete mit HTTP <n>` | Statuscode außerhalb 200–299 ohne `error` im Body | Code deuten: 401 Token, 403 Allowlist, 429 Rate-Limit, 502 power-agent, 503 fehlendes Secret ([carplay-api](../capulus-core/3-apps-workloads/300d0-carplay-api.md#fehlerbehebung)) |
 | `<Text des Servers>` (aus JSON `{"error": "…"}`) | Backend lehnt die Anfrage ab, zum Beispiel falscher Bestätigungscode | Text lesen, Ursache im Backend ([Steuerung](steuerung.md#debugging-und-fehlersuche)) |
-| `Could not parse response: <Detail>` | Antwort ist kein erwartetes JSON (Pflichtfeld fehlt oder anderer Typ) | Antwort mit `curl` prüfen, App und Backend-Version abgleichen |
-| `No API token stored in Keychain — open Settings to add one.` | Token des WoL-Agents fehlt (gilt nur dort) | Einstellungen → Vereinsheim-WoL-Agent-Token |
-| *(keine App-Meldung)* Statuscode 401 | Token von `carplay-api` fehlt oder falsch. Ohne Token sendet die App die Anfrage ohne Header | Einstellungen → carplay-api Token |
+| `Antwort konnte nicht gelesen werden: <Detail>` | Antwort ist kein erwartetes JSON (anderer Typ) | Antwort mit `curl` prüfen, App und Backend-Version abgleichen |
+| `Kein Token im Schlüsselbund gespeichert, bitte in den Einstellungen eintragen.` | Token von `carplay-api` bzw. des WoL-Agents fehlt; die App sendet dann keine Anfrage | Einstellungen → carplay-api Token bzw. Vereinsheim-WoL-Agent-Token |
+| `Server antwortete mit HTTP 401` | Token von `carplay-api` falsch | Einstellungen → carplay-api Token |
+| `Schlüsselbund-Fehler: <Text>` | Lesen, Speichern oder Löschen im Keychain scheiterte (z. B. Gerät gesperrt) | Gerät entsperren, erneut versuchen |
 | iOS-Systemtext „cancelled“ / „abgebrochen“ | Pinning lehnt das Zertifikat ab | [Verbindung und Sicherheit](verbindung-und-sicherheit.md#debugging-und-fehlersuche) |
 | iOS-Systemtext „The request timed out.“ | kein Antwort in 10 Sekunden | VPN, Netz, Cluster prüfen |
 | iOS-Systemtext „A server with the specified hostname could not be found.“ | Name nicht auflösbar | Tailscale, DNS |
