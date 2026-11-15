@@ -6,7 +6,7 @@ Aufruf:  scripts/check-doc-links.py            (alle *.md des Repos, die nicht i
 
 Geprueft wird nur, was lokal aufloesbar ist: Dateien/Ordner und Ueberschriften-Anker
 (Slug-Regeln wie auf GitHub). Externe URLs (http, https, mailto) werden nicht abgerufen.
-Exit-Code 1, wenn ein Link ins Leere zeigt. Beschreibung: capulus-core/f-cicd-automatisierung/f0070-ci-lint.md
+Exit-Code 1, wenn ein Link ins Leere zeigt. Beschreibung: capulus/capulus-core/f-cicd-automatisierung/f0070-ci-lint.md
 """
 import functools
 import os
