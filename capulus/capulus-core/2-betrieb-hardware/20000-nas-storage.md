@@ -178,7 +178,8 @@ Metrik-Namen (`smartctl_device_smart_status`, `smartctl_device_temperature`,
 
 Aktuell auf `nas`: `n8n`, `paperless-ngx` (5× — data/media/consume/export/
 redis), `wikijs` (postgresql), `zammad` (nur redis, nicht die primary DB —
-siehe unten) und `minio` — Stand der Migration; `mealie` ist inzwischen entfernt.
+siehe unten) — Stand der Migration; `mealie` ist inzwischen entfernt. `minio` lag ebenfalls auf `nas` und ist durch
+Garage auf `local-path` ersetzt ([60040](../6-hintergruende/60040-helm-charts-tech.md#argo-workflows-und-garage)), das PV bleibt bis zum Aufräumen (`Retain`).
 
 **Nicht (mehr) auf `nas`, bewusst auf `local-path`:** `monitoring` (vmsingle)
 und `uptime-kuma` wurden versuchsweise migriert, dann aber zurück auf
@@ -277,9 +278,6 @@ argocd app set $NS --sync-policy automated --auto-prune --self-heal
 > **Hinweis VictoriaMetrics (`vmsingle`):** Der Operator verwaltet Deployment
 > + PVC selbst; Namen vorab mit `kubectl -n monitoring get pvc,deploy`
 > prüfen (typischerweise `vmsingle-<release>-victoria-metrics-k8s-stack`).
->
-> **Hinweis MinIO:** PVC- und Deployment-Name sind im Standalone-Modus
-> üblicherweise schlicht `minio` (`kubectl -n minio get pvc,deploy`).
 
 ---
 

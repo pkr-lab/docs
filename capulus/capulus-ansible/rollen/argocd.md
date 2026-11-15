@@ -26,7 +26,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `argocd_apply_network_policies` | `true` | – |
 | `argocd_network_policy_refined_namespaces` | `[alert-caller, n8n, alamos-apager, alamos-relay, carplay-api, github-release-watcher, i…` | – |
 | `argocd_network_policy_excluded_apps` | `[]` | – |
-| `argocd_network_policy_extra_ingress` | `{minio: [argo-workflows], monitoring: [carplay-api, n8n, argo-workflows], n8n: [alamos-…` | – |
+| `argocd_network_policy_extra_ingress` | `{garage: [argo-workflows], monitoring: [carplay-api, n8n, argo-workflows], n8n: [alamos-…` | – |
 
 ## Ablauf
 
