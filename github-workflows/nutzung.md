@@ -50,5 +50,8 @@ Im Aufrufer `with: image: <name>` setzen. Voraussetzung ist ein `Dockerfile` im 
 | Kein Release trotz `feat`-Commit | Kopfzeile prüfen (`feat:` kleingeschrieben, Doppelpunkt und Leerzeichen); der Commit muss nach dem letzten Tag liegen |
 | 403 beim Push des CHANGELOG-Commits | `main` verbietet Pushes ohne Pull Request. Für GitHub Actions eine Ausnahme im Ruleset eintragen oder das Ruleset anders zuschneiden |
 | Release-Commit löst weitere Workflows aus | `[skip ci]` steht in der Nachricht; Workflows auf `push` werden dann übersprungen |
+| commitlint: `type may not be empty`, `subject may not be empty` bei `feat!: …` | Aufrufer nutzt eine Version vor dem eigenen Kopfzeilen-Parser; per Renovate auf die aktuelle Version heben |
+| Warnung „Das Repo hat eine eigene Release-Konfiguration“ | Im Repo liegt `.releaserc*`, `release.config.*` oder ein `release`-Abschnitt in `package.json`; der zentrale Workflow ersetzt sie. Datei bzw. Abschnitt entfernen |
+| `released=false` nach Re-Run | gewollt: Der Tag existierte schon vor dem Lauf, das Image wird nicht erneut gebaut |
 | actionlint meldet SC2129 | mehrere `echo >> "$GITHUB_OUTPUT"` in einer `{ …; } >> "$GITHUB_OUTPUT"`-Gruppe zusammenfassen |
 | Aufrufer meldet „workflow was not found“ | SHA oder Pfad falsch; `.github/workflows/release.yml@<sha>` aus dem Repo `pkr-lab/.github` verwenden |
