@@ -28,6 +28,8 @@ Repository: [pkr-lab/cubi](https://github.com/pkr-lab/cubi)
 | Tokens | `cubi tokens` (`token`) | Alter, Ablauf und Rotation der Tokens aus dem Token-Register von capulus-core | [tokens.md](tokens.md) |
 | Login | `cubi login` (`auth`) | Login-Status für ArgoCD, GitHub und Tailscale samt Login-Befehlen | [login.md](login.md) |
 
+Zusätzlich gibt es [cubi-desktop](desktop.md), eine Desktop-Oberfläche in Rust mit allen Bereichen von cubi. Dazu kommen lokale CI-Checks vor dem `git push`, nach denen Push oder PR per Button möglich sind.
+
 Jeder Bereich lässt sich direkt öffnen, zum Beispiel `cubi argocd` oder `cubi login`. Ohne Argument startet das Hauptmenü, `cubi --help` listet die Bereiche. Ein unbekannter Bereich beendet cubi mit Exit-Code 2.
 
 Die ArgoCD-Ansicht sortiert Apps mit Problemen nach oben und lädt die Tabelle automatisch neu:
@@ -100,6 +102,7 @@ cubi bleibt immer in der normalen Terminal-Ansicht: kein Vollbild, kein Löschen
 | [Debugging und Fehlersuche](debugging.md) | Fehlermeldungen, Checkliste, lokales Debugging |
 | [Entwicklung](entwicklung.md) | Tests, neuen Bereich ergänzen |
 | [Releases](releases.md) | Release-Prozess |
+| [cubi-desktop](desktop.md) | Desktop-Oberfläche: alle Bereiche plus CI-Checks vor dem Push |
 
 
 ## Fehlersuche
