@@ -70,9 +70,9 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Reload systemd
-- Restart xibosignage sync timer
-- Hinweis auf nötigen Reboot nach EDID-Erzwingung
+- systemd für xibo-kiosk neu laden
+- sync-timer von xibosignage neu starten
+- hinweis auf nötigen reboot nach edid-erzwingung
 
 ## Templates
 

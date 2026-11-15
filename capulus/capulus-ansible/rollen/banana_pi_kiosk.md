@@ -40,18 +40,18 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 ## Ablauf
 
 1. Sicherstellen dass banana_pi_kiosk_station gesetzt ist
-2. Sicherstellen dass banana_pi_kiosk_fallback_url gesetzt und entschluesselt ist
+2. Sicherstellen dass banana_pi_kiosk_fallback_url gesetzt und entschlüsselt ist
 3. Kiosk-Pakete installieren (Debian-Paketnamen, nicht Raspbian)
 4. homeserver-root-ca verteilen (Rolle [`homeserver_ca`](homeserver_ca.md))
 5. NSS-Datenbank-Verzeichnis des Kiosk-Users anlegen
-6. Pruefen ob Homeserver-Root-CA bereits in NSS-Datenbank des Kiosk-Users vertraut ist
+6. Prüfen ob Homeserver-Root-CA bereits in NSS-Datenbank des Kiosk-Users vertraut ist
 7. Homeserver-Root-CA in NSS-Datenbank des Kiosk-Users importieren
 8. lightdm stoppen und deaktivieren (falls vorhanden)
-9. Verzeichnis fuer getty@tty1-Drop-in anlegen
-10. Autologin-Drop-in fuer getty@tty1 deployen
-11. .bash_profile von {{ banana_pi_kiosk_user }} um automatischen startx-Aufruf ergaenzen
+9. Verzeichnis für getty@tty1-Drop-in anlegen
+10. Autologin-Drop-in für getty@tty1 deployen
+11. .bash_profile von {{ banana_pi_kiosk_user }} um automatischen startx-Aufruf ergänzen
 12. .xinitrc deployen
-13. konfigurationsverzeichnis fuer den kiosk-supervisor anlegen (`/etc/banana-pi-kiosk`, `0750`)
+13. konfigurationsverzeichnis für den kiosk-supervisor anlegen (`/etc/banana-pi-kiosk`, `0750`)
 14. fallback-url des kiosk-supervisors ablegen (`supervisor.env`, `0640`, `no_log`, ohne Diff)
 15. Kiosk-Supervisor-Skript deployen (liest die Fallback-URL aus `supervisor.env`)
 16. Screenshot-Skript deployen
@@ -82,11 +82,11 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Handler
 
-- Homeserver-CA-Vertrauensspeicher aktualisieren
-- Restart banana-pi heartbeat timer
-- Reload getty@tty1
-- Restart banana-pi daily reboot timer
-- Restart banana-pi wol agent
+- system-vertrauensspeicher aktualisieren (Rolle [`homeserver_ca`](homeserver_ca.md))
+- heartbeat-timer des banana pi neu starten
+- getty@tty1 neu laden
+- timer für den täglichen reboot des banana pi neu starten
+- wol-agent des banana pi neu starten
 
 ## Templates
 

@@ -27,38 +27,38 @@ Die Voraussetzungen (`tasks/prerequisites.yml`: nfs-common, Hostname, Swap, Modu
 ## Ablauf
 
 1. nfs-common installieren
-2. Set system hostname
-3. Update /etc/hosts with new hostname
+2. hostnamen setzen
+3. neuen hostnamen in /etc/hosts eintragen
 4. kubernetes-voraussetzungen aus der rolle common übernehmen (`common/tasks/k8s_prerequisites.yml`)
-5. Allow kubelet API (port 10250) from k3s server
+5. kubelet-api (port 10250) vom k3s-server erlauben
 6. flannel-vxlan (udp 8472) nur aus dem lan erlauben
 7. offene regeln für flannel-vxlan und die api (6443) auf dem agent entfernen
-8. Allow all traffic from k3s pod CIDR
-9. Allow all traffic from k3s service CIDR
+8. gesamten verkehr aus dem pod-cidr von k3s erlauben
+9. gesamten verkehr aus dem service-cidr von k3s erlauben
 10. infrastruktur-hosts vollständig erlauben
 11. veraltete offene regeln entfernen
 12. ssh aus dem lan erlauben
 13. tailscale-wireguard erlauben
 14. bridge für virtuelle maschinen weiterleiten
 15. ufw aktivieren
-16. Read k3s node-token from server
-17. Set k3s node-token fact
-18. Create /etc/rancher/k3s directory
-19. Template k3s agent configuration
-20. Check if k3s is already installed
-21. Get current k3s version (if installed)
-22. Decide whether to (re)run the k3s installer
-23. Download k3s install script
-24. Install or upgrade k3s agent
-25. Remove k3s install script
-26. Enable and start k3s-agent service
-27. Wait for {{ k3s_agent_hostname }} node to become Ready
-28. Display cluster node status
-29. Show all cluster nodes
+16. node-token von k3s vom server lesen
+17. node-token von k3s als fakt setzen
+18. verzeichnis /etc/rancher/k3s anlegen
+19. k3s-agent-konfiguration templaten
+20. prüfen ob k3s bereits installiert ist
+21. aktuelle k3s-version lesen (falls installiert)
+22. entscheiden ob der k3s-installer (erneut) laufen muss
+23. k3s-installationsskript herunterladen
+24. k3s-agent installieren oder aktualisieren
+25. k3s-installationsskript entfernen
+26. dienst k3s-agent aktivieren und starten
+27. warten bis der node {{ k3s_agent_hostname }} ready ist
+28. node-status des clusters lesen
+29. alle nodes des clusters anzeigen
 
 ## Handler
 
-- Restart k3s-agent
+- k3s-agent neu starten
 
 ## Templates
 

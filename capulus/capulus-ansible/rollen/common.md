@@ -23,56 +23,56 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Set system hostname
-2. Update /etc/hosts with hostname
-3. Update apt cache
-4. Upgrade all packages to latest (dist-upgrade)
-5. Install required system packages
-6. Enable unattended-upgrades (security patches between Ansible runs)
-7. Configure unattended-upgrades to also pull "updates" and clean up
-8. Ensure unattended-upgrades service is enabled
-9. Set system timezone
-10. Ensure chrony is enabled and running
+1. hostnamen setzen
+2. hostnamen in /etc/hosts eintragen
+3. apt-cache aktualisieren
+4. alle pakete aktualisieren (dist-upgrade)
+5. benötigte systempakete installieren
+6. unattended-upgrades einschalten (sicherheitsupdates zwischen den ansible-läufen)
+7. unattended-upgrades auch für "updates" und zum aufräumen einrichten
+8. sicherstellen dass der dienst unattended-upgrades aktiviert ist
+9. zeitzone setzen
+10. chrony aktivieren und starten
 11. kubernetes-voraussetzungen herstellen (`tasks/k8s_prerequisites.yml`: Swap aus und maskiert, Kernel-Module `br_netfilter`/`overlay`, sysctl in `/etc/sysctl.d/99-k3s.conf`; auch von `k3s_agent` genutzt)
-12. Allow SSH (port 22) before any other firewall changes
-13. Set UFW default incoming policy to deny
-14. Set UFW default outgoing policy to allow
-15. Allow HTTP (port 80) for Traefik ingress
-16. Allow HTTPS (port 443)
+12. ssh (port 22) vor allen anderen firewall-änderungen erlauben
+13. ufw-standardrichtlinie für eingehenden verkehr auf deny setzen
+14. ufw-standardrichtlinie für ausgehenden verkehr auf allow setzen
+15. http (port 80) für den traefik-ingress erlauben
+16. https (port 443) erlauben
 17. k3s-api (6443) nur von den freigegebenen quellen erlauben
-18. Remove ArgoCD NodePort 30080 rules (NodePort entfällt, ArgoCD läuft über den Ingress)
-19. Remove unrestricted ArgoCD NodePort 30080 rule (manuell gesetzt, jetzt auf LAN/Tailnet begrenzt)
-20. Remove useless ArgoCD NodePort 30443 rule (Server spricht dort Klartext, kein TLS)
-21. Allow Tailscale WireGuard (UDP 41641)
+18. regeln für den argocd-nodeport 30080 entfernen (nodeport entfällt, argocd läuft über den ingress)
+19. offene regel für den argocd-nodeport 30080 entfernen (manuell gesetzt, jetzt auf lan/tailnet begrenzt)
+20. nutzlose regel für den argocd-nodeport 30443 entfernen (server spricht dort klartext, kein tls)
+21. tailscale-wireguard (udp 41641) erlauben
 22. flannel-vxlan (udp 8472) und kubelet (10250) nur aus dem lan erlauben
 23. offene k3s-regeln für alle quellen entfernen (6443, 10250, 8472)
-24. Allow all traffic from k3s pod CIDR
-25. Allow all traffic from k3s service CIDR
-26. Allow all traffic from local LAN subnet
-27. Allow all traffic from Tailscale network
+24. gesamten verkehr aus dem pod-cidr von k3s erlauben
+25. gesamten verkehr aus dem service-cidr von k3s erlauben
+26. gesamten verkehr aus dem lokalen lan erlauben
+27. gesamten verkehr aus dem tailscale-netz erlauben
 28. infrastruktur-hosts mit vollzugriff erlauben
 29. dienste für das lan freigeben
 30. pauschale lan-regel entfernen
 31. pauschale tailnet-regel entfernen
-32. Enable UFW
-33. Verify UFW is active
-34. Display UFW status
-35. Configure static IP via Netplan
-36. Find existing Netplan configs
-37. Remove existing Netplan DHCP configs
-38. Deploy static Netplan configuration
-39. Apply Netplan configuration (connection will briefly drop)
-40. Wait for server to be reachable at the new static IP
-41. Check whether a reboot is required (kernel/libc updates)
-42. Reboot the server because /var/run/reboot-required is set
-43. Reboot required but auto_reboot_if_required is false — warn the operator
-44. Reboot required but Semaphore is running this task — warn instead of self-killing
+32. ufw aktivieren
+33. prüfen dass ufw aktiv ist
+34. ufw-status anzeigen
+35. statische ip per netplan einrichten
+36. vorhandene netplan-konfigurationen suchen
+37. vorhandene netplan-dhcp-konfigurationen entfernen
+38. statische netplan-konfiguration ablegen
+39. netplan-konfiguration anwenden (verbindung bricht kurz ab)
+40. warten bis der server unter der neuen statischen ip erreichbar ist
+41. prüfen ob ein reboot nötig ist (kernel-/libc-updates)
+42. server neu starten, weil /var/run/reboot-required gesetzt ist
+43. reboot nötig, aber auto_reboot_if_required ist false — betreiber warnen
+44. reboot nötig, aber semaphore führt diesen task aus — warnen statt sich selbst abzuschießen
 45. nicht benötigte dienste stoppen und deaktivieren
 
 ## Handler
 
-- Restart chrony
-- Reload sysctl
+- chrony neu starten
+- sysctl neu laden
 
 ## Templates
 

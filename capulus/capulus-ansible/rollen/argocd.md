@@ -30,36 +30,36 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 
 ## Ablauf
 
-1. Create argocd namespace (idempotent)
-2. Add Argo Helm repository
-3. Update Helm repositories
-4. Template ArgoCD Helm values to /tmp
-5. Create ingress TLS secret
-6. Install or upgrade ArgoCD via Helm
-7. Display Helm release status
-8. Wait for ArgoCD server deployment to be available
-9. Wait for all ArgoCD pods to be ready
-10. Check if initial admin secret exists
-11. Get ArgoCD initial admin password
-12. Display ArgoCD initial credentials (password redacted)
-13. Display ArgoCD initial credentials (password shown)
-14. Template bootstrap AppProjects
-15. Apply bootstrap AppProjects
-16. Remove legacy platform/workloads ApplicationSets (ENTW layout)
-17. Template bootstrap ApplicationSet
-18. Apply bootstrap ApplicationSet
-19. Remove legacy platform/workloads AppProjects (ENTW layout)
-20. Display ApplicationSet status
-21. Wait for ApplicationSets to be processed
-22. List created Applications
-23. Display Applications
-24. Label platform-tier namespaces with security-tier=platform
-25. Label workloads-tier namespaces with security-tier=workload
-26. Get existing namespaces
-27. Set existing namespaces fact
-28. Template tier-default-ingress NetworkPolicies
-29. Apply tier-default-ingress NetworkPolicies
-30. Remove temporary Helm values file
+1. argocd-namespace anlegen (idempotent)
+2. argo-helm-repository hinzufügen
+3. helm-repositories aktualisieren
+4. helm-werte für argocd nach /tmp templaten
+5. tls-secret für den ingress anlegen
+6. argocd per helm installieren oder aktualisieren
+7. status des helm-releases anzeigen
+8. warten bis das argocd-server-deployment verfügbar ist
+9. warten bis alle argocd-pods bereit sind
+10. prüfen ob das initiale admin-secret existiert
+11. initiales argocd-admin-passwort lesen
+12. initiale argocd-zugangsdaten anzeigen (passwort verborgen)
+13. initiale argocd-zugangsdaten anzeigen (passwort sichtbar)
+14. bootstrap-appprojects templaten
+15. bootstrap-appprojects anwenden
+16. alte applicationsets platform/workloads entfernen (entw-layout)
+17. bootstrap-applicationset templaten
+18. bootstrap-applicationset anwenden
+19. alte appprojects platform/workloads entfernen (entw-layout)
+20. status der applicationsets anzeigen
+21. warten bis die applicationsets verarbeitet sind
+22. angelegte applications auflisten
+23. applications anzeigen
+24. namespaces der platform-stufe mit security-tier=platform labeln
+25. namespaces der workloads-stufe mit security-tier=workload labeln
+26. vorhandene namespaces lesen
+27. vorhandene namespaces als fakt setzen
+28. networkpolicies tier-default-ingress templaten
+29. networkpolicies tier-default-ingress anwenden
+30. temporäre helm-wertedatei entfernen
 
 ## Templates
 
