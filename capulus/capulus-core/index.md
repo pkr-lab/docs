@@ -66,7 +66,7 @@ Die Hosts und Cluster selbst provisioniert [capulus-ansible](../capulus-ansible/
 <tr><td>Speicher</td><td><strong>UGREEN NAS (NFS)</strong></td><td>RAID1, StorageClasses <code>nas</code> und <code>immich-nas</code> für alle Cluster, restic-Backup auf USB-Platte</td></tr>
 <tr><td>Remote-Access</td><td><strong>Tailscale</strong></td><td>WireGuard-Mesh-VPN — keine Portfreigaben, keine öffentliche IP</td></tr>
 <tr><td>Externe Erreichbarkeit</td><td><strong>Cloudflare Tunnel</strong></td><td>Je Cluster ein Tunnel: ausgewählte Dienste öffentlich erreichbar, ohne VPN und ohne offene Ports</td></tr>
-<tr><td>CI/CD intern</td><td><strong>Argo Workflows + MinIO</strong></td><td>Private CI/CD-Pipeline + S3-Artifact-Store im Cluster</td></tr>
+<tr><td>CI/CD intern</td><td><strong>Argo Workflows + Garage</strong></td><td>Private CI/CD-Pipeline + S3-Artifact-Store im Cluster</td></tr>
 <tr><td>Ingress</td><td><strong>Traefik</strong> (k3s bundled)</td><td>HTTP/HTTPS-Routing, je Cluster eine eigene Instanz</td></tr>
 <tr><td>Provisioning</td><td><strong>Ansible</strong> (≥ 2.14)</td><td>Vollständig idempotent, Role-per-Concern, Vault für Secrets</td></tr>
 </tbody>
@@ -263,7 +263,7 @@ Neu hier? Der beste Einstieg ist der **[Architektur-Überblick](../capulus-ansib
 
 | Dokument | Inhalt |
 |---|---|
-| [Argo Workflows](f-cicd-automatisierung/f0000-argo-workflows.md) | Private CI/CD-Pipeline mit MinIO-Artifact-Store |
+| [Argo Workflows](f-cicd-automatisierung/f0000-argo-workflows.md) | Private CI/CD-Pipeline mit Garage-Artifact-Store |
 | [Renovate](f-cicd-automatisierung/f0020-renovate.md) | Automatische Update-PRs für Helm-Chart-Versionen und Image-Tags (Sicherheits-PRs kommen von Dependabot) |
 | [Release-Automatisierung](f-cicd-automatisierung/f0030-release-automation.md) | GitHub Release + Changelog bei jedem Merge auf `main` via semantic-release |
 | [GitHub Release Watcher](f-cicd-automatisierung/f0040-github-release-watcher.md) | Neue GitHub-Releases erkennen und per Zammad-Ticket eine E-Mail-Benachrichtigung auslösen |
@@ -329,7 +329,7 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [Zentrales Logging](3-apps-workloads/300j0-logging.md) | TECH | VictoriaLogs: journald aller Hosts und Pod-Logs an einem Ort |
 | [Headlamp](3-apps-workloads/300n0-headlamp.md) | TECH | Kubernetes-Dashboard im Browser, Anmeldung mit kurzlebigem Lese-Token |
 | [kubeseal-webgui](3-apps-workloads/300o0-kubeseal-webgui.md) | TECH | Secrets im Browser versiegeln (Zertifikat des TECH-Controllers) |
-| [MinIO](3-apps-workloads/300p0-minio.md) | TECH | S3-Speicher für Argo Workflows (Bucket `argo-artifacts`) |
+| [Garage](3-apps-workloads/300p0-garage.md) | TECH | S3-Speicher für Argo Workflows (Bucket `argo-artifacts`) |
 | [Monitoring](3-apps-workloads/300q0-monitoring.md) | TECH | VictoriaMetrics, Grafana, Alertmanager, Regeln, Fehlersuche |
 | [ticket-gate](3-apps-workloads/300r0-ticket-gate.md) | TECH | E-Mail-Bestätigung (6-stelliger Code) vor dem Ticketformular der Website, legt das Ticket erst danach in Zammad an |
 | [MDM für iPads](3-apps-workloads/300r0-mdm.md) | TECH | Eigener Apple-MDM-Server (NanoMDM, NanoDEP, SCEP) mit n8n-Automatisierung: Überblick, [Installation](3-apps-workloads/300s0-mdm-installation.md), [Apple-Setup](3-apps-workloads/300t0-mdm-apple-setup.md), [Automatisierung](3-apps-workloads/300u0-mdm-automatisierung.md), [Betrieb](3-apps-workloads/300v0-mdm-betrieb.md), [Sicherheit](3-apps-workloads/300w0-mdm-sicherheit.md) |
