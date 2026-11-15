@@ -154,8 +154,8 @@ dieselbe DB-Datei zerschießen:
 
 **Single-Writer/Standalone-Datenspeicher:**
 
-- minio (Standalone-Mode ignoriert `replicas` laut Chart-Kommentar —
-  echte HA bräuchte "distributed mode", nicht HPA)
+- garage (Single-Node-Modus mit `replication_factor = 1` und SQLite-Metadaten,
+  mehrere Replikas bräuchten ein Layout über mehrere Knoten, nicht HPA)
 - alle internen `postgresql`/`redis`-Deployments (immich, nextcloud,
   wikijs, zammad) — Single-Writer-Datenbanken, teils zusätzlich per
   `nodeAffinity` auf `local-path`-Storage gepinnt

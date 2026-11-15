@@ -49,7 +49,7 @@ flowchart TB
     subgraph TECH["TECH — homeserver (bare metal) + worker-0/-1"]
         direction LR
         T1["ArgoCD-Hub<br/>verwaltet TECH + PROD"]
-        T2["sealed-secrets · lldap<br/>monitoring · logging · pihole · minio<br/>argo-workflows · semaphore · headlamp"]
+        T2["sealed-secrets · lldap<br/>monitoring · logging · pihole · garage<br/>argo-workflows · semaphore · headlamp"]
         T3["n8n · zammad · vaultwarden · mediamtx<br/>alamos-* · carplay-api · uptime-kuma · pacman"]
     end
 
@@ -125,7 +125,7 @@ flowchart TB
         S4["ntfy<br/>+ Alert-Brücke"]
         S5["cloudflared · pihole<br/>coredns-custom · cert-manager"]
         S6["nas-storage<br/>immich-storage"]
-        S7["minio · argo-workflows<br/>semaphore · headlamp"]
+        S7["garage · argo-workflows<br/>semaphore · headlamp"]
     end
 
     subgraph L2["SCHICHT 2 — CLUSTER-PLATTFORM"]
@@ -197,7 +197,7 @@ flowchart LR
 
     CP --- AG0
     CP --- AG1
-    SC1 --> APPS["Nextcloud, Paperless, Wiki.js (PROD)<br/>Zammad, n8n, MinIO, Vaultwarden (TECH)"]
+    SC1 --> APPS["Nextcloud, Paperless, Wiki.js (PROD)<br/>Zammad, n8n, Vaultwarden (TECH)"]
     SC2 --> IMM["Immich (PROD)"]
 ```
 
@@ -271,8 +271,8 @@ Aufgaben und die Adressen.
 | `coredns-custom` | zusätzliche DNS-Zonen im Cluster | — |
 | `nas-storage` | NFS-Provisioner → StorageClass `nas` | — |
 | `immich-storage` | NFS-Provisioner → StorageClass `immich-nas` | — |
-| `minio` | S3-Speicher für Build-Artefakte | N · S |
-| `argo-workflows` | interne CI/CD-Pipelines, braucht MinIO | S |
+| `garage` | S3-Speicher für Build-Artefakte und Workflow-Logs (bis 2026-11 `minio`) | S |
+| `argo-workflows` | interne CI/CD-Pipelines, braucht Garage | S |
 | `semaphore` | Weboberfläche, die Ansible-Playbooks startet | L |
 | `headlamp` | Kubernetes-Dashboard im Browser | S |
 | `traefik-config` | Traefik-Zusatzkonfiguration (HelmChartConfig, Metrics-Scrape, TLSStore) | — |
@@ -323,7 +323,7 @@ flowchart TB
     IMSC["StorageClass immich-nas"]
     LP["StorageClass local-path"]
     CF["cloudflared<br/>je Cluster ein Tunnel"]
-    MIN["minio"]
+    MIN["garage"]
     NT["ntfy"]
     TR["Traefik"]
     LDAP["lldap"]
@@ -488,7 +488,7 @@ keinen eigenen Port, UI und API laufen über Traefik auf `:443`. Details je App:
 ## 10. Abhängigkeitsketten im Klartext
 
 **Speicher**
-- UGREEN NAS (RAID1) → NFS `/volume1` → `nas-storage` (in TECH **und** PROD) → StorageClass `nas` → Nextcloud, Paperless, Wiki.js (PROD); Zammad, n8n, MinIO, Vaultwarden (TECH)
+- UGREEN NAS (RAID1) → NFS `/volume1` → `nas-storage` (in TECH **und** PROD) → StorageClass `nas` → Nextcloud, Paperless, Wiki.js (PROD); Zammad, n8n, Vaultwarden (TECH)
 - UGREEN NAS → `/volume2` → `immich-storage` → `immich-nas` → Immich, bewusst getrennt vom übrigen Cluster-Speicher
 - Steht das NAS, starten diese Apps nicht mehr. Apps auf `local-path` (Grafana, ntfy, Pi-hole, Uptime Kuma, Semaphore) laufen weiter.
 - Sicherung: NAS → restic → WD Elements 8 TB. Ohne diese Platte existiert keine Kopie der Nutzdaten. Das restic-Passwort ist der einzige Schlüssel — ohne es ist auch das Backup wertlos.
@@ -509,7 +509,7 @@ keinen eigenen Port, UI und API laufen über Traefik auf `:443`. Details je App:
 - Erst `make install` auf dem Homeserver (erzeugt Join-Token und Shutdown-Schlüssel), dann `make controlplane-1` / `make worker-1` — sonst können die Worker nicht beitreten.
 - Die VMs brauchen zuerst die Bridge (`libvirt_host` mit `libvirt_host_configure_bridge`); ein falsch gepinntes Interface hat schon einmal den Homeserver vom LAN getrennt, die Rolle prüft das jetzt per `assert`. Nach jeder Netzwerkumstellung einen Reboot-Test machen.
 - Wake-on-LAN braucht zusätzlich die BIOS-Einstellung auf den Workern und die richtige MAC-Adresse in `capulus-ansible/host_vars/`.
-- Argo Workflows braucht MinIO als Artefaktspeicher; die Alarm-Brücke braucht ntfy; `wiki-docs-sync` (PROD) braucht Wiki.js; `github-release-watcher` braucht Zammad.
+- Argo Workflows braucht Garage als Artefaktspeicher; die Alarm-Brücke braucht ntfy; `wiki-docs-sync` (PROD) braucht Wiki.js; `github-release-watcher` braucht Zammad.
 - `cluster_power_manager` misst absichtlich ohne Prometheus: er liest `/proc/stat` und `/proc/meminfo` direkt, damit die Entscheidung auch dann funktioniert, wenn der Monitoring-Stack selbst unter Last steht.
 
 ---
@@ -551,7 +551,7 @@ SCHICHT 4  PROD:  Nextcloud  Immich  Paperless  Wiki.js  xibosignage  + wiki-doc
                                    |  braucht
                                    v
 SCHICHT 3  lldap  sealed-secrets  monitoring  logging  ntfy  cloudflared
-           pihole  nas-storage  immich-storage  minio  argo-workflows  semaphore  headlamp  cert-manager
+           pihole  nas-storage  immich-storage  garage  argo-workflows  semaphore  headlamp  cert-manager
                                    |  läuft in
                                    v
 SCHICHT 2  TECH: k3s server (homeserver) + 2x k3s agent   PROD: k3s (prod-vm)   ENTW: k3s (entw-vm)

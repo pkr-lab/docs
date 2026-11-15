@@ -162,7 +162,7 @@ Aktuell tragen diese Apps zusätzlich einen `*-pkr-lab.de`-Host:
 | Immich | `immich-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
 | Xibo CMS | `xibo-prod.pkr-lab.de` | prod | PROD (Hostregel im TECH-Tunnel) |
 
-Alle anderen Apps (Semaphore, Pi-hole, MinIO, Headlamp, Paperless-ngx, n8n, ...) bleiben
+Alle anderen Apps (Semaphore, Pi-hole, Headlamp, Paperless-ngx, n8n, ...) bleiben
 ausschließlich LAN/Tailscale-erreichbar, auch wenn ihr Hostname theoretisch unter die Wildcard-Regel
 fiele, weil ihnen schlicht der zweite Ingress-Host fehlt.
 
