@@ -33,7 +33,7 @@ concurrency:
 
 jobs:
   release:
-    uses: pkr-lab/.github/.github/workflows/release.yml@<commit-sha> # v1.0.1
+    uses: pkr-lab/.github/.github/workflows/release.yml@<commit-sha> # vX.Y.Z
 ```
 
 `.github/workflows/commitlint.yml`:
@@ -50,16 +50,17 @@ permissions:
 
 jobs:
   commitlint:
-    uses: pkr-lab/.github/.github/workflows/commitlint.yml@<commit-sha> # v1.0.1
+    uses: pkr-lab/.github/.github/workflows/commitlint.yml@<commit-sha> # vX.Y.Z
 ```
 
-Den SHA liefert `git rev-parse v1.0.1^{commit}` im Repo `.github`. Ein vorhandenes `.releaserc.json` im Code-Repo löschen, der Workflow erzeugt die Konfiguration selbst.
+Den SHA liefert `git rev-parse vX.Y.Z^{commit}` im Repo `.github`. Ein vorhandenes `.releaserc.json` im Code-Repo löschen, der Workflow erzeugt die Konfiguration selbst.
 
 ## Lokaler Hook
 
 ```bash
 mkdir -p .githooks
 cp /pfad/zu/.github/hooks/commit-msg .githooks/commit-msg
+chmod +x .githooks/commit-msg
 git config core.hooksPath .githooks
 ```
 
@@ -72,5 +73,6 @@ Bei Repos mit Makefile (capulus-core, capulus-ansible) erledigt `make hooks` den
 |---|---|---|
 | Workflow-Aufruf meldet „workflow was not found“ | SHA oder Pfad im `uses:` falsch | [Nutzung: Fehlersuche](nutzung.md#fehlersuche) |
 | Kein Release nach dem Merge | Commit-Format, nach dem letzten Tag keine Commits mit `feat`/`fix` | [Nutzung: Fehlersuche](nutzung.md#fehlersuche) |
-| `commit-msg`-Hook lehnt ab | Kopfzeile verletzt das Format | `<typ>(<scope>): <beschreibung>` ([Lokaler Hook](#lokaler-hook)) |
+| `commit-msg`-Hook lehnt ab | Kopfzeile verletzt das Format, endet mit Punkt oder ist länger als 120 Zeichen | `<typ>(<scope>): <beschreibung>` ([Lokaler Hook](#lokaler-hook)) |
+| Hook wird nicht ausgeführt | Datei nach dem Kopieren nicht ausführbar | `chmod +x .githooks/commit-msg` |
 | Push auf `main` abgelehnt | Branch-Schutz | PR verwenden, [Branch-Schutz (capulus-core)](../capulus/capulus-core/f-cicd-automatisierung/f0090-branch-schutz-main.md#fehlersuche) |

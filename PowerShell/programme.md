@@ -1,19 +1,17 @@
 # Programme – Verwaltungs- und Inventur-Skripte
 
-> **Hinweis:** Der Ordnername `Porgamme` ist ein historischer Tippfehler (korrekt: `Programme`).
-
 Skripte in diesem Ordner werden **automatisch vom Watchdog** bei jedem Login ausgeführt.
 
 ## Dateien
 
 | Skript | Zweck | Als Admin? |
 |--------|-------|-----------|
-| `10020115_WIN_Log_Software.ps1` | Software-Inventur ins Log schreiben | Nein |
+| `10020115_Win_Log_Software.ps1` | Software-Inventur ins Log schreiben | Nein |
 | `10020115_Win_doc_Word.ps1` | Word-Vorlagen (.dotx) installieren und Registry setzen | Nein |
 
 ---
 
-## `10020115_WIN_Log_Software.ps1`
+## `10020115_Win_Log_Software.ps1`
 
 **Zweck:** Erstellt eine vollständige Software-Inventur des Systems und schreibt sie ins Logging-System.
 
@@ -21,10 +19,10 @@ Skripte in diesem Ordner werden **automatisch vom Watchdog** bei jedem Login aus
 - Klassische Programme (aus Registry `HKLM:\...\Uninstall`)
 - UWP/Store-Apps (`Get-AppxPackage`)
 
-**Abhängigkeiten:** `Logging.psm1`
+**Abhängigkeiten:** `Logging.psm1`, `Common.psm1` (`Get-InstalledProgram`, gemeinsam mit `StartUp\10020115_Win_A_Install.ps1`)
 
 ```powershell
-.\10020115_WIN_Log_Software.ps1
+.\10020115_Win_Log_Software.ps1
 ```
 
 ---
