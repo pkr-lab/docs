@@ -72,7 +72,6 @@ Nicht jede App mit LAN-Ingress ist automatisch auch extern erreichbar.
 | Argo Workflows | tech | TECH | argo-workflows | argo-workflows-server:2746 | argo-workflows.tech.homeserver | — |
 | Headlamp | tech | TECH | headlamp | headlamp:80 | headlamp.tech.homeserver | — |
 | ArgoCD (Web-UI) | tech | TECH | argocd | argocd-server:80 | argocd.tech.homeserver | — |
-| MinIO Console | tech | TECH | minio | minio-console:9001 | minio.tech.homeserver | — |
 | kubeseal-webgui | tech | TECH | kubeseal-webgui | kubeseal-webgui:8080 | kubeseal-webgui.tech.homeserver | — |
 | VictoriaMetrics/-Logs (Schreib-Endpunkte) | tech | TECH | monitoring / logging | siehe Charts | vm-write.tech.homeserver, logs-write.tech.homeserver | — |
 | demo-app / example-whoami (ENTW) | dev | ENTW | demo-app / example-whoami | — | demo.dev.homeserver / whoami.dev.homeserver | — |
@@ -131,7 +130,7 @@ angesprochen (Datenbanken, Caches, interne Bridges, Batch-Jobs):
 | Zammad Memcached | zammad | 11211 |
 | Zammad Websocket | zammad | 6042 |
 | Wiki.js Postgres | wikijs | 5432 |
-| MinIO S3-API | minio | 9000 |
+| Garage S3-API | garage | 3900 |
 | Sealed Secrets Controller | sealed-secrets | 8080 |
 | VictoriaMetrics (vmsingle/vmagent/vmalert/vmalertmanager) | monitoring | 8428/8429/8080/9093 |
 | Xibo CMS MySQL | xibosignage | 3306 |

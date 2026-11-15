@@ -68,7 +68,6 @@ Jeder Hostname trägt ein Tier-Label (`tech` = Infrastruktur/Admin, `prod` = App
 | ntfy | tech | TECH | https://ntfy.tech.homeserver |
 | Pi-hole | tech | TECH | https://pihole.tech.homeserver |
 | Argo Workflows | tech | TECH | https://argo-workflows.tech.homeserver |
-| MinIO Console | tech | TECH | https://minio.tech.homeserver |
 | kubeseal-webgui | tech | TECH | https://kubeseal-webgui.tech.homeserver |
 | Vaultwarden | tech (Ausnahme) | TECH | https://vault.tech.homeserver |
 | Zammad | tech (Ausnahme) | TECH | https://zammad.tech.homeserver |

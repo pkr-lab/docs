@@ -429,7 +429,7 @@ curl -sI https://grafana-tech.pkr-lab.de | head -1
 | **ArgoCD** | Nicht freigeben | Voller GitOps-Controller-Zugriff auf den Cluster. Bleibt Tailscale-only. |
 | **Semaphore** | Nicht freigeben | Kann Ansible-Playbooks mit Root-Rechten auf beiden Servern ausführen. Bleibt Tailscale-only. |
 | **Headlamp** | Nicht freigeben | Kubernetes-Admin-Dashboard, voller Cluster-Zugriff. Bleibt Tailscale-only. |
-| **MinIO Console / kubeseal-webgui** | Nicht freigeben | Artifact-Store bzw. Secret-Verschlüsselungs-UI — reine Admin-Werkzeuge ohne externen Bedarf. |
+| **kubeseal-webgui** | Nicht freigeben | Secret-Verschlüsselungs-UI — reines Admin-Werkzeug ohne externen Bedarf. |
 | **Argo Workflows** | Nicht freigeben | Interne CI/CD-Pipeline, kein externer Nutzerkreis. |
 | **ArgoCD/k3s-API/SSH** | Nicht freigeben | Infrastruktur-Ports gehören grundsätzlich nicht ins öffentliche Internet, auch nicht per Tunnel. |
 

@@ -83,9 +83,9 @@ die im Image gesetzte UID nur der Image-Default, das `securityContext` des Deplo
   ([600a0](600a0-ci-workflows-und-skripte.md), [f0060](../f-cicd-automatisierung/f0060-build-images.md)).
 - Ist das GHCR-Package privat, braucht der Namespace ein Pull-Secret:
   `kubectl -n carplay-api create secret docker-registry ghcr-pull --docker-server=ghcr.io --docker-username=<user> --docker-password=<pat>`.
-- **Chart-Versionen schweben:** `argo-workflows` und `minio` hängen mit `version: "*"` an ihren Community-Charts (beobachtet zum Zeitpunkt
-  der Erstellung: argo-helm 1.0.x bzw. `charts.min.io` 5.x). Ein neuer Upstream-Stand wird also automatisch gezogen. Eine konkrete Version
-  festlegen, sobald sie mit `helm search repo` geprüft ist.
+- **Chart-Versionen schweben:** `argo-workflows` hängt mit `version: "*"` am Community-Chart (beobachtet zum Zeitpunkt
+  der Erstellung: argo-helm 1.0.x). Ein neuer Upstream-Stand wird also automatisch gezogen. Eine konkrete Version
+  festlegen, sobald sie mit `helm search repo` geprüft ist. Das frühere `minio`-Chart ist mit dem Wechsel auf Garage entfallen.
 
 ### Externe Hosts, Namen und ForwardAuth
 
@@ -205,23 +205,53 @@ leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
   n8n-Seite spiegelt das über `argocd_network_policy_extra_ingress → n8n` in `capulus-ansible/roles/argocd/defaults/main.yml`, sonst blockt
   n8ns eigene verfeinerte Policy den Namespace weiterhin ([d0030](../d-sicherheit/d0030-network-policies.md), Schritt 2).
 
-### argo-workflows und minio
+### argo-workflows und garage
 
 - **Kaniko ist entfernt (2026-10-18).** Das WorkflowTemplate `kaniko-build-push` lief mit `gcr.io/kaniko-project/executor` (zuletzt auf `v1.24.0` fixiert, gleicher Digest wie `latest`); das kaniko-Projekt von Google ist archiviert, der Scan zeigte 5 CRITICAL / rund 150 HIGH, und `build-images.yml` hat das Template ersetzt. Zuletzt lief es vor rund 61 Tagen. Der alte Docker-Config-Secret `ghcr-push` ist übrig (siehe [f0000](../f-cicd-automatisierung/f0000-argo-workflows.md)).
 
 - **`clusterWorkflowTemplates.enabled: false` für Server und Controller.** Mit `singleNamespace: true` legt das Chart (2.0.13) zwar die ClusterRoleBindings `argo-workflows-server-cluster-template` und `argo-workflows-workflow-controller-cluster-template` an, aber nicht die dazugehörigen ClusterRoles (deren Template verlangt `not singleNamespace`). Die Bindings zeigten ins Leere, und jede künftig angelegte ClusterRole mit diesem Namen hätte sofort Rechte an die beiden ServiceAccounts vergeben. Es gibt keine `ClusterWorkflowTemplate` im Cluster, die Funktion wird nicht gebraucht; wer sie später nutzen will, muss `singleNamespace` auf `false` stellen und beide Schalter wieder einschalten.
 
 - **argo-workflows:** Controller und Server sind auf den Release-Namespace beschränkt (einfacher und sicherer als cluster-weit für ein
-  Ein-Nutzer-Heim-CI). HTTP im Klartext, TLS endet bzw. entfällt hinter Traefik im LAN. Artefakt-Repository und Log-Archiv liegen auf MinIO
-  (cluster-intern), die Zugangsdaten kommen aus dem Secret `argo-artifacts-s3` und **müssen den MinIO-Root-Zugangsdaten entsprechen**.
+  Ein-Nutzer-Heim-CI). HTTP im Klartext, TLS endet bzw. entfällt hinter Traefik im LAN. Artefakt-Repository und Log-Archiv liegen auf Garage
+  (cluster-intern, `region: garage`), die Zugangsdaten kommen aus dem Secret `argo-artifacts-s3` und **müssen dem Key in `garage-secrets`
+  entsprechen** (beide aus einem Lauf von `scripts/seal-garage.sh`).
   Eine ClusterRole erlaubt dem `argo-workflow`-ServiceAccount, Pods und
   Workloads in allen Namespaces zu lesen, zu skalieren und zu überwachen, ausschließlich vom Workflow `nightly-pod-maintenance` genutzt.
-- **minio:** Der Chart-Default für `replicas` ist 16 (verteilt), im Standalone-Betrieb muss das überschrieben werden, damit Scheduling und
-  Validierung einen einzelnen Pod erwarten. Der Default-Request von **16 Gi Speicher** wäre auf dem Homeserver nie schedulbar und wird hart
-  überschrieben. Die S3-API bleibt cluster-intern (`minio.minio.svc:9000`), nur die Konsole hat einen Ingress. Buckets werden beim ersten
-  Start automatisch angelegt. Liegt die bestehende PVC schon auf einer anderen StorageClass, muss vor dem Sync manuell migriert werden
-  (`storageClassName` ist immutable, Runbook in 20000). Die Root-Zugangsdaten sind ein SealedSecret (`minio-root`, Schlüssel `rootUser`/
-  `rootPassword`).
+- **garage statt minio (2026-11-15).** MinIO hat die Community-Edition eingestellt: das GitHub-Repo `minio/minio` ist archiviert, Images
+  auf `quay.io/minio/*` und Docker Hub `minio/*` sind nicht mehr öffentlich (Registry antwortet 401). Der Pod
+  (`RELEASE.2024-12-18T13-15-44Z`) lief zuletzt nur noch aus dem Image-Cache von `homeserver`; ein Umzug auf einen anderen Node oder ein
+  geleerter Cache hätte das Log-Archiv von Argo Workflows ausfallen lassen. Der PostSync-Hook des Charts (`quay.io/minio/mc`) hing aus
+  demselben Grund in `ImagePullBackOff`. Geprüfte Wege:
+
+  | Weg | Bewertung |
+  |---|---|
+  | Image nach `ghcr.io/pkr-lab/` spiegeln | Spiegeln geht nur aus dem lokalen Cache, Ergebnis ist ein eingefrorener Stand von 2024-12 mit bekannten Lücken (u. a. Signatur-Umgehung, behoben erst in späteren Releases), nie wieder Fixes. |
+  | Aus Source über `build-images.yml` bauen | Baut den letzten Stand eines archivierten Repos: keine Sicherheitsfixes mehr, dazu eigener Go-Build und das Chart `charts.min.io`, dessen Hooks ebenfalls an `minio/mc` hängen. |
+  | **Garage** (gewählt) | Aktiv gepflegt (v2.5.0, 2026-10), Image öffentlich auf Docker Hub, Rust-Binary mit geringem Speicherbedarf, AGPL wie MinIO. Seit 2.x legt `garage server --single-node --default-bucket` Layout, Key und Bucket selbst an: kein Hook-Job, kein `mc`, alles deklarativ. |
+  | SeaweedFS | Gepflegt und mit Helm-Chart, aber mehrere Komponenten (Master, Volume, Filer, S3) und S3-Zugänge über eine JSON-Konfiguration, für 440 KB Logs überdimensioniert. |
+  | RustFS | MinIO-kompatibel inklusive Konsole, 1.0 aber erst seit Kurzem stabil und schnelle Release-Folge; Bucket-Anlage bräuchte wieder einen Job. |
+
+  Die Daten in MinIO (440 KB alte Workflow-Logs) wurden nicht übernommen, Logs älterer Workflows sind in der Argo-UI nicht mehr abrufbar.
+- **garage, eigenes Chart:** Upstream liefert nur ein Chart im Git-Repo (`script/helm/garage`), kein veröffentlichtes Helm-Repo, und es ist
+  auf mehrere Knoten mit StatefulSet ausgelegt. Ein Deployment mit `Recreate` reicht für eine Replika. Keine Weboberfläche: Garage hat keine
+  eingebaute Konsole, der frühere Host `minio.tech.homeserver` ist samt Eintrag im Wildcard-Zertifikat entfallen. Bedienung über
+  `kubectl exec deploy/garage -- /garage …` ([300p0](../3-apps-workloads/300p0-garage.md)).
+- **garage, Speicher auf `local-path`:** Garage rät für die Metadaten (SQLite) von Netzwerk-Dateisystemen ab, NFS-Locking kann die
+  Datenbank beschädigen. Metadaten und Daten liegen deshalb gemeinsam auf einer `local-path`-PVC (`Delete=false`), nicht auf `nas` wie bei
+  MinIO. Folge: der Pod ist an den Node der PVC gebunden. Für Logs und Artefakte ist das vertretbar.
+- **garage, Key-Format und Rotation:** Garage übernimmt den Key aus `GARAGE_DEFAULT_ACCESS_KEY`/`GARAGE_DEFAULT_SECRET_KEY` nur beim
+  ersten Start dieser Key-ID. Ändert sich zu einer bestehenden ID nur der Secret-Key, bricht der Start ab; eine gelöschte ID lässt sich
+  nicht wieder anlegen. `seal-garage.sh` erzeugt deshalb immer ID und Secret neu (ID im Garage-Stil `GK` + 24 Hex). Die alten
+  MinIO-Root-Zugangsdaten (`minio-root`) wurden nicht weiterverwendet.
+- **garage, Region:** `s3_region` muss mit der Region übereinstimmen, mit der der Client signiert. Ohne Angabe muss der Client
+  die Region erst erfragen, deshalb steht `region: garage` explizit im `artifactRepository`.
+- **garage, Admin-API:** Port 3903 ist nur für Liveness- und Readiness-Probe auf `/health` gebunden (ohne Token). Ohne `admin_token`
+  in der Konfiguration lehnt Garage alle anderen Admin-Endpunkte ab; Metriken werden derzeit nicht gesammelt.
+- **minio-Benutzer `console` (zu entfernen).** Das Chart `charts.min.io` legte per Default den Benutzer `console` mit der Policy
+  `consoleAdmin` an. Er ist an keiner Stelle in Gebrauch. Mit der Application `minio` entfällt der Server, der Benutzer liegt aber noch in
+  den MinIO-Metadaten auf dem Volume: PV der PVC `minio/minio` (StorageClass `nas`, `Retain`). Beim Aufräumen von Namespace `minio` und
+  PV das Verzeichnis auf dem NAS mit löschen, dann ist er weg. Sollte MinIO je wieder gestartet werden, den Benutzer vorher mit
+  `mc admin user remove <alias> console` entfernen.
 
 ### github-release-watcher
 
