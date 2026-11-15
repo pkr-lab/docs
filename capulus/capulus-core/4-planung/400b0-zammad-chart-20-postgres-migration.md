@@ -160,10 +160,12 @@ F="$B/zammad-pg17-$(date +%Y%m%d-%H%M).dump"
 kubectl -n zammad exec zammad-postgresql-0 -c postgresql -- bash -c \
   'PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" pg_dump -Fc -U zammad -d zammad_production' > "$F"
 echo "rc=$?"; ls -l "$F"
-kubectl -n zammad exec -i zammad-postgresql-0 -c postgresql -- pg_restore --list < "$F" | grep -c 'TABLE DATA'
+docker run --rm -i docker.io/postgres:18.4 pg_restore --list < "$F" | grep -c 'TABLE DATA'
+kubectl -n zammad exec zammad-postgresql-0 -c postgresql -- bash -c \
+  'PGPASSWORD="$(cat "$POSTGRES_PASSWORD_FILE")" psql -U zammad -d zammad_production -Atc "select count(*) from pg_tables where schemaname = '"'"'public'"'"'"'
 ```
 
-Erwartet: `rc=0`, Datei um 25 MB (Probe am 2026-11-15: 25 293 647 Byte), mehrere hundert `TABLE DATA`-Einträge. Zählwerte der alten Datenbank sichern:
+Erwartet: `rc=0`, Datei um 25 MB, beide Zahlen gleich (2026-11-15: 128). Das Inhaltsverzeichnis lokal prüfen, nicht per `kubectl exec -i … pg_restore --list < "$F"`: `--list` liest nur den Anfang der Datei und beendet sich, `kubectl` hängt dann beim Schreiben des Rests und bricht mit `i/o timeout` ab (die ausgegebene Zahl stimmt trotzdem). Zählwerte der alten Datenbank sichern:
 
 ```bash
 cat > "$B/zammad-counts.sql" <<'SQL'
@@ -217,7 +219,13 @@ kubectl -n zammad exec -i zammad-postgres-0 -- psql -U zammad -d zammad_producti
 diff "$B/zammad-counts-alt.txt" "$B/zammad-counts-neu.txt" && echo "Zählwerte identisch"
 ```
 
-Erwartet: `rc=0`, keine Zeile `errors ignored on restore`, `Zählwerte identisch`. Probe am 2026-11-15: Dump der laufenden Datenbank mit genau diesem Befehl in ein lokales `postgres:18-alpine` (18.7, Benutzer per `POSTGRES_USER` wie im Chart) eingespielt, `rc=0` ohne Meldungen, alle sechs Zählwerte gleich, alle Tabellen gehören `zammad`. Bei Fehlern Schritt 6 wiederholen (wegen `--clean --if-exists` wiederholbar) oder Rollback A.
+Erwartet: `rc=0`, keine Zeile `errors ignored on restore`, `Zählwerte identisch`. Probe am 2026-11-15: Dump der laufenden Datenbank mit genau diesem Befehl in ein lokales `postgres:18-alpine` (18.7, Benutzer per `POSTGRES_USER` wie im Chart) eingespielt, `rc=0` ohne Meldungen, alle sechs Zählwerte gleich, alle Tabellen gehören `zammad`. Bei Fehlern Schritt 6 wiederholen (wegen `--clean --if-exists` wiederholbar) oder Rollback A. Bricht die Übertragung über stdin ab (`i/o timeout`), den Dump erst in den Pod kopieren und von dort einspielen:
+
+```bash
+kubectl -n zammad cp "$F" zammad-postgres-0:/tmp/zammad.dump
+kubectl -n zammad exec zammad-postgres-0 -- sh -c \
+  'PGPASSWORD="$POSTGRES_PASSWORD" pg_restore -U zammad -d zammad_production --no-owner --clean --if-exists /tmp/zammad.dump && rm /tmp/zammad.dump'
+```
 
 ### 7. Auto-Sync wieder einschalten
 
