@@ -35,7 +35,7 @@ flowchart TD
     D -->|nein| E{aufgabenRoot: Schema und Whitelist ok?}
     E -->|nein, Hinweis aktiv| X5[Warnung: passt nicht zum Schema oder nicht in der Whitelist, Hinweisdatei]
     E -->|ja| F[Ziel aufgabenRoot/Präfix/Suffix]
-    E -->|kein aufgabenRoot| G{Projekt- oder Kategorie-Routing?}
+    E -->|kein aufgabenRoot| G{Kategorie-Routing?}
     G -->|aktiv, kein Treffer| X6[Warnung: keine Zuordnung, übersprungen]
     G -->|keine Routen, keine targets| X7[Warnung: kein Ziel ermittelbar]
     G -->|Treffer oder targets| F
@@ -97,13 +97,12 @@ Diese Meldungen beenden den Lauf mit einem PowerShell-Fehler.
 | `Zustandsdatei '<pfad>' konnte nicht gelesen werden. Es wird eine neue Datei erstellt.` | Warning | beschädigtes JSON in `.docflow-state.json` | Datei sichern, Lauf wiederholen. Alle Dateien gelten danach als neu und können erneut kopiert werden. Ob sie im Ziel schon liegen, entscheidet die Prüfung „liegt bereits identisch“ |
 | `Registry-Datei '<pfad>' wurde nicht gefunden.` | Warning | `projectRoutesFile` zeigt auf eine fehlende Datei | Pfad prüfen oder Startbestand per `projectRoutesSeedFile` angeben |
 | `Whitelist-Startbestand '<pfad>' wurde nicht gefunden. Synchronisierung übersprungen.` | Warning | `projectRoutesSeedFile` fehlt | Pfad prüfen |
-| `Projekt-Routing-Datei '<pfad>' wurde nicht gefunden.` | Warning | Routing-Datei fehlt | Pfad prüfen |
 | `Ungültige Zeile in Whitelist '<pfad>' ignoriert (erlaubt: praefix=<Name>, suffix=<Name>): '<zeile>'` | Warning | Zeile in `project-routes.txt` hat falsche Form | Zeile korrigieren |
 | `Suffix '<name>' in Whitelist '<pfad>' steht vor dem ersten praefix= und wird ignoriert.` (beim Abgleich: `… wird beim Abgleich entfernt.`) | Warning | Suffix ohne Präfix | `praefix=<Name>` davor setzen |
 | `Datei '<name>': Präfix '<p>' ist nicht in der Whitelist '<pfad>' eingetragen.` | Warning | Präfix unbekannt | Whitelist ergänzen oder dem Schüler das richtige Präfix nennen |
 | `Datei '<name>': Suffix '<s>' ist für Präfix '<p>' nicht in der Whitelist '<pfad>' eingetragen.` | Warning | Kombination nicht erlaubt | Whitelist ergänzen |
 | `Datei '<name>' passt nicht zum Schema initialen[_v<version>]_praefix_suffix_aufgabennummer (…).` | Warning | Name verletzt das Schema (Leerzeichen, Bindestrich, Umlaut, fehlender Teil) | Datei umbenennen. Der Schüler findet die Hinweisdatei neben der Datei |
-| `Keine passende Projekt- oder Kategorie-Zuordnung für '<name>' gefunden. Datei wird übersprungen.` | Warning | Projekt- oder Kategorie-Routing aktiv, aber kein Treffer | Routing erweitern oder Dateinamen korrigieren |
+| `Keine passende Kategorie-Zuordnung für '<name>' gefunden. Datei wird übersprungen.` | Warning | `categoryRoutes` aktiv, aber kein Treffer | Routing erweitern oder Dateinamen korrigieren |
 | `Kein Ziel für '<name>' ermittelbar (kein gültiges Präfix/Suffix-Routing, keine 'targets' konfiguriert). Datei wird übersprungen.` | Warning | weder `aufgabenRoot`-Routing noch `targets` | `targets` konfigurieren oder Namen korrigieren |
 | `Datei '<name>' wurde nach der Abgabe unter gleichem Namen überschrieben. Sie wird nicht erneut kopiert; der Schüler soll eine Versionsangabe (_v2_ usw.) verwenden.` | Warning | bereits verarbeitete Datei wurde geändert | Version im Namen (`_v2_`) verwenden |
 | `Datei '<name>' wurde bereits abgegeben ('<vorhanden>'). Sie wird nicht erneut kopiert; …` | Warning | im Ziel liegt schon eine andere Abgabe | wie oben |
