@@ -4,11 +4,11 @@
 
 | Aufgabe | Befehl |
 |---|---|
-| Watchdog einrichten | `.\Ausführung\WatchDogInstall.ps1` (als normaler Benutzer) |
+| Watchdog einrichten | `.\Ausfuehrung\WatchDogInstall.ps1` (als normaler Benutzer) |
 | Einzelnes Richtlinien-Skript testen | `powershell.exe -ExecutionPolicy Bypass -File .\Richtlinien\10020115_Win_R_Firewall.ps1` (als Administrator) |
 | Updates im Hintergrund starten | `.\Update\10020115_Win_UpdateScript.ps1 -RUN_IN_BACKGROUND` |
-| Skripte in eine Test-VM kopieren und GPO exportieren | `.\Ausführung\DateienSendenVM.ps1` |
-| SSH zu einem Mac per MAC-Adresse | `.\SSH_toMac.ps1 -TargetMac <MAC>` |
+| Skripte in eine Test-VM kopieren und GPO exportieren | `.\Ausfuehrung\DateienSendenVM.ps1` (Ziel in der VM aus `VmBenutzer` oder `-DestinationInVM`) |
+| SSH zu einem Gerät per MAC-Adresse | `.\SSH_toMac.ps1 -TargetMac <MAC>`, ohne Parameter aus `SshZielMac` |
 
 Jedes Skript und jeder Ordner ist in einer eigenen Seite beschrieben, siehe [Überblick](index.md#überblick).
 
