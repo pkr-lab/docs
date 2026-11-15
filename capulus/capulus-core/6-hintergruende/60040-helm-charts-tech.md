@@ -217,57 +217,39 @@ leitet alle `*.homeserver`-Anfragen an dnsmasq weiter.
   entsprechen** (beide aus einem Lauf von `scripts/seal-garage.sh`).
   Eine ClusterRole erlaubt dem `argo-workflow`-ServiceAccount, Pods und
   Workloads in allen Namespaces zu lesen, zu skalieren und zu überwachen, ausschließlich vom Workflow `nightly-pod-maintenance` genutzt.
-- **garage statt minio (2026-11-15).** MinIO hat die Community-Edition eingestellt: das GitHub-Repo `minio/minio` ist archiviert, Images
-  auf `quay.io/minio/*` und Docker Hub `minio/*` sind nicht mehr öffentlich (Registry antwortet 401). Der Pod
-  (`RELEASE.2024-12-18T13-15-44Z`) lief zuletzt nur noch aus dem Image-Cache von `homeserver`; ein Umzug auf einen anderen Node oder ein
-  geleerter Cache hätte das Log-Archiv von Argo Workflows ausfallen lassen. Der PostSync-Hook des Charts (`quay.io/minio/mc`) hing aus
-  demselben Grund in `ImagePullBackOff`. Geprüfte Wege:
-
-  | Weg | Bewertung |
-  |---|---|
-  | Image nach `ghcr.io/pkr-lab/` spiegeln | Spiegeln geht nur aus dem lokalen Cache, Ergebnis ist ein eingefrorener Stand von 2024-12 mit bekannten Lücken (u. a. Signatur-Umgehung, behoben erst in späteren Releases), nie wieder Fixes. |
-  | Aus Source über `build-images.yml` bauen | Baut den letzten Stand eines archivierten Repos: keine Sicherheitsfixes mehr, dazu eigener Go-Build und das Chart `charts.min.io`, dessen Hooks ebenfalls an `minio/mc` hängen. |
-  | **Garage** (gewählt) | Aktiv gepflegt (v2.5.0, 2026-10), Image öffentlich auf Docker Hub, Rust-Binary mit geringem Speicherbedarf, AGPL wie MinIO. Seit 2.x legt `garage server --single-node --default-bucket` Layout, Key und Bucket selbst an: kein Hook-Job, kein `mc`, alles deklarativ. |
-  | SeaweedFS | Gepflegt und mit Helm-Chart, aber mehrere Komponenten (Master, Volume, Filer, S3) und S3-Zugänge über eine JSON-Konfiguration, für 440 KB Logs überdimensioniert. |
-  | RustFS | MinIO-kompatibel inklusive Konsole, 1.0 aber erst seit Kurzem stabil und schnelle Release-Folge; Bucket-Anlage bräuchte wieder einen Job. |
-
-  Die Daten in MinIO (440 KB alte Workflow-Logs) wurden nicht übernommen, Logs älterer Workflows sind in der Argo-UI nicht mehr abrufbar.
-- **garage, eigenes Chart:** Upstream liefert nur ein Chart im Git-Repo (`script/helm/garage`), kein veröffentlichtes Helm-Repo, und es ist
-  auf mehrere Knoten mit StatefulSet ausgelegt. Ein Deployment mit `Recreate` reicht für eine Replika. Keine Weboberfläche: Garage hat keine
-  eingebaute Konsole, der frühere Host `minio.tech.homeserver` ist samt Eintrag im Wildcard-Zertifikat entfallen. Bedienung über
-  `kubectl exec deploy/garage -- /garage …` ([300p0](../3-apps-workloads/300p0-garage.md)).
-- **garage, Speicher auf `local-path`:** Garage rät für die Metadaten (SQLite) von Netzwerk-Dateisystemen ab, NFS-Locking kann die
-  Datenbank beschädigen. Metadaten und Daten liegen deshalb gemeinsam auf einer `local-path`-PVC (`Delete=false`), nicht auf `nas` wie bei
-  MinIO. Folge: der Pod ist an den Node der PVC gebunden. Für Logs und Artefakte ist das vertretbar.
-- **garage, Key-Format und Rotation:** Garage übernimmt den Key aus `GARAGE_DEFAULT_ACCESS_KEY`/`GARAGE_DEFAULT_SECRET_KEY` nur beim
-  ersten Start dieser Key-ID. Ändert sich zu einer bestehenden ID nur der Secret-Key, bricht der Start ab; eine gelöschte ID lässt sich
-  nicht wieder anlegen. `seal-garage.sh` erzeugt deshalb immer ID und Secret neu (ID im Garage-Stil `GK` + 24 Hex). Die alten
-  MinIO-Root-Zugangsdaten (`minio-root`) wurden nicht weiterverwendet.
-- **garage, Region:** `s3_region` muss mit der Region übereinstimmen, mit der der Client signiert. Ohne Angabe muss der Client
-  die Region erst erfragen, deshalb steht `region: garage` explizit im `artifactRepository`.
-- **garage, Admin-API:** Port 3903 ist nur für Liveness- und Readiness-Probe auf `/health` gebunden (ohne Token). Ohne `admin_token`
-  in der Konfiguration lehnt Garage alle anderen Admin-Endpunkte ab; Metriken werden derzeit nicht gesammelt.
-- **minio-Benutzer `console` (zu entfernen).** Das Chart `charts.min.io` legte per Default den Benutzer `console` mit der Policy
-  `consoleAdmin` an. Er ist an keiner Stelle in Gebrauch. Mit der Application `minio` entfällt der Server, der Benutzer liegt aber noch in
-  den MinIO-Metadaten auf dem Volume: PV der PVC `minio/minio` (StorageClass `nas`, `Retain`). Beim Aufräumen von Namespace `minio` und
-  PV das Verzeichnis auf dem NAS mit löschen, dann ist er weg. Sollte MinIO je wieder gestartet werden, den Benutzer vorher mit
-  `mc admin user remove <alias> console` entfernen.
+- **minio:** Der Chart-Default für `replicas` ist 16 (verteilt), im Standalone-Betrieb muss das überschrieben werden, damit Scheduling und
+  Validierung einen einzelnen Pod erwarten. Der Default-Request von **16 Gi Speicher** wäre auf dem Homeserver nie schedulbar und wird hart
+  überschrieben. Die S3-API bleibt cluster-intern (`minio.minio.svc:9000`), nur die Konsole hat einen Ingress. Buckets werden beim ersten
+  Start angelegt, seit 2026-11-15 aber nicht mehr: `buckets: []` und `users: []`. Der Chart legt dafür den PostSync-Job `minio-post-job`
+  mit `quay.io/minio/mc` an. MinIO veröffentlicht die Images auf quay.io und Docker Hub nicht mehr öffentlich (`401`), der Hook hing in
+  `ImagePullBackOff` und der Sync blieb stehen (`ArgoSyncOperationStuck`). Der Bucket `argo-artifacts` liegt auf der PVC und bleibt.
+  Geht die PVC verloren, muss er von Hand angelegt werden. Der Chart-Default `users` hätte zudem den Benutzer `console` mit
+  `consoleAdmin` und öffentlich bekanntem Passwort angelegt. Das Chart ist auf `5.4.0` fixiert (vorher `*`). Das Server-Image
+  `quay.io/minio/minio` ist ebenfalls nicht mehr öffentlich, der Pod startet nur, solange das Image auf dem Node liegt. Liegt die bestehende PVC schon auf einer anderen StorageClass, muss vor dem Sync manuell migriert werden
+  (`storageClassName` ist immutable, Runbook in 20000). Die Root-Zugangsdaten sind ein SealedSecret (`minio-root`, Schlüssel `rootUser`/
+  `rootPassword`).
 
 ### github-release-watcher
 
 - Der CronJob läuft alle 120 Minuten. **`*/120` im Minutenfeld ist kein gültiger Cron-Ausdruck** (das Feld endet bei 59), Schrittweite muss
   im Stundenfeld stehen.
-- `currentVersion` ist die **aktuell deployte** Version und wird **manuell** gepflegt (Git als Source of Truth). Sie **muss nach jedem Upgrade
-  des Dienstes nachgezogen werden**, sonst zeigt die App-Update-Liste falsche oder veraltete Ergebnisse. Leer heißt „unbekannt“, die App zeigt
-  dann keinen Update-Status statt eines falschen. Das Format muss zum `tag_name`-Stil des Repos passen (Nextcloud: Docker-Tag `34.0.2-apache`
-  ↔ Release `v34.0.2`; n8n taggt `n8n@2.33.7`, nicht `v2.33.7`, das Image trägt zusätzlich `-imap`; Paperless, Wiki.js und Immich mit `v`-Präfix;
-  Vaultwarden ohne). Vor dem Ausfüllen mit `curl https://api.github.com/repos/<owner>/<repo>/releases/latest` gegenprüfen.
-- `notifyZammad: true` erzeugt bei einem neuen Release ein Zammad-Ticket (nur für DocFlowEngine aktiv), `false` zeigt neue Releases **nur**
-  in der App-Update-Liste. Die neu hinzugekommenen Self-Hosted-Apps haben `false` und erzeugen keine Tickets.
-- **Zammad veröffentlicht keine GitHub-Releases** (nur Tags/eigener Changelog): `/releases/latest` liefert dauerhaft 404, was der Watcher als
-  „keine Releases vorhanden“ behandelt (kein Fehler). Der Eintrag bleibt für den Fall, dass sich das ändert, `has_update` bleibt dort immer
-  „unbekannt“.
-- Ein optionaler GitHub-PAT hebt das Limit der unangemeldeten API (60 Anfragen/h, bei 10 Repos im 120-Minuten-Takt knapp) auf 5000/h. Er
+- **Installierte Version aus dem Repo (`currentFrom`, seit 2026-11-15).** Vorher stand sie als `currentVersion` von Hand in den Values und
+  veraltete nach jedem Upgrade (Nextcloud stand auf `v34.0.2`, lief `34.0.5`), außerdem waren nur 8 Apps eingetragen. Jetzt liest der
+  Watcher Image-Tag bzw. Chart-Version aus `pkr-lab/capulus-core@main`. Das ist der Stand, den ArgoCD ausrollt. Ein manueller Eingriff im
+  Cluster (Auto-Sync aus) fällt dabei nicht auf, dafür gibt es `ArgoAppOutOfSync`.
+- **Höchste Version statt `/releases/latest`.** Nextcloud markiert Backport-Releases (`v33.0.11`) als „latest“, der Watcher hätte
+  `34.0.5` als aktuell gemeldet. Gezählt wird die höchste Versionsnummer der Releases ohne Draft/Pre-Release, Tags auf `rc`/`beta`/`alpha`
+  sind zusätzlich ausgeschlossen. `has_update` vergleicht Zahlen, nicht Zeichenketten (`v12.0.2` = `12.0.2`, `release-4.5.5` < `4.5.6`).
+- **`tagPrefix` und State-Schlüssel.** Monorepos (`VictoriaMetrics/helm-charts`) liefern mehrere Produkte, der Präfix trennt sie. Der
+  State-Schlüssel ist dann `repo#prefix`. Einträge ohne Präfix behalten `repo` als Schlüssel, damit bestehende Einträge nicht neu
+  initialisiert werden.
+- **Nicht erfasst:** selbst gebaute Images (`ghcr.io/pkr-lab/*`, `sha-…`), Basis-Images (python, alpine, postgres, redis),
+  `argo-workflows` (Chart `*` ohne Lock, ArgoCD löst immer die neueste Version auf) und `kubeseal-webgui` (Chart-Version und
+  App-Releases haben verschiedene Nummern). Zammad wird über das Chart (`zammad/zammad-helm`) verglichen, das App-Repo veröffentlicht
+  keine GitHub-Releases. GitHub-Releases des Charts können der Helm-Repo-Index vorauslaufen.
+- **`ttlSecondsAfterFinished: 86400`.** `failedJobsHistoryLimit: 3` hält die letzten drei fehlgeschlagenen Jobs für immer. Drei Jobs vom
+  August hielten `KubeJobFailed` monatelang offen. Mit der TTL löscht Kubernetes jeden beendeten Job nach einem Tag.
+- Ein optionaler GitHub-PAT hebt das Limit der unangemeldeten API (60 Anfragen/h; seit 2026-11-15 braucht ein Lauf rund 55 Anfragen, 30 Release-Listen und gut 20 Repo-Dateien) auf 5000/h. Er
   kommt aus einem **vorhandenen** Secret, das der Chart nicht anlegt ([60030](60030-argocd-und-bootstrap.md)).
 - Die Zammad-Ticket-URL ist `https://`, nicht `http://`: Traefik antwortet mit 308, und `urllib` folgt einem 308 bei POST nicht (die
   Ticketanlage schlüge fehl). Die interne Root-CA kommt aus `templates/ca-configmap.yaml`. Die Zammad-Gruppe erwartet bei Untergruppen
@@ -345,6 +327,12 @@ weil ein Ausfall des Clusters (und damit kein Anruf) bewusst in Kauf genommen wi
 
 ### n8n
 
+- **Heap-Limit und Parallelität (2026-11-15).** Am 14.11. ist n8n zweimal mit `JavaScript heap out of memory` abgestürzt. Der Workflow
+  „Alertmanager → Mattermost“ scheiterte bei jedem Lauf am nicht vorhandenen Kanal `alerts`, Alertmanager wiederholte jede
+  fehlgeschlagene Zustellung, und rund 15 dauerhaft feuernde Alert-Gruppen (schlafender worker-1) erzeugten 148 Läufe in einer Stunde,
+  dazu je Fehler den Error-Workflow. Der Heap stieg in wenigen Minuten auf 1,4 bis 1,9 GB. `NODE_OPTIONS=--max-old-space-size=1536`
+  lässt Platz für Nicht-Heap-Speicher unter dem Limit von 2Gi. `N8N_CONCURRENCY_PRODUCTION_LIMIT=10` stellt weitere Produktionsläufe in die
+  Queue, statt sie parallel zu starten.
 - Das Image ist ein Custom-Build (`argocd/apps/tech/n8n/image/Dockerfile`): `n8n-nodes-imap` plus `whatsapp-web.js` und Chromium für die
   Workflows, die WhatsApp-Nachrichten aus einem Code-Node senden. Verwendet wird das offizielle npm-Paket `whatsapp-web.js`
   (github.com/wwebjs/whatsapp-web.js), **nicht** das ältere `wwebjs@1.23.1-alpha.7` (Alpha von 04/2024 mit Puppeteer 18 und ohne
