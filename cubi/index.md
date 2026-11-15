@@ -28,6 +28,8 @@ Repository: [pkr-lab/cubi](https://github.com/pkr-lab/cubi)
 | Tokens | `cubi tokens` (`token`) | Alter, Ablauf und Rotation der Tokens aus dem Token-Register von capulus-core | [tokens.md](tokens.md) |
 | Login | `cubi login` (`auth`) | Login-Status für ArgoCD, GitHub und Tailscale samt Login-Befehlen | [login.md](login.md) |
 
+Zusätzlich gibt es [cubi-precheck](precheck.md), eine Desktop-App in Rust. Sie führt vor dem `git push` die CI-Checks der capulus-Repos lokal aus und bietet danach Push oder PR per Button an.
+
 Jeder Bereich lässt sich direkt öffnen, zum Beispiel `cubi argocd` oder `cubi login`. Ohne Argument startet das Hauptmenü, `cubi --help` listet die Bereiche. Ein unbekannter Bereich beendet cubi mit Exit-Code 2.
 
 Die ArgoCD-Ansicht sortiert Apps mit Problemen nach oben und lädt die Tabelle automatisch neu:
@@ -100,6 +102,7 @@ cubi bleibt immer in der normalen Terminal-Ansicht: kein Vollbild, kein Löschen
 | [Debugging und Fehlersuche](debugging.md) | Fehlermeldungen, Checkliste, lokales Debugging |
 | [Entwicklung](entwicklung.md) | Tests, neuen Bereich ergänzen |
 | [Releases](releases.md) | Release-Prozess |
+| [cubi-precheck](precheck.md) | Desktop-App: CI-Checks lokal vor dem Push, Push- und PR-Buttons |
 
 
 ## Fehlersuche
