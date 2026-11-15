@@ -101,7 +101,7 @@ Den `!vault |…`-Block über den leeren Wert in
 `capulus-ansible/inventory/hosts.yml`:
 
 ```yaml
-raspberry_pis:
+xibo_displays:
   hosts:
     pi-livingroom:
       ansible_host: 192.168.178.50
