@@ -19,7 +19,7 @@ Format: `<typ>(<scope>): <beschreibung>`, Der Typ und der Scope sind kleingeschr
 
 ## Versionen
 
-Die Versionierung beginnt bei `v1.0.0`. Die Marketing-Version der App (`MARKETING_VERSION` in `project.yml`) wird davon getrennt gepflegt.
+Die Versionierung beginnt bei `v1.0.0`. Die Marketing-Version der App kommt aus dem letzten Tag: Das Build-Skript „Version aus Git-Tag“ (`postBuildScripts` in `project.yml`) schreibt ihn in `CFBundleShortVersionString`. Ohne Tag (z. B. flacher Klon) bleibt `MARKETING_VERSION` (`1.0.0`) stehen; die CI holt deshalb die volle Historie.
 
 ## Artefakte
 
