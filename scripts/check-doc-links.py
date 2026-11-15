@@ -8,6 +8,7 @@ Geprueft wird nur, was lokal aufloesbar ist: Dateien/Ordner und Ueberschriften-A
 (Slug-Regeln wie auf GitHub). Externe URLs (http, https, mailto) werden nicht abgerufen.
 Exit-Code 1, wenn ein Link ins Leere zeigt. Beschreibung: capulus-core/f-cicd-automatisierung/f0070-ci-lint.md
 """
+import functools
 import os
 import re
 import subprocess
@@ -42,12 +43,8 @@ def iter_unfenced_lines(path: str):
                 yield lineno, line
 
 
-_anchor_cache: dict = {}
-
-
-def anchors(path: str) -> set:
-    if path in _anchor_cache:
-        return _anchor_cache[path]
+@functools.cache
+def lowercase_anchors(path: str) -> frozenset:
     seen: dict = {}
     result = set()
     for _, line in iter_unfenced_lines(path):
@@ -59,8 +56,7 @@ def anchors(path: str) -> set:
             n = seen.get(base, 0)
             seen[base] = n + 1
             result.add(base if n == 0 else f"{base}-{n}")
-    _anchor_cache[path] = result
-    return result
+    return frozenset(a.lower() for a in result)
 
 
 def iter_links(path: str):
@@ -82,9 +78,13 @@ def check(path: str) -> list:
         if not os.path.exists(dest):
             problems.append(f"{path}:{lineno}: Ziel fehlt: {target}")
             continue
-        if anchor and os.path.isfile(dest) and dest.endswith(".md"):
-            if unquote(anchor).lower() not in {a.lower() for a in anchors(dest)}:
-                problems.append(f"{path}:{lineno}: Anker fehlt: {target}")
+        if (
+            anchor
+            and os.path.isfile(dest)
+            and dest.endswith(".md")
+            and unquote(anchor).lower() not in lowercase_anchors(dest)
+        ):
+            problems.append(f"{path}:{lineno}: Anker fehlt: {target}")
     return problems
 
 
