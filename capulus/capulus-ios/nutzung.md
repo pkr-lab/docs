@@ -54,10 +54,9 @@ Modus Alltag → Tankstellen. Beim ersten Mal fragt iOS nach der Standortfreigab
 ## Bekannte Lücken
 
 - **Keine Tests:** Das Schema `HomeserverDashboard` hat keine Test-Targets (`testTargets: []` in `project.yml`). Am meisten würden Codable-Tests der Modelle gegen echte `carplay-api`-Antworten bringen.
-- **Fehler der Übersicht unsichtbar:** `DashboardViewModel.error` wird nie angezeigt, siehe [Übersicht und Alerts](uebersicht-und-alerts.md#randfälle-und-einschränkungen).
 - **Keine Push-Benachrichtigungen:** Die App ruft nur ab. Alarme kommen per ntfy aufs Telefon ([Telefon-Alarm](../capulus-core/1-benachrichtigungen/10020-telefon-alarm.md)).
 - **Feste Standorte und Stationen:** Wetter, Pegel und drei Tankstellen sind im Code festgelegt.
-- **Platzhalter-Bundle-ID:** `com.yourname.homeserver-dashboard` in `project.yml`.
+- **Platzhalter-Bundle-ID:** `com.yourname.homeserver-dashboard` in `project.yml`. Bleibt bewusst: Ein Wechsel ändert die Keychain-Zugriffsgruppe, gespeicherte Tokens wären danach nicht mehr lesbar und müssten neu eingegeben werden.
 - **Swift-Concurrency:** gebaut mit Swift-Sprachmodus 5 (`SWIFT_VERSION: "5.0"`), nicht im Strict-Modus von Swift 6.
 - **App Store:** Datenschutzerklärung und Screenshots für TestFlight-Extern oder App Store sind nicht Teil des Repos. TODO: prüfen, ob die App über TestFlight verteilt wird.
 

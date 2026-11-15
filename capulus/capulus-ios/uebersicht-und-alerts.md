@@ -13,10 +13,10 @@ Code: [Views/HomeView.swift](https://github.com/pkr-lab/capulus-ios/blob/main/Ho
 | **Hosts** | VictoriaMetrics (node-exporter) | Eine Karte je Host, der **online** ist: CPU, RAM und Disk als Prozentwerte mit Farbe, Temperatur (wenn der Host einen Sensor meldet, also Wert > 0) und Uptime. Offline-Hosts erscheinen nicht, statt mit 0 % verwirrend auszusehen. Gibt es keinen Host: „Kein Host ist gerade erreichbar.“ |
 | **Status** | Uptime-Kuma-Status-Page | Eine Zeile je Monitor: `UP · <Ping> · <Uptime>`, `DOWN`, `MAINTENANCE`, `PAUSED`, mit Symbol und Farbe. Tippen öffnet ein Detail-Sheet (Status, Ping, Uptime 24 h, letzter Check). Leer: „Keine Monitore konfiguriert“ |
 | **Dienst-Aktivität** | VictoriaMetrics (Traefik-Request-Rate) | Balken je Dienst, sortiert nach Requests pro Sekunde. Die Zahl ist eine Näherung für Aktivität, keine Nutzerzahl |
-| **Updates** | ConfigMap des [github-release-watcher](../capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md) | Karte nur, wenn die Liste nicht leer ist: Apps mit neuer Version (`aktuell → neu`, Link auf das Release) oder „Alle Apps aktuell.“. Bei Apps ohne bekannte aktuelle Version steht ein Hinweis, `currentVersion` im Watcher nachzutragen |
+| **Updates** | ConfigMap des [github-release-watcher](../capulus-core/f-cicd-automatisierung/f0040-github-release-watcher.md) | Karte nur, wenn die Liste nicht leer ist oder der Abruf fehlschlug (dann mit „Updates konnten nicht geladen werden: …“): Apps mit neuer Version (`aktuell → neu`, Link auf das Release) oder „Alle Apps aktuell.“. Bei Apps ohne bekannte aktuelle Version steht ein Hinweis, `currentVersion` im Watcher nachzutragen |
 | **Alerts** (eigener Tab) | ntfy über `ntfy-bridge` und Host-Skripte | Liste aktiver Alarme mit Symbol und Farbe nach Stufe (`critical` rot, `warning` orange, `info` grün). Titel auf 20, Nachricht auf 30 Zeichen gekürzt. Tippen öffnet das Detail (Topic, Level, Empfangen, volle Nachricht). Leer: „Keine aktiven Alerts“ |
 
-Unter den Karten steht „Aktualisiert vor …“ (relative Zeit des letzten erfolgreichen Abrufs). Pull-to-Refresh lädt Dashboard und Updates neu, auf dem Alerts-Tab nur das Dashboard.
+Unter den Karten steht „Aktualisiert vor …“ (relative Zeit des letzten erfolgreichen Abrufs), während eines Abrufs „Aktualisiere …“. Pull-to-Refresh lädt Dashboard und Updates neu, auf dem Alerts-Tab nur das Dashboard.
 
 Die Alarme erscheinen **nicht** auf der Übersicht, sondern nur im Tab Alerts. Woher die Alarme kommen: [ntfy](../capulus-core/1-benachrichtigungen/10010-ntfy.md), [Monitoring und Alerting](../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md).
 
@@ -51,28 +51,30 @@ sequenceDiagram
 
 Die 30-Sekunden-Schleife startet, sobald die Übersicht zum ersten Mal erscheint, und wird nie gestoppt (`stopAutoRefresh()` wird im Code nicht aufgerufen). Der Alerts-Tab nutzt dieselbe Instanz (`DashboardViewModel.shared`) und zeigt daher die Daten, die die Schleife liefert. Startet die App im Modus Alltag, läuft die Schleife erst, wenn man einmal zum Modus PKR-Lab wechselt.
 
-Der Abruf der Updates ist einmalig, nicht Teil der Schleife (Fehler werden still verworfen: ein leeres `catch`).
+Der Abruf der Updates ist einmalig, nicht Teil der Schleife. Ein Fehler landet in `updatesError` und steht in der Karte „Updates“.
 
 ### Tolerantes Decodieren
 
 | Feld | Verhalten bei fehlendem oder unbekanntem Wert |
 |---|---|
-| `alerts`, `hosts`, `service_activity` | fehlt: leere Liste |
-| `status`, `updated_at` | **Pflicht**: fehlt eins, schlägt das Decodieren fehl (`Could not parse response: …`) |
-| `level` eines Alerts | unbekannt: `info` |
-| `status` eines Monitors | unbekannt: `down` |
+| `alerts`, `hosts`, `status`, `service_activity` | fehlt oder `null`: leere Liste |
+| `updated_at` | fehlt: `0` |
+| Felder eines Alerts, Hosts, Monitors oder einer Dienst-Aktivität | fehlt: Leerstring, `0` bzw. `false`; ein fehlendes Feld lässt nicht mehr das ganze Dashboard scheitern. Fehlt `id`, nimmt die App den Namen (Alert: Topic, Zeit und Titel) |
+| `level` eines Alerts | unbekannt oder fehlt: `info` |
+| `status` eines Monitors | unbekannt oder fehlt: `unknown` (grau, Fragezeichen, „UNBEKANNT“), nicht mehr rot wie `down` |
+| `latest_url` eines Updates | ungültig: kein Link |
 | `hasUpdate` | `null`: Eintrag erscheint nur im Hinweis „kein bekannter aktueller Stand“ |
 
 ### Farben
 
-Prozentwerte (CPU, RAM, Disk, Temperatur) färben sich nach Schwelle: unter 50 grün, 50 bis 75 gelb, 75 bis 90 orange, ab 90 rot (`StatusPalette.color(forPercentage:)`). Die Temperatur nutzt dieselbe Skala, auch wenn sie in °C gemessen wird.
+Prozentwerte (CPU, RAM, Disk) färben sich nach Schwelle: unter 50 grün, 50 bis 75 gelb, 75 bis 90 orange, ab 90 rot (`StatusPalette.color(forPercentage:)`). Die Temperatur hat eigene Schwellen in °C (`StatusPalette.color(forTemperature:)`): unter 60 grün, 60 bis 75 gelb, 75 bis 85 orange, ab 85 rot.
 
 ---
 
 ## Randfälle und Einschränkungen
 
-- **Fehler sind unsichtbar.** `DashboardViewModel.error` wird gesetzt, aber **von keiner Ansicht angezeigt**. Schlägt ein Abruf fehl, bleibt der zuletzt bekannte Stand stehen, und es erscheint nur der gelbe Hinweis „Homeserver nicht erreichbar — zeige letzten bekannten Stand.“ (siehe unten). Die Ursache sieht man im Debugger, siehe [Debugging](debugging.md#in-xcode-debuggen).
-- Der Hinweis erscheint, sobald **kein Netzpfad** besteht oder die **letzte Anfrage an `carplay-api` fehlschlug**. Dazu zählt jeder Statuscode ≠ 200, also auch ein falsches Token (401). „Nicht erreichbar“ heißt deshalb nicht zwingend, dass das Netzwerk fehlt.
+- **Fehler stehen im gelben Hinweis.** Schlägt ein Abruf fehl, bleibt der zuletzt bekannte Stand stehen, und unter „Homeserver nicht erreichbar — zeige letzten bekannten Stand.“ steht der Fehlertext aus `DashboardViewModel.error` (z. B. HTTP-Status oder Decodierfehler).
+- Der Hinweis erscheint, sobald **kein Netzpfad** besteht oder die **letzte Anfrage an `carplay-api` fehlschlug**. Dazu zählt jeder Statuscode außerhalb von 200 bis 299, also auch ein falsches Token (401), und ein fehlendes Token („Kein Token im Schlüsselbund gespeichert …“). „Nicht erreichbar“ heißt deshalb nicht zwingend, dass das Netzwerk fehlt.
 - Wetter-, News- und Tankerkönig-Aufrufe beeinflussen den Hinweis nicht.
 - Beim ersten Start ohne Daten sind die Karten leer (`hosts: []`, `status: []`), bis der erste Abruf gelungen ist.
 - Gelöschte Alarme gibt es nicht: Das Backend liefert nur die Nachrichten der letzten Stunden (`NTFY_SINCE`, Standard 12 Stunden). Ältere Alarme verschwinden von selbst.
@@ -82,7 +84,7 @@ Prozentwerte (CPU, RAM, Disk, Temperatur) färben sich nach Schwelle: unter 50 g
 
 ## Debugging und Fehlersuche
 
-Das Backend liefert eigene Fehlertexte (JSON `{"error": "…"}`), die die App nicht anzeigt. Zur Diagnose ruft man die Endpunkte direkt auf:
+Das Backend liefert eigene Fehlertexte (JSON `{"error": "…"}`), die App zeigt sie im gelben Hinweis. Zur Diagnose ruft man die Endpunkte direkt auf:
 
 ```bash
 TOKEN=<TOKEN>
