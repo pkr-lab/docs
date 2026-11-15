@@ -64,18 +64,55 @@ Externe Programme laufen über `tokio::process::Command` mit Argumentlisten, nie
 
 ## Installation
 
+cubi-desktop läuft unter Linux und macOS (Apple Silicon und Intel). Ein Skript installiert die App auf beiden Systemen wie eine normale Desktop-App mit Icon:
+
 ```bash
 cd ~/git/github/tools/cubi/cubi-desktop
-cargo build --release
-mkdir -p ~/.config/cubi-desktop
-cp -r config/* ~/.config/cubi-desktop/
+./install.sh                 # bauen, installieren, Symbol auf dem Schreibtisch
+./install.sh --no-desktop    # ohne Symbol auf dem Schreibtisch
+./install.sh --uninstall     # App, Starter und Icons entfernen, Konfiguration bleibt
 ```
+
+| System | Ergebnis |
+|---|---|
+| Linux | `~/.local/bin/cubi-desktop`, Eintrag „cubi“ im Anwendungsmenü (`~/.local/share/applications/cubi-desktop.desktop`), Icons in `~/.local/share/icons/hicolor`, Symbol auf dem Schreibtisch. Unter GNOME das Symbol beim ersten Mal per Rechtsklick „Start erlauben“. |
+| macOS | `~/Applications/cubi.app` mit Icon, startbar über Launchpad und Spotlight, Verknüpfung auf dem Schreibtisch. Fürs Dock: App starten, Rechtsklick aufs Dock-Symbol, „Im Dock behalten“. |
+
+Das Skript kopiert die Konfiguration nach `~/.config/cubi-desktop/`, auf beiden Systemen derselbe Ort (oder `$XDG_CONFIG_HOME/cubi-desktop/`). Vorhandene Dateien überschreibt es nicht. Nach einem `git pull` installiert ein erneutes `./install.sh` die neue Version.
+
+<img src="pics/desktop-icon.png" alt="cubi-Icon" width="96">
+
+Aus dem Terminal startet die App mit `cubi-desktop`, siehe [Nutzung](#nutzung).
+
+### macOS
+
+```bash
+brew install rustup && rustup-init
+brew install kubectl argocd helm gh act
+```
+
+- **Tailscale:** Die App nutzt die CLI aus `/Applications/Tailscale.app`, wenn `tailscale` nicht im `PATH` liegt.
+- **Terminal:** Interaktive Befehle öffnen Terminal.app über ein temporäres `.command`-Skript. Die Argumente werden darin einzeln in Anführungszeichen gesetzt, das Skript löscht sich beim Start selbst. Für iTerm in `desktop.toml` `terminal = ["open", "-a", "iTerm"]` setzen.
+- **`PATH`:** Beim Start übernimmt die App den `PATH` der Login-Shell und ergänzt `/opt/homebrew/bin` und `/usr/local/bin`. So findet sie Homebrew-Tools auch dann, wenn sie nicht aus einem Terminal gestartet wurde.
+- **Pre-Push-Checks:** Der Build von capulus-ios läuft hier echt, mit `xcodegen` und Xcode. Für die act-Checks braucht es Docker Desktop.
+
+### Linux
+
+Für den Build braucht es diese Pakete:
+
+```bash
+sudo apt install libxkbcommon-dev libwayland-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libgl1-mesa-dev
+```
+
+Das Terminal sucht die App in dieser Reihenfolge: `x-terminal-emulator`, `gnome-terminal`, `konsole`, `xfce4-terminal`, `kitty`, `alacritty`, `xterm`.
+
+### Voraussetzungen
 
 | Voraussetzung | Wofür |
 |---|---|
 | Rust stable (`rustup`) | Build |
 | `kubectl`, `argocd`, `helm`, `gh`, `tailscale`, `ssh` | cubi-Bereiche, wie beim Terminal-cubi |
-| ein Terminal (`x-terminal-emulator`, `gnome-terminal`, `konsole`, `kitty`, `alacritty`, `xterm`) | interaktive Befehle |
+| ein Terminal (Linux: siehe oben, macOS: Terminal.app oder iTerm) | interaktive Befehle |
 | `git`, `gh` (angemeldet mit `gh auth login`) | Status, Push, PR |
 | Docker (Daemon läuft), [`act`](https://github.com/nektos/act) | Workflow-Jobs mit Inline-Skript (capulus-core) und `docker build` |
 | `yamllint`, `ansible-lint`, `gitleaks`, `npx`, `python3` mit PyYAML | Checks der Profile |
@@ -130,7 +167,7 @@ Ordner: `~/.config/cubi-desktop/` (oder `--config <ordner>` oder `CUBI_DESKTOP_C
 
 | Datei | Inhalt |
 |---|---|
-| `desktop.toml` | `terminal`: Terminal für interaktive Befehle als Argumentliste, z. B. `["gnome-terminal", "--"]`. Leer heißt automatisch suchen. |
+| `desktop.toml` | `terminal`: Terminal für interaktive Befehle als Argumentliste, z. B. `["gnome-terminal", "--"]` oder unter macOS `["open", "-a", "iTerm"]`. Leer heißt automatisch: Linux sucht ein Terminal, macOS nimmt Terminal.app. |
 | `precheck/config.toml` | `parallel` (gleichzeitige Checks, Standard 2), `repos` (Liste für die Auswahl, `~` erlaubt) |
 | `precheck/profiles/<name>.toml` | ein Profil pro Repo. Es wird über `remote = "owner/repo"` dem Remote `origin` zugeordnet. |
 | `precheck/shared/commitlint.config.cjs` | commitlint-Regeln aus `pkr-lab/.github` (v1.2.0) |
