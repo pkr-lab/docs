@@ -46,12 +46,16 @@ bleiben in der Historie und würden nach der Reparatur weiter feuern.
 | Alert | Bedingung | Schwere |
 |---|---|---|
 | `BackupJobStale` | CronJob mit `backup` im Namen, letzter Erfolg älter als 30 h | critical |
-| `CronJobStale` | alle anderen CronJobs, letzter Erfolg älter als 36 h | warning |
+| `CronJobStale` | alle anderen CronJobs, letzter Erfolg älter als das 1,5-fache des Zeitplan-Intervalls, mindestens 36 h | warning |
 
 Ausgesetzte CronJobs (`suspend: true`, z. B. der wöchentliche `zammad-cronjob-reindex`) sind ausgenommen. Die
 Schwellen passen zu täglichen Nachtläufen (Vaultwarden 01:30): eine ausgefallene Nacht meldet sich
 am Vormittag danach. Erfasst sind nur CronJobs, die schon einmal erfolgreich waren; ein CronJob, der nie lief,
 erzeugt keine Serie.
+
+Das Intervall von `CronJobStale` ergibt sich aus `kube_cronjob_next_schedule_time - kube_cronjob_status_last_schedule_time`.
+Tägliche Jobs melden sich weiter nach 36 h, wöchentliche wie `zammad-scheduler-restart` (So 04:30) erst nach 10,5 Tagen.
+Vorher galten 36 h für alle, der wöchentliche Job meldete sich deshalb jeden Montagnachmittag (Anlass 2026-11-16).
 
 **Grenze:** die Regeln sehen nur, ob der Job erfolgreich *endete*. Ein „erfolgreicher“ Lauf mit leerem Dump
 (so ein 0-Byte-Dump trat bei Authentik schon auf) fällt hier nicht auf; das prüfen die Skripte der Backups selbst.
