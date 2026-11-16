@@ -68,10 +68,28 @@ cubi-desktop läuft unter Linux und macOS (Apple Silicon und Intel). Ein Skript 
 
 ```bash
 cd ~/git/github/tools/cubi/cubi-desktop
-./install.sh                 # bauen, installieren, Symbol auf dem Schreibtisch
+./install.sh                 # fehlende Pakete (mit Rückfrage), bauen, installieren, Schreibtisch-Symbol
+./install.sh --yes           # fehlende Pakete ohne Rückfrage
+./install.sh --no-deps       # Pakete nicht prüfen
 ./install.sh --no-desktop    # ohne Symbol auf dem Schreibtisch
 ./install.sh --uninstall     # App, Starter und Icons entfernen, Konfiguration bleibt
+./deps.sh --check            # nur anzeigen, welche Programme fehlen
 ```
+
+### Pakete
+
+`install.sh` ruft zuerst `deps.sh` auf. Das Skript prüft alle Programme aus der Tabelle [Voraussetzungen](#voraussetzungen), zeigt die fehlenden an und installiert sie nach Rückfrage:
+
+| Programm | Linux | macOS |
+|---|---|---|
+| Rust | offizieller rustup-Installer | `brew install rustup` |
+| git, gh, ssh, curl, make, python3, PyYAML, npm, yamllint, ansible-lint, Docker | `apt` (`docker.io`, `python3-yaml`, `openssh-client` …) | Homebrew bzw. Xcode Command Line Tools, Docker Desktop als Cask |
+| kubectl, helm, argocd, act | offizielles Release-Binary nach `~/.local/bin`, SHA-256 geprüft | Homebrew |
+| gitleaks | `apt`, sonst Release-Binary mit SHA-256-Prüfung | Homebrew |
+| Tailscale | offizieller Installer von tailscale.com | Tailscale-App als Cask |
+| xcodegen | – | Homebrew |
+
+Eine falsche Prüfsumme bricht die Installation ab. Für `apt` fragt `sudo` nach dem Passwort. CodeQL für die optionalen CodeQL-Checks wird nicht automatisch installiert. Am Ende nennt das Skript offene Schritte, z. B. `sudo tailscale up` oder die Aufnahme in die Gruppe `docker`.
 
 | System | Ergebnis |
 |---|---|
@@ -84,25 +102,31 @@ Das Skript kopiert die Konfiguration nach `~/.config/cubi-desktop/`, auf beiden 
 
 Aus dem Terminal startet die App mit `cubi-desktop`, siehe [Nutzung](#nutzung).
 
-### macOS
+### Umgebung beim Start aus Menü, Dock oder Launchpad
 
-```bash
-brew install rustup && rustup-init
-brew install kubectl argocd helm gh act
+Eine App aus dem Startmenü bekommt nicht die Variablen aus `~/.bashrc` oder `~/.zshrc`, z. B. ein dort gesetztes `KUBECONFIG`. Ohne `KUBECONFIG` fällt `kubectl` auf `localhost:8080` zurück, und ArgoCD, Kubernetes und Helm melden „connection refused“.
+
+cubi-desktop liest deshalb beim Start einmal die Umgebung der interaktiven Login-Shell. Die Shell läuft dabei mit Zeitlimit und ohne Steuerterminal. Übernommen werden nur diese Variablen:
+- `PATH`, zusammengeführt mit `/opt/homebrew/bin`, `/usr/local/bin`, `~/.local/bin` und `~/.cargo/bin`
+- `KUBECONFIG`, `SSH_AUTH_SOCK`, `DOCKER_HOST`, `CUBI_CONFIG`
+- alle mit `ARGOCD_`, `GH_`, `GITHUB_`, `HELM_`, `KUBE`, `TAILSCALE_` oder `HOMEBREW_` am Anfang
+
+Schon gesetzte Werte haben Vorrang. Feste Werte stehen in `desktop.toml` unter `[env]`:
+
+```toml
+[env]
+KUBECONFIG = "~/.kube/homeserver.yaml"
 ```
+
+### macOS
 
 - **Tailscale:** Die App nutzt die CLI aus `/Applications/Tailscale.app`, wenn `tailscale` nicht im `PATH` liegt.
 - **Terminal:** Interaktive Befehle öffnen Terminal.app über ein temporäres `.command`-Skript. Die Argumente werden darin einzeln in Anführungszeichen gesetzt, das Skript löscht sich beim Start selbst. Für iTerm in `desktop.toml` `terminal = ["open", "-a", "iTerm"]` setzen.
-- **`PATH`:** Beim Start übernimmt die App den `PATH` der Login-Shell und ergänzt `/opt/homebrew/bin` und `/usr/local/bin`. So findet sie Homebrew-Tools auch dann, wenn sie nicht aus einem Terminal gestartet wurde.
-- **Pre-Push-Checks:** Der Build von capulus-ios läuft hier echt, mit `xcodegen` und Xcode. Für die act-Checks braucht es Docker Desktop.
+- **Pre-Push-Checks:** Der Build von capulus-ios läuft hier echt, mit `xcodegen` und Xcode. Für die act-Checks muss Docker Desktop laufen.
 
 ### Linux
 
-Für den Build braucht es diese Pakete:
-
-```bash
-sudo apt install libxkbcommon-dev libwayland-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libgl1-mesa-dev
-```
+Zum Bauen braucht es nur einen C-Linker (`build-essential`). Die Grafikbibliotheken lädt die App zur Laufzeit, sie sind auf jedem Desktop vorhanden.
 
 Das Terminal sucht die App in dieser Reihenfolge: `x-terminal-emulator`, `gnome-terminal`, `konsole`, `xfce4-terminal`, `kitty`, `alacritty`, `xterm`.
 
@@ -119,7 +143,7 @@ Das Terminal sucht die App in dieser Reihenfolge: `x-terminal-emulator`, `gnome-
 | `codeql` | optionale CodeQL-Checks |
 | macOS mit `xcodegen` und Xcode | Build von capulus-ios |
 
-Fehlende Programme meldet die App: in den cubi-Bereichen als Fehlermeldung, bei den Pre-Push-Checks als „Voraussetzung fehlt“. Sie installiert nichts selbst.
+Fehlende Programme meldet die App selbst: in den cubi-Bereichen als Fehlermeldung, bei den Pre-Push-Checks als „Voraussetzung fehlt“. Installiert werden sie über `install.sh` bzw. `deps.sh`, die App selbst installiert nichts.
 
 ---
 
@@ -261,6 +285,7 @@ Abgeleitet aus den Workflows, die bei `pull_request` auf `main` laufen. Nicht ü
 |---|---|---|
 | `Konfiguration: Profilordner … fehlt` | Konfiguration nicht kopiert | `cp -r config/* ~/.config/cubi-desktop/` |
 | `Kein Profil für owner/repo` | kein Profil mit passendem `remote` | Profil anlegen |
+| `The connection to the server localhost:8080 was refused` | `kubectl` findet keine kubeconfig, z. B. weil `KUBECONFIG` nur in einer Datei steht, die die Shell beim Start nicht liest | `KUBECONFIG` in `~/.bashrc`/`~/.zshrc` exportieren oder in `desktop.toml` unter `[env]` setzen, App neu starten |
 | `Kein Terminal gefunden` | kein bekanntes Terminal im `PATH` | `terminal` in `desktop.toml` setzen |
 | `cubi-Konfiguration: Keine targets.yaml gefunden` | cubi nicht eingerichtet | `~/.config/cubi/targets.yaml` anlegen, siehe [Konfiguration](konfiguration.md) |
 | `Tool nicht installiert: …` | Programm fehlt im `PATH` | installieren und den Check neu starten |
