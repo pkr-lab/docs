@@ -128,6 +128,7 @@ Defaults in
 | `cluster_power_manager_ram_scale_down_threshold` | 30% | RAM-Schwelle zum Herunterskalieren |
 | `cluster_power_manager_scale_down_sustain_seconds` | 900s | Wie lange sustained niedrig, bevor EIN Worker abgeschaltet wird |
 | `cluster_power_manager_min_uptime_seconds` | 300s | Mindest-Laufzeit eines Workers nach dem Wecken, bevor er für Shutdown in Frage kommt |
+| `cluster_power_manager_unplanned_off_grace_seconds` | 600s | Karenzzeit, nach der ein unerreichbarer, nicht cordoneter Worker cordoned wird |
 
 **Bewusste Asymmetrie:** Die Scale-down-Schwelle (30%) liegt deutlich
 unter der Scale-up-Schwelle (60%), und die Sustain-Dauer zum Abschalten
@@ -171,6 +172,22 @@ wakeonlan <mac-adresse-worker-1>
 ```
 
 ---
+
+### Ungeplant ausgeschaltete Worker
+
+Jeder geplante Shutdown (Power-Manager, nightly-worker-wake, power-agent) cordont den Worker vorher. Geht ein Worker
+ohne cordon aus, etwa durch `resource_watchdog` oder `thermal_watchdog` (beide rufen nur `systemctl poweroff` auf),
+den Stromtaster oder einen Absturz, steht er als „schedulable, NotReady“ im Cluster. Der Signalalarm `Worker1Schlaeft`
+setzt aber cordoned voraus ([Monitoring](../../capulus-core/6-hintergruende/60060-monitoring-und-alerting.md#schlafende-hosts-und-inhibit-regeln)).
+Ohne ihn feuern alle Folgealarme (DaemonSets, kubelet, Scrape-Ziele, entw-vm) dauerhaft und wiederholen sich alle 24 h.
+
+Deshalb prüft der Dienst in jedem Durchlauf jeden Worker per Ping. Ist einer länger als
+`cluster_power_manager_unplanned_off_grace_seconds` nicht erreichbar und nicht cordoned, cordont er ihn, löscht
+`woke_at` und schickt einmal „Worker unerwartet aus“ per ntfy. `worker-1Down` meldet den Ausfall also einmal, danach
+greift die Unterdrückung. Die Unerreichbarkeit merkt sich der Dienst in `<state_dir>/<name>.unreachable_since`.
+
+Anlass am 2026-11-16: worker-1 ging am Vorabend um 20:34 nach einem Ansible-Lauf (cordon, Reboot, uncordon) ohne
+cordon aus. Bis zum manuellen `kubectl cordon` kamen rund 20 Folgealarme in Mattermost an.
 
 ## Fehlerbehebung
 
