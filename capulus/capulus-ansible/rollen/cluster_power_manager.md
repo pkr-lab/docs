@@ -25,6 +25,7 @@ Defaults aus `defaults/main.yml`. Überschreiben in `group_vars/` oder `host_var
 | `cluster_power_manager_scale_down_sustain_seconds` | `900` | – |
 | `cluster_power_manager_min_uptime_seconds` | `300` | – |
 | `cluster_power_manager_ready_timeout_seconds` | `120` | – |
+| `cluster_power_manager_unplanned_off_grace_seconds` | `600` | Ist ein Worker so lange nicht erreichbar, aber nicht cordoned (ungeplanter Shutdown), cordont der Dienst ihn und meldet das einmal per ntfy |
 | `cluster_power_manager_state_dir` | `/var/lib/cluster-power-manager` | – |
 | `cluster_power_manager_kubeconfig` | `/etc/rancher/k3s/k3s.yaml` | – |
 | `cluster_power_manager_ntfy_host` | `{{ homelab_ntfy_host }}` | – |
@@ -76,6 +77,7 @@ kubectl get nodes
 | Worker wird nicht geweckt | Last unter den Schwellen (CPU und RAM je 60 % über `…scale_up_sustain_seconds`) oder WoL nicht aktiv | Log des Dienstes lesen, [Rolle wake_on_lan](wake_on_lan.md), BIOS und Switch prüfen |
 | Worker fährt nicht herunter | Last über 30 % (Scale-down erst nach 900 s Dauer), `min_uptime_seconds` (300) nicht erreicht, SSH-Schlüssel nicht autorisiert | Schlüssel `/etc/cluster-power-manager/id_ed25519`, Rolle [cluster_power_manager_target](cluster_power_manager_target.md) |
 | Worker bleibt nach dem Wecken `NotReady` | `ready_timeout_seconds` (120) abgelaufen | `journalctl -u k3s-agent` auf dem Worker, [k3s](../../capulus-core/b-kubernetes-gitops/b0000-k3s.md#fehlersuche) |
+| ntfy „Worker unerwartet aus“ | Worker ging ohne cordon aus (resource-/thermal-watchdog, Stromtaster, Absturz) | Ursache auf dem Worker suchen (`journalctl -b -1`); der Node ist bereits cordoned, die Folgealarme sind unterdrückt |
 | Dienst startet nicht neu nach Änderung | `config.env` fehlerhaft | `systemctl cat cluster-power-manager`, `/etc/cluster-power-manager/config.env` |
 
 Betrieb und Schwellen: [Cluster Power Manager](../2-betrieb-hardware/20020-cluster-power-manager.md#fehlerbehebung).
