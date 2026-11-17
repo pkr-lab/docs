@@ -84,12 +84,15 @@ Lokal: `python3 scripts/check-doc-links.py`.
 
 ### gitleaks-Konfiguration
 
-- [`.gitleaks.toml`](https://github.com/pkr-lab/capulus-core/blob/main/.gitleaks.toml) erweitert die Standardregeln um **eine Ausnahme**: den Chiffretext von
+- [`.gitleaks.toml`](https://github.com/pkr-lab/capulus-core/blob/main/.gitleaks.toml) erweitert die Standardregeln um **zwei Ausnahmen**. Erstens den Chiffretext von
   SealedSecrets (Base64, beginnt mit `Ag`, mindestens 200 Zeichen). Ohne sie meldete die Regel `generic-api-key` den
   verschlüsselten Wert von Feldern namens `token:` als Klartext-Token (der Lauf nach Commit `433afb3` wurde rot,
   und mit Pflicht-Checks hätte jeder PR mit einem neuen SealedSecret hier gehangen). Die Ausnahme hängt am **Wert**,
   nicht am Dateipfad: ein versehentlich im Klartext eingetragenes Token in einer `sealedsecret*.yaml` wird weiter
   gemeldet (getestet).
+  Zweitens das Base32-Secret `GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ`: der öffentliche Testvektor aus RFC 6238 (ASCII `12345678901234567890`),
+  den die Tests von `isc-manager-bot` für TOTP-Codes und die Mock-Konfiguration verwenden. `generic-api-key` meldete ihn als Klartext-Secret. Auch hier
+  gilt der Wert, nicht der Pfad: jedes andere Base32-Secret in einer Testdatei wird weiter gemeldet.
 - [`.gitleaksignore`](https://github.com/pkr-lab/capulus-core/blob/main/.gitleaksignore) führt **7 Altfunde in der Git-Historie** auf. Ohne die Liste scheitert
   jeder Lauf, der die ganze Historie scannt (Cron/`workflow_call` der [ENTW-Promotion](f0080-entw-promotion.md)),
   dauerhaft. Fünf sind harmlos (Platzhalter in alten Doku-Beispielen, eine öffentliche UUID im pacman-Manifest).
