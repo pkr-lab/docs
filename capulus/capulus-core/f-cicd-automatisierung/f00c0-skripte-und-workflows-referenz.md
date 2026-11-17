@@ -147,14 +147,14 @@ Der Ablauf (ENTW → `main` → PROD) und die Gates stehen in [f0080](f0080-entw
 
 | Workflow | Auslöser | Zweck | Benötigte Secrets | Typische Fehlerursache |
 |---|---|---|---|---|
-| `ci.yml` | PR und Push auf `main`, manuell, `workflow_call` | Jobs: `lint` (yamllint, helm lint), `manifest-validate` (helm template, kubeconform), `go-check`, `isc-news-bot`, `token-register`, `secret-scan` (gitleaks). Bestandteil des Rulesets „main: PR + CI“ | `GITHUB_TOKEN` | Linter-Fehler, Schemafehler im Chart, `go test` rot, Register-Fehler, Secret im Diff ([f0070](f0070-ci-lint.md)) |
+| `ci.yml` | PR und Push auf `main`, manuell, `workflow_call` | Jobs: `lint` (yamllint, helm lint), `manifest-validate` (helm template, kubeconform), `go-check`, `isc-news-bot`, `isc-manager-bot`, `token-register`, `secret-scan` (gitleaks). Bestandteil des Rulesets „main: PR + CI“ | `GITHUB_TOKEN` | Linter-Fehler, Schemafehler im Chart, `go test` rot, Register-Fehler, Secret im Diff ([f0070](f0070-ci-lint.md)) |
 | `commitlint.yml` | PR | Conventional Commits | – | Commit-Nachricht im falschen Format |
 | `release.yml` | Push auf `main` | semantic-release über den zentralen Workflow ([f0030](f0030-release-automation.md)) | siehe [github-workflows](../../../github-workflows/index.md) | Commit-Typen ohne Release, Rechte |
 | `codeql.yml` | Push, PR, wöchentlich Montag 03:41 UTC | CodeQL-Analyse ([d0080](../d-sicherheit/d0080-codeql-dependabot.md)) | – | Build-Fehler im Autobuild |
 | `security-issues.yml` | täglich 06:35 UTC | `security-issues.py` | `github.token` | siehe Meldungen oben |
 | `image-scan.yml` | wöchentlich Montag 05:30 UTC | Trivy über alle Chart-Images (`scan-cluster-images.sh --charts --summary`) | – | neue Funde mit Fix |
 | `token-watch.yml` | täglich 06:05 UTC | `token-watch.py`, rot bei Ablauf in weniger als 7 Tagen | `GITHUB_TOKEN`, `PROMOTE_TOKEN`, `RENOVATE_TOKEN`, `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET` | Token läuft ab, Rotation nötig |
-| `build-images.yml` | Push auf `main` (Pfade der Images), PR, manuell | baut `pacman`, `carplay-api`, `ticket-gate`, `n8n`, `alert-caller`, `isc-news-bot`, pusht nach `ghcr.io/pkr-lab`, öffnet Bump-PR (`bump-image-tag.py`) ([f0060](f0060-build-images.md)) | `GITHUB_TOKEN`, `RENOVATE_TOKEN` | Dockerfile-Fehler, Registry-Rechte |
+| `build-images.yml` | Push auf `main` (Pfade der Images), PR, manuell | baut `pacman`, `carplay-api`, `ticket-gate`, `n8n`, `alert-caller`, `isc-news-bot`, `isc-manager-bot`, pusht nach `ghcr.io/pkr-lab`, öffnet Bump-PR (`bump-image-tag.py`) ([f0060](f0060-build-images.md)) | `GITHUB_TOKEN`, `RENOVATE_TOKEN` | Dockerfile-Fehler, Registry-Rechte |
 | `entw-trigger.yml` | Push auf `entw` | startet `promote-entw.yml` auf `main` | – | – |
 | `promote-entw.yml` | stündlich (Minute 7), manuell | Jobs: `detect`, `ci`, `ci-failed`, `promote`: übernimmt `entw` nach `main` ([f0080](f0080-entw-promotion.md)) | `RENOVATE_TOKEN` | Konflikt oder rote CI, erzeugt ein Issue |
 | `sync-entw.yml` | Push auf `main`, stündlich (Minute 17), manuell | `sync-entw.sh` | `RENOVATE_TOKEN` | `entw` hat eigene, nicht übergebene Commits |
