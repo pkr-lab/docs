@@ -140,7 +140,7 @@ Eine freie Mitteilung auf den iPads läuft über ntfy ([300u0, Workflow 8](300u0
 2. Auf jedem iPad die App **ntfy** aus dem App Store installieren.
 3. In der App: Einstellungen → Benutzer verwalten → Benutzer `ipad` mit dem Passwort für `https://ntfy-tech.pke-lab.de` hinzufügen.
 4. Thema abonnieren: Server `https://ntfy-tech.pke-lab.de`, Thema `Home-Lab-iPad`. Mitteilungen für die App erlauben.
-5. Mitteilungen testen: Formular `https://n8n.prod.homeserver/form/mdm-nachricht`.
+5. Mitteilungen testen: Formular `https://n8n.prod.homeserver/form/mdm-auftrag`, Feld Push-Nachricht.
 
 Die App muss auf dem iPad installiert und das Thema abonniert sein, damit eine Mitteilung ankommt. Eine Verteilung der App per MDM ist nicht eingerichtet (sie bräuchte Lizenzen über Apple Business).
 
