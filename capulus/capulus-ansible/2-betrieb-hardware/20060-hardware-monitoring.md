@@ -19,13 +19,13 @@ Quellen im Repo: [argocd/apps/tech/monitoring/dashboards/hardware/](https://gith
 | **Hardware** | die vier Dashboards oben + die "Node Exporter …"-Standard-Dashboards | `dashboards-hardware.yaml`; Node-Exporter-Dashboards per Hook-Job |
 | **Kubernetes (TECH)** | "Kubernetes / …" (Compute Resources, Networking, Kubelet, …) — zeigen den TECH-Cluster | Hook-Job `monitoring-dashboard-folders` (nach Titel-Präfix) |
 | **Monitoring-Stack** | VictoriaMetrics, Prometheus, Alertmanager, Grafana Overview | dito |
-| **Anwendungen (TECH)** | nur noch das Pegel-Dashboard "Rhein-Pegel Andernach" | `dashboard-rhein-andernach.yaml` (`grafana_folder`-Annotation) |
+| **OG Andernach** | Rhein-Pegel Andernach, NINA-Warnlage | `dashboard-rhein-andernach.yaml`, `dashboard-nina-warnlage.yaml` (`grafana_folder`-Annotation) |
 
 Pro-App-Dashboards (frühere Ordner **Plattform (TECH)** und die App-Dashboards in
 **Anwendungen (TECH)**, Zammad, Pacman, "1002011-pis") gibt es nicht mehr: Das
 Mainboard und das Server-Detail decken die Maschinen ab, App-Zustand zeigen
-ArgoCD, Uptime Kuma und die Alerts. Der leere Ordner **Plattform (TECH)** muss
-einmalig von Hand gelöscht werden.
+ArgoCD, Uptime Kuma und die Alerts. Die leeren Ordner **Plattform (TECH)** und **Anwendungen (TECH)** müssen
+einmalig von Hand gelöscht werden (Anwendungen (TECH) ist durch OG Andernach ersetzt).
 
 Ein umbenannter Ordner ist für Grafana ein **neuer** Ordner — der alte bleibt
 leer stehen und muss von Hand gelöscht werden (Grafana → Dashboards → Ordner

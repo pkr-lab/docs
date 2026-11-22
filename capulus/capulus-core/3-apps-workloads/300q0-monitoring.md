@@ -35,7 +35,7 @@ flowchart LR
 | VMSingle | Aufbewahrung `15d`, ein Replika, PVC 10 GiB `local-path`, auf dem Node `homeserver` |
 | Grafana | PVC 2 GiB `local-path`, Plugins `victoriametrics-metrics-datasource`, `yesoreyeram-infinity-datasource`, `victoriametrics-logs-datasource`, `grafana-polystat-panel`, Admin aus dem Secret `grafana-admin`, Sidecar liest Dashboards und Datenquellen aus ConfigMaps (Namespace `monitoring`) |
 | Alertmanager | ein Replika, Routen siehe [60060](../6-hintergruende/60060-monitoring-und-alerting.md#alertmanager-routing) |
-| Dashboards | Ordner Hardware (Mainboard, Übersicht, Server-Detail, Speicher & Laufwerke), Anwendungen (TECH) mit Rhein-Pegel |
+| Dashboards | Ordner Hardware (Mainboard, Übersicht, Server-Detail, Speicher & Laufwerke), OG Andernach mit Rhein-Pegel und NINA-Warnlage |
 | Schreibzugang | Ingress `vm-write` mit Basic-Auth `vm-writer` (`writeAuth.enabled`, derzeit `false`), für `vmagent` der Pis, siehe [vmagent](../../capulus-ansible/rollen/vmagent.md) |
 | Secrets | `grafana-admin`, `alert-caller-token`, `n8n-webhook-token`, `vm-write-auth` (SealedSecrets) |
 
