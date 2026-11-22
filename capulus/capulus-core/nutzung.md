@@ -10,6 +10,7 @@ python3 scripts/check-token-register.py
 (cd argocd/apps/tech/pacman/server && go build ./... && go vet ./... && go test ./... && go mod tidy -diff)
 (cd argocd/apps/tech/carplay-api/src && go build ./... && go vet ./... && go test ./... && go mod tidy -diff)
 (cd argocd/apps/tech/isc-news-bot && npm ci && npm test)
+(cd argocd/apps/tech/isc-manager-bot && npm ci && npm test)
 helm template argocd/apps/<cluster>/<app> | kubeconform -strict -ignore-missing-schemas -summary
 ```
 
@@ -57,7 +58,7 @@ Eine Änderung läuft zuerst über den Branch `entw` in den ENTW-Cluster, nach 2
 
 ## Images bauen
 
-`build-images.yml` baut die selbst gehosteten Images (`pacman`, `carplay-api`, `n8n`, `alert-caller`, `isc-news-bot`) bei Änderungen am Dockerfile oder Quellcode und schreibt den Tag `sha-<commit>` nach `image.tag` in der `values.yaml` (`scripts/bump-image-tag.py`). Registry: `ghcr.io/pkr-lab`. Manuell: Workflow `Build Workload Images` mit Auswahl der App starten. Details: [f0060 Images bauen](f-cicd-automatisierung/f0060-build-images.md).
+`build-images.yml` baut die selbst gehosteten Images (`pacman`, `carplay-api`, `n8n`, `alert-caller`, `isc-news-bot`, `isc-manager-bot`) bei Änderungen am Dockerfile oder Quellcode und schreibt den Tag `sha-<commit>` nach `image.tag` in der `values.yaml` (`scripts/bump-image-tag.py`). Registry: `ghcr.io/pkr-lab`. Manuell: Workflow `Build Workload Images` mit Auswahl der App starten. Details: [f0060 Images bauen](f-cicd-automatisierung/f0060-build-images.md).
 
 ## Monitoring
 
