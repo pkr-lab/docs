@@ -312,7 +312,8 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [Paperless-ngx](3-apps-workloads/30050-paperless-ngx.md) | PROD | Dokumentenmanagement mit OCR — Briefe, Rechnungen, Verträge scannen und durchsuchen |
 | [n8n](3-apps-workloads/30070-n8n.md) | TECH | Low-Code-Automatisierung — Dienste verknüpfen ohne Programmieren |
 | [Uptime Kuma](3-apps-workloads/30080-uptime-kuma.md) | TECH | Status-Seite und Alerting für alle Dienste |
-| [Rhein-Dashboard](3-apps-workloads/30090-rhein-dashboard.md) | TECH | Grafana: Pegelonline, DWD-Warnungen, ELWIS, Hochwasservorhersage RLP |
+| [Rhein-Dashboard](3-apps-workloads/30090-rhein-dashboard.md) | TECH | Grafana: Pegelonline mit Nachbarstationen, Wettervorschau, ELWIS, Hochwasservorhersage RLP |
+| [NINA-Warnlage](3-apps-workloads/30098-nina-warnlage.md) | TECH | Grafana: aktive NINA-Warnmeldungen (MoWaS, Katwarn, DWD, Hochwasser) je Landkreis für DLRG und Katastrophenschutz |
 | [Vaultwarden](3-apps-workloads/300a0-vaultwarden.md) | TECH | Bitwarden-kompatibler Passwort-Manager für Browser/Mobile-Clients |
 | [Nextcloud](3-apps-workloads/300b0-nextcloud.md) | PROD | Datei-Sync, Kalender, Kontakte |
 | [Immich](3-apps-workloads/300c0-immich.md) | PROD | Foto-/Video-Backup vom Handy inkl. Gesichtserkennung, eigener NAS-Storage-Export |

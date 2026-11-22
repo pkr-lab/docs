@@ -1,9 +1,9 @@
-# Rhein-Dashboard — Pegel, Warnungen & Schifffahrt Andernach
+# Rhein-Dashboard — Pegel, Wetter & Schifffahrt Andernach
 
 > **Cluster:** TECH · Ordner `argocd/apps/tech/monitoring/ (Dashboard in Grafana)` · URL `https://grafana.tech.homeserver`. `kubectl`-Befehle in diesem Doc gelten für den TECH-Cluster ([Zugriff je Cluster](../../capulus-ansible/a-betriebssystem/a0010-overview.md#kubectl-zugriff-je-cluster)).
 
-Das Grafana-Dashboard **"Rhein Andernach — Pegel & Warnungen"** zeigt
-Echtzeitdaten aus vier öffentlichen, kostenlosen Datenquellen.
+Das Grafana-Dashboard **"Rhein Andernach — Pegel, Wetter & Warnungen"** zeigt
+Echtzeitdaten aus öffentlichen, kostenlosen Datenquellen. Die aktuellen amtlichen Warnmeldungen stehen im eigenen Dashboard [NINA-Warnlage](30098-nina-warnlage.md).
 
 Grafana URL: **https://grafana.tech.homeserver** → Dashboard: *Rhein Andernach*
 
@@ -13,7 +13,8 @@ Grafana URL: **https://grafana.tech.homeserver** → Dashboard: *Rhein Andernach
 
 | Quelle | Betreiber | Lizenz | Zweck |
 |---|---|---|---|
-| **Pegelonline** | WSV (Wasser- und Schifffahrtsverwaltung) | öffentlich & kostenlos | Aktueller Rhein-Pegel + Verlauf |
+| **Pegelonline** | WSV (Wasser- und Schifffahrtsverwaltung) | öffentlich & kostenlos | Aktueller Rhein-Pegel + Verlauf, Nachbarstationen |
+| **Open-Meteo** | Open-Meteo.com | öffentlich & kostenlos, kein Schlüssel | Wettervorhersage heute + 3 Tage |
 | **DWD Open Data** | Deutscher Wetterdienst | öffentlich & kostenlos | Unwetter- und Sturmwarnungen |
 | **ELWIS** | WSV | öffentlich & kostenlos | Schifffahrtsmeldungen, Sperrungen |
 | **Hochwasser RLP** | LUWG RLP | öffentlich & kostenlos | 24–48h Hochwasservorhersage |
@@ -29,7 +30,9 @@ Grafana URL: **https://grafana.tech.homeserver** → Dashboard: *Rhein Andernach
 - **Stat-Panel:** Aktueller Wasserstand in cm mit Farbschwellen
 - **Zeitreihe:** 48h-Verlauf mit Hochwassermeldestufen-Markierungen
 - **Gauge:** Visueller Füllstand mit Schwellenwert-Markierungen
-- **Tabelle:** Nachbarstationen am Rhein (km 580–650)
+- **Tabelle:** Nachbarstationen am Rhein (km 580–650), gefiltert und nach km sortiert
+- **Kacheln oberhalb/unterhalb:** Koblenz (km 591,5) und Neuwied Stadt (km 608,0) flussaufwärts, Oberwinter (km 638,2) und Bonn (km 654,8) flussabwärts
+- **Vergleichsverlauf (48 h):** Koblenz, Neuwied Stadt, Andernach, Oberwinter und Bonn. Die Pegelnullpunkte unterscheiden sich je Station, verglichen wird der Verlauf der Welle, nicht der absolute Wert
 
 Hochwassermeldestufen Andernach (Rhein):
 
@@ -40,13 +43,19 @@ Hochwassermeldestufen Andernach (Rhein):
 | 3 | ≥ 660 cm | Einsatz |
 | 4 | ≥ 800 cm | Katastrophenschutz |
 
+### Wetter Andernach — heute + 3 Tage
+
+**API:** `https://api.open-meteo.com/v1/forecast?latitude=50.4397&longitude=7.4017&daily=…&forecast_days=4`
+
+Tabelle mit Wetterlage (WMO-Code als Text), Höchst- und Tiefsttemperatur, Regenmenge, Regenwahrscheinlichkeit und Wind. Die erste Zeile ist heute.
+
 ### DWD Warnungen — Kreis Mayen-Koblenz
 
 > **⚠ API eingestellt:** Der DWD hat die JSON-API (`warnapp_gemeinden/json/`) abgeschaltet (HTTP 404).
 > Die Nachfolge-URL (`warnapp/json/warnings.json`) liefert **JSONP**, kein valides JSON — nicht kompatibel
 > mit dem Infinity-Plugin. Das Panel zeigt daher statische Links zum DWD-Warnportal.
 >
-> Alternative für Grafana: NINA-API (`https://nina.api.bund.dev`) oder Katwarn-API prüfen.
+> Live-Warnungen liefert das Dashboard [NINA-Warnlage](30098-nina-warnlage.md).
 
 - Warncell-ID `807137000` = Landkreis Mayen-Koblenz
 - Warnstufen: 1 = Gelb, 2 = Orange, 3 = Rot, 4 = Violett
@@ -86,7 +95,10 @@ www.pegelonline.wsv.de
 www.dwd.de
 www.elwis.de
 www.hochwasser-rlp.de
+www.hochwasser.rlp.de
 opendata.dwd.de
+warnung.bund.de
+api.open-meteo.com
 ```
 
 Weitere Hosts können in `argocd/apps/tech/monitoring/templates/datasource-infinity.yaml`
@@ -95,14 +107,6 @@ ergänzt werden.
 ---
 
 ## Erweiterungsmöglichkeiten
-
-### Open-Meteo Wettervorhersage (kein API-Key)
-
-```
-https://api.open-meteo.com/v1/forecast?latitude=50.44&longitude=7.40&hourly=temperature_2m,precipitation,wind_speed_10m&forecast_days=2
-```
-
-Panel-Typ: Timeseries, Format: JSON, root_selector: `hourly`
 
 ### UV-Index (DWD)
 
