@@ -64,6 +64,7 @@ Alle Endpunkte außer `/healthz` und `/readyz` verlangen `Authorization: Bearer 
 | Methode und Pfad | Zweck |
 |---|---|
 | `POST /sync` | Eine Person abgleichen (Body siehe unten) |
+| `POST /members/new` | Neue Mitgliedsnummern in SEWOBE suchen (siehe [Neue Mitglieder erkennen](#neue-mitglieder-erkennen)) |
 | `GET /healthz` | Lebenszeichen, ohne Browser, ohne Token |
 | `GET /readyz` | Bereit, wenn der Chromium-Build vorhanden ist, ohne Token |
 
@@ -93,6 +94,29 @@ Alle Endpunkte außer `/healthz` und `/readyz` verlangen `Authorization: Bearer 
 | `durationMs` | Laufzeit |
 
 `changedFields` enthält je nach Fall `vorname`, `nachname`, `geburtsdatum`, `geschlecht`, `dlrgManagerId`, `strasse`, `plz`, `ort`, `land`, `mitgliedschaft`.
+
+### Neue Mitglieder erkennen
+
+`POST /members/new` meldet Mitglieder, deren Nummer höher ist als die zuletzt bekannte. Der Bot meldet sich nur bei SEWOBE an (nicht im ISC), sucht nacheinander nach `after + 1`, `after + 2` und so weiter und wertet einen Treffer nur, wenn seine Nummer genau der gesuchten entspricht. Lücken in der Nummernfolge sind erlaubt: Der Bot prüft `window` Nummern ab `after`, und jeder Treffer verlängert das Fenster um `window` ab der gefundenen Nummer (höchstens 60 Suchen je Lauf). Jede Suche wartet höchstens `NUMBER_SEARCH_SETTLE_MS` (Standard 20000, wie bei der Namenssuche) und endet früher, sobald der Treffer mit der gesuchten Nummer erscheint. Ohne neue Mitglieder dauert ein Lauf mit zehn Nummern deshalb rund dreieinhalb Minuten. Das Zeitlimit des Gesamtlaufs ist `MEMBERS_TIMEOUT_MS` (Standard 900000), der n8n-Aufruf wartet 960 s.
+
+| Feld | Pflicht | Bedeutung |
+|---|---|---|
+| `after` | ja | Zuletzt bekannte Mitgliedsnummer, 13 Ziffern |
+| `window` | nein | Wie viele Nummern über `after` hinaus geprüft werden, 1 bis 25, Standard 10 |
+
+| Antwortfeld | Inhalt |
+|---|---|
+| `ok` | `true`, wenn die Prüfung durchlief (auch ohne Treffer) |
+| `found` | Mindestens eine höhere Nummer gefunden |
+| `members` | Liste aus `number`, `name` (`Nachname, Vorname` wie in SEWOBE) und `active` |
+| `highest` | Höchste gefundene Nummer, ohne Treffer gleich `after` |
+| `checked` | Anzahl der Suchen |
+| `probes` | Je Suche: `number`, `hits` (Zahl der SEWOBE-Treffer) und `seen` (bis zu drei Treffernummern). Zeigt, ob die Suche Nummern überhaupt findet, ohne Namen |
+| `errorCode`, `step`, `error` | Bei Fehler wie bei `/sync` |
+
+Der Bot speichert keinen Stand. Die zuletzt bekannte Nummer hält der n8n-Workflow.
+
+**Annahme.** Das Verfahren setzt voraus, dass die SEWOBE-Suche auch nach der Mitgliedsnummer findet. Das wurde noch nicht gegen das echte SEWOBE geprüft. Zeigt `checked` nur Fehlschläge, obwohl es die Nummer gibt, bleibt `found` dauerhaft `false`: dann ist die Suche nach Nummern in SEWOBE nicht möglich und die Erkennung muss auf eine Liste mit Sortierung umgestellt werden.
 
 ### Fehlercodes und HTTP-Status
 
@@ -162,6 +186,9 @@ ConfigMap `isc-manager-bot-config` (Werte in `values.yaml` unter `config`):
 | `MITGLIEDSCHAFT_GLIEDERUNG` | `Ortsgruppe Andernach e.V.` | Gliederung der angelegten Mitgliedschaft |
 | `STEP_TIMEOUT_MS` | 30000 | Pro Schritt |
 | `SEARCH_TIMEOUT_MS` | 90000 | SEWOBE-Suche, sie braucht rund 20 s |
+| `SEARCH_SETTLE_MS` | 20000 | Wartezeit nach der Sucheingabe bei der Namenssuche |
+| `NUMBER_SEARCH_SETTLE_MS` | 20000 | Längste Wartezeit je Nummernsuche bei `/members/new` |
+| `MEMBERS_TIMEOUT_MS` | 900000 | Gesamtlauf von `/members/new` |
 | `SAVE_TIMEOUT_MS` | 45000 | Bestätigung beim Speichern |
 | `SYNC_TIMEOUT_MS` | 360000 | Gesamtlauf |
 | `LOCK_WAIT_MS` | 60000 | Wartezeit auf den Mutex |
@@ -219,6 +246,26 @@ Nach dem Import: Credentials zuordnen (Header-Auth für den Bot, Basic-Auth für
 
 **Test mit dem Formular.** Formular aufrufen, Name eintragen, „Testlauf“ auf Ja lassen. Das Ergebnis zeigt die ntfy-Meldung. Den `diff` (alte und neue Werte) sieht man in der Ausführung des Nodes „ISC-Manager-Bot abgleichen“ in n8n. Erst mit „Nein“ wird gespeichert.
 
+### Workflow „Neue Mitglieder in SEWOBE melden“
+
+Datei: `argocd/apps/tech/n8n/workflows/isc-manager-bot-neue-mitglieder.json` (ID `iscManagerNeu001`, `active` ist `false`). Läuft täglich um 07:30 und 17:30.
+
+| Node | Aufgabe |
+|---|---|
+| Formular Test | Formular mit „Letzte bekannte Mitgliedsnummer“ und optional „Fenster (1 bis 25)“, Pfad `isc-manager-neue-mitglieder-test`, Basic-Auth (Credential `MDM Formulare`). Zusätzlich das Feld „Mail an Empfaenger senden“ (Nein/Ja). Läuft als Testlauf: die gemerkte Nummer bleibt unverändert, die ntfy-Meldung erscheint auch ohne Treffer mit Anzahl der geprüften Nummern |
+| Konfiguration | Bot-URL, ntfy-Thema `isc-manager`, `fenster` (Standard 10), `startNummer` (nur für den Erststart) sowie `mailAn` (Standard `peter.kretzer@dlrg.org`) und `mailVon` (`n8n@pkr-service.de`) |
+| Stand lesen | Liest die zuletzt bekannte Nummer aus den Workflow-Static-Data (`letzteNummer`), sonst `startNummer`. Fehlt beides, geht eine Fehlermeldung per ntfy raus |
+| Neue Mitglieder abfragen | `POST /members/new` mit `after` und `window`, Timeout 420 s, Credential `ISC-Manager-Bot API-Token` |
+| Ergebnis auswerten | Merkt `highest` als neue `letzteNummer` und baut die Meldung „Nummer Name“ je neuem Mitglied |
+| Mail bauen, Mail senden | HTML-Mail im Aufbau der zentralen Meldungs-Mails von „Publish: Benachrichtigung“ (blauer Kopf „Info“, Tabelle aus Name und Mitgliedsnummer, darunter Quelle, Zeit und ntfy-Thema) an `mailAn`. Die zentrale Mail ist für diese Meldung abgeschaltet (`mail = false`), damit niemand sie doppelt bekommt (SMTP-Credential `SMTP Netcup Automations`). Beim Testformular nur bei „Ja“, ohne Treffer als Beispielmail mit „Person Beispiel“ und dem Betreff-Präfix [TEST]. Den Empfänger gibt es nur in diesem Workflow, andere Workflows sind nicht betroffen. Mehrere Empfänger: `mailAn` als kommagetrennte Liste eintragen (`a@dlrg.org, b@dlrg.org`), alle bekommen dieselbe Mail |
+| ntfy-Nodes | Meldung „Neues Mitglied in SEWOBE“ bzw. „Mitgliederpruefung fehlgeschlagen“ an das Thema `isc-manager` |
+
+**Erststart.** Im Node „Konfiguration“ `startNummer` auf die aktuell höchste Mitgliedsnummer setzen (13 Ziffern), Workflow aktivieren. Ab dem ersten erfolgreichen Lauf zählt nur noch die gemerkte Nummer, `startNummer` wird ignoriert. Zurücksetzen geht, indem man den Workflow neu einspielt, oder im Node „Ergebnis auswerten“ `store.letzteNummer` einmalig überschreibt.
+
+**Static-Data.** n8n speichert sie nur bei Läufen durch den Trigger. Manuelle Testläufe aus dem Editor merken die Nummer nicht. Ob ein Deploy per PUT ohne `staticData` die gemerkte Nummer behält, ist nicht geprüft: nach dem Einspielen `letzteNummer` kontrollieren und notfalls `startNummer` neu setzen.
+
+**Reaktion.** Der Workflow meldet nur. Der Übertrag ins ISC läuft weiter über den Mail-Pfad oder das Formular des Sync-Workflows.
+
 ---
 
 ## Selektoren anpassen bei Änderungen an ISC oder SEWOBE
@@ -260,6 +307,8 @@ SMOKE_VORNAME=… SMOKE_NACHNAME=… npm run smoke
 | `FORM_CHANGED` | Seite im ISC oder SEWOBE hat sich geändert | Selektor anpassen, siehe oben |
 | `SAVE_UNCONFIRMED` | ISC hat nicht bestätigt oder zeigt nach dem Speichern andere Werte | Person im ISC prüfen, Lauf wiederholen (idempotent) |
 | `BUSY` (429) | Anderer Lauf aktiv | n8n wiederholt später |
+| `/members/new` meldet nie Treffer | SEWOBE-Suche findet keine Nummern oder `startNummer` liegt über allen vergebenen Nummern | Nummer von Hand in SEWOBE suchen, `after` auf eine bekannte Nummer setzen |
+| Meldung „Keine Startnummer“ | Erststart ohne `startNummer` und ohne gemerkte Nummer | `startNummer` im Node „Konfiguration“ eintragen |
 
 ---
 
