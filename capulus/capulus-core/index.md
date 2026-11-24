@@ -326,6 +326,7 @@ Die Spalte *Cluster* zeigt, wo die App läuft (Ordner unter `argocd/apps/`).
 | [ALAMOS-Webhook-Relay](3-apps-workloads/300i0-alamos-relay.md) | TECH | Öffentlicher Mini-Proxy vor n8n, damit ALAMOS den Einsatzalarm-Webhook erreicht, ohne n8n selbst öffentlich zu machen |
 | [ISC-News-Bot](3-apps-workloads/300k0-isc-news-bot.md) | TECH | News im DLRG ISC per API anlegen (Playwright-RPA), aufgerufen aus n8n, cluster-intern |
 | [ISC-Manager-Bot](3-apps-workloads/300x0-isc-manager-bot.md) | TECH | Person aus SEWOBE ins ISC übertragen (Playwright-RPA mit eigenem TOTP), aufgerufen aus n8n, cluster-intern |
+| [Plaudi](3-apps-workloads/300y0-plaudi.md) | PROD | Selbst gehosteter Chat mit Claude, Anmeldung per Passwort und Mail-Code, Mailversand über ticket-gate |
 | [Instagram-Post per Mail](3-apps-workloads/300l0-instagram-post-per-mail.md) | TECH | n8n-Workflow: Mail mit JSON und Bildern wird zum Instagram-Beitrag (Graph API), Bilder kurz über einen einzelnen öffentlichen Pfad für Meta |
 | [ISC-Urkunden melden](3-apps-workloads/300m0-isc-urkunden-melden.md) | TECH | n8n-Workflow + ISC-News-Bot: donnerstags 17:30–20:00 neue Seepferdchen-, Schwimmabzeichen- und Juniorretter-Urkunden per Mail |
 | [Zentrales Logging](3-apps-workloads/300j0-logging.md) | TECH | VictoriaLogs: journald aller Hosts und Pod-Logs an einem Ort |
