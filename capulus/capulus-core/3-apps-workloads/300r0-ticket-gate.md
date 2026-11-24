@@ -43,6 +43,7 @@ Alle Endpunkte sind `POST` mit `Content-Type: application/json`, Body maximal 32
 | `POST /v1/verify/request` | `{email}` | `202 {status:"ok", resend_after}` |
 | `POST /v1/verify/confirm` | `{code}` | `200 {verification_token, email, expires_in}` |
 | `POST /v1/tickets` | `{verification_token, name?, subject, message}` | `201 {ticket_number}` |
+| `POST /v1/mail` | `{to, subject, text, html?, from?}`, Header `Authorization: Bearer <MAIL_RELAY_TOKEN>` | `200 {status:"sent"}` |
 | `GET /healthz` | — | `200 ok` (Probes) |
 
 Fehler haben die Form `{"error": "<code>"}`, bei `429` zusätzlich `retry_after` (Sekunden) und den Header `Retry-After`.
@@ -61,6 +62,10 @@ Fehler haben die Form `{"error": "<code>"}`, bei `429` zusätzlich `retry_after`
 | `request_invalid` | 400 | JSON fehlerhaft oder unbekanntes Feld (z. B. ein mitgeschicktes `email` beim Ticket) |
 | `origin_not_allowed` | 403 | Origin nicht in `ALLOWED_ORIGINS` |
 | `unavailable` | 503 | zu viele offene Sessions |
+| `token_invalid` | 401 | nur `/v1/mail`: Relay-Token fehlt oder ist falsch |
+| `mail_invalid` | 400 | nur `/v1/mail`: Adresse ungültig, Betreff oder Text leer oder zu lang |
+| `mail_failed` | 502 | nur `/v1/mail`: SMTP hat die Mail nicht angenommen |
+| `not_found` | 404 | nur `/v1/mail`: Endpunkt ist ohne `MAIL_RELAY_TOKEN` abgeschaltet |
 
 ## Datenmodell
 
@@ -97,9 +102,26 @@ Die Werte kommen aus `values.yaml` (`config:` → ConfigMap) und dem SealedSecre
 | `CONFIRM_PER_IP` / `CONFIRM_WINDOW_SECONDS` | `20` / `600` | Prüfversuche je IP im Fenster |
 | `SESSION_PER_IP_PER_HOUR` / `TICKET_PER_IP_PER_HOUR` | `30` / `10` | Sessions und Tickets je IP und Stunde |
 | `MAX_SESSIONS` | `50000` | Obergrenze offener Sessions |
+| `MAIL_RELAY_TOKEN` | leer (Secret) | mindestens 32 Zeichen, schaltet `POST /v1/mail` ein; leer = Endpunkt antwortet `404` |
+| `MAIL_RELAY_FROM_NAME` | Wert von `SMTP_FROM_NAME` | Anzeigename des Absenders bei Relay-Mails (Plaudi) |
+| `MAIL_RELAY_PER_HOUR` / `MAIL_RELAY_PER_RECIPIENT_PER_HOUR` | `60` / `10` | Relay-Mails pro Stunde insgesamt bzw. je Empfängeradresse |
 | `PORT` / `LOG_LEVEL` | `8080` / `info` | |
 
 Secrets (`HMAC_SECRET`, `SMTP_PASSWORD`, `ZAMMAD_TOKEN`) stehen im [Token-Register](https://github.com/pkr-lab/capulus-core/blob/main/ops/token-register.yaml) als `ticket-gate-hmac-secret`, `ticket-gate-smtp-password` und `ticket-gate-zammad-token`.
+
+## Mail-Endpunkt für andere Dienste
+
+`POST /v1/mail` versendet eine Mail über dasselbe SMTP-Postfach, damit andere Dienste keine eigenen SMTP-Zugangsdaten brauchen. Das Format entspricht dem Webhook-Transport von [Plaudi](300y0-plaudi.md) (`MAIL_TRANSPORT=webhook`): JSON mit `to`, `subject`, `text`, optional `html`, ein mitgeschicktes `from` wird ignoriert, der Absender ist immer `SMTP_FROM` mit dem Namen aus `MAIL_RELAY_FROM_NAME`.
+
+| Eigenschaft | Umsetzung |
+|---|---|
+| Zugang | `Authorization: Bearer <MAIL_RELAY_TOKEN>`, zeitkonstanter Vergleich über HMAC. Ohne gesetztes Token antwortet der Endpunkt `404`. Ein Browser kann ihn nicht nutzen: Anfragen mit einer fremden `Origin` werden mit `403` abgelehnt |
+| Prüfung | Adresse wie bei der Bestätigung (`NormalizeEmail`), Betreff höchstens 200 Zeichen ohne Zeilenumbruch, Text höchstens 10000, HTML höchstens 20000 Zeichen, Header-Injection wird abgelehnt |
+| Limits | 60 Mails pro Stunde insgesamt, 10 pro Stunde je Empfängeradresse (`429`) |
+| Zustellung | synchron mit 8 Sekunden Frist, Fehler als `502`. Mailinhalt und Empfänger stehen nicht im Log |
+| Inhalt | `multipart/alternative` (Text und HTML, base64), `Auto-Submitted: auto-generated` |
+
+Das Token steht im Token-Register als `plaudi-mail-relay-token`, versiegelt wird es von `scripts/seal-plaudi.sh` zusammen mit den Secrets von Plaudi. Wer das Token hat, kann über das Postfach Mails an beliebige Adressen senden, begrenzt durch die Limits.
 
 ## Sicherheitsmaßnahmen
 
@@ -154,6 +176,7 @@ Ohne lokales Go: `docker run --rm -v "$PWD":/src -w /src golang:1.27-alpine go t
 |---|---|
 | `internal/gate/verify_test.go` | Ticket ohne Session, ohne Verifikation, mit erfundenem Token; Adressfeld im Ticket abgelehnt; Token einmalig, an Session gebunden, läuft nach 30 min ab, neues Token ersetzt altes; falscher, abgelaufener, wiederverwendeter Code; Code einer anderen Adresse (andere und gleiche Session); Code aus anderer Session; neuer Code macht alten ungültig; Sperre nach 5 Fehlversuchen; Format und Verteilung der Codes; kein Klartext in Antworten, Speicher und Log; identische Antworten für beliebige Adressen; ungültige Adressen und Header-Injection; alle Rate Limits; Aufräumen; Origin/CORS, Content-Type und Body-Grenze; gleichzeitige Nutzung eines Tokens erzeugt genau ein Ticket |
 | `internal/mail/` | Aufbau der Mail, Ablehnung von Header-Injection, Versand gegen einen Fake-SMTP-Server mit TLS, Ablehnung eines nicht vertrauenswürdigen Zertifikats |
+| `internal/gate/relay_test.go` | Mail-Endpunkt: ohne Token abgeschaltet, falsches oder fehlendes Token, ungültige Eingaben und Header-Injection, Limits, Zustellfehler ohne Adresse im Log, fremde Origin |
 | `internal/zammad/` | Anfrage an Zammad mit verifizierter Adresse, Fehlerstatus |
 | `internal/config/`, `internal/limiter/` | Pflichtvariablen, Standardwerte, Limiter-Logik |
 
@@ -163,6 +186,7 @@ Ohne lokales Go: `docker run --rm -v "$PWD":/src -w /src golang:1.27-alpine go t
 |---|---|
 | `HMAC_SECRET` | `scripts/seal-ticket-gate.sh` erneut ausführen (erzeugt ein neues Secret), PR mergen. Offene Sessions, Codes und Token werden ungültig, Nutzer fordern einen neuen Code an |
 | `SMTP_PASSWORD` | beim Hoster ändern, in die Credentials-Datei eintragen, Skript ausführen. Dasselbe Postfach nutzt [Vaultwarden](300a0-vaultwarden.md) |
+| `MAIL_RELAY_TOKEN` | `scripts/seal-plaudi.sh` ausführen, siehe [Plaudi, Rotation](300y0-plaudi.md#rotation) |
 | `ZAMMAD_TOKEN` | in Zammad neues Token erzeugen, in die Credentials-Datei eintragen, Skript ausführen, danach das alte Token in Zammad löschen |
 
 ## Fehlersuche
